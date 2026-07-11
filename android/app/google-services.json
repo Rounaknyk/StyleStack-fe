@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "87320160492",
+    "project_id": "stylestack-9032f",
+    "storage_bucket": "stylestack-9032f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:87320160492:android:6035074da11a79d472ddc9",
+        "android_client_info": {
+          "package_name": "com.stylestack.stylestack"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDj0gLHcAjeABYLz0A5BxncaXblsDx4d0U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
