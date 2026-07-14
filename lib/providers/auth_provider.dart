@@ -54,14 +54,15 @@ class AuthProvider extends ChangeNotifier {
   Future<void> signOut() => _service.signOut();
 
   String _messageFor(String code) => switch (code) {
-        'invalid-email' => 'Enter a valid email address.',
-        'weak-password' => 'Use a password with at least 6 characters.',
-        'email-already-in-use' => 'An account already exists for this email.',
-        'invalid-credential' || 'wrong-password' || 'user-not-found' =>
-          'Incorrect email or password.',
-        'network-request-failed' => 'Check your internet connection.',
-        _ => 'Authentication failed. Please try again.',
-      };
+    'invalid-email' => 'Enter a valid email address.',
+    'weak-password' => 'Use a password with at least 6 characters.',
+    'email-already-in-use' => 'An account already exists for this email.',
+    'invalid-credential' ||
+    'wrong-password' ||
+    'user-not-found' => 'Incorrect email or password.',
+    'network-request-failed' => 'Check your internet connection.',
+    _ => 'Authentication failed. Please try again.',
+  };
 
   @override
   void dispose() {
