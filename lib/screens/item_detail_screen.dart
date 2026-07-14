@@ -285,6 +285,24 @@ class _AiResultCard extends StatelessWidget {
     final processing =
         item.aiTagStatus == 'pending' || item.aiTagStatus == 'processing';
     final success = item.aiTagStatus == 'completed';
+    final suggestionKeys = <String>{
+      for (final value in [
+        item.aiCategory,
+        item.aiColor,
+        item.aiSeason,
+        item.aiFormality,
+      ])
+        if (value != null && value.trim().isNotEmpty)
+          value.trim().toLowerCase(),
+    };
+    final suggestionTags = <String>[];
+    for (final tag in item.tags) {
+      final trimmedTag = tag.trim();
+      if (trimmedTag.isEmpty || !suggestionKeys.add(trimmedTag.toLowerCase())) {
+        continue;
+      }
+      suggestionTags.add(trimmedTag);
+    }
 
     return StyleStackCard(
       backgroundColor: processing
@@ -435,6 +453,26 @@ class _AiResultCard extends StatelessWidget {
                     ),
                     child: Text(
                       item.aiFormality!,
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: DesignSystem.primary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                for (final tag in suggestionTags)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: DesignSystem.spacingMd,
+                      vertical: DesignSystem.spacingSm,
+                    ),
+                    decoration: BoxDecoration(
+                      color: DesignSystem.secondary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(
+                        DesignSystem.radiusSm,
+                      ),
+                    ),
+                    child: Text(
+                      tag,
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         color: DesignSystem.primary,
                         fontWeight: FontWeight.w600,
