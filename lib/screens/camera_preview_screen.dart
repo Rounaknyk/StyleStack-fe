@@ -128,7 +128,7 @@ class _CameraPreviewScreenState extends State<CameraPreviewScreen> {
                     borderRadius: BorderRadius.circular(DesignSystem.radiusXl),
                     boxShadow: DesignSystem.shadowMedium,
                   ),
-                  child: Image.file(widget.image, fit: BoxFit.cover),
+                  child: Image.file(widget.image, fit: BoxFit.contain),
                 ),
               ),
             ),

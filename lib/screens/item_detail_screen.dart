@@ -179,7 +179,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                             )
                           : Image.network(
                               item.imageUrl!,
-                              fit: BoxFit.cover,
+                              fit: BoxFit.contain,
                               errorBuilder: (context, error, stackTrace) =>
                                   const Center(
                                     child: Icon(Icons.broken_image_outlined),
