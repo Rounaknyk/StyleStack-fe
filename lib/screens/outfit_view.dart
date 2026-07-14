@@ -664,7 +664,7 @@ class _OutfitPiece extends StatelessWidget {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(12),
           child: ColoredBox(
-            color: DesignSystem.surfaceAlt,
+            color: Colors.white,
             child: item.imageUrl == null
                 ? const Icon(Icons.checkroom_outlined, size: 34)
                 : Image.network(

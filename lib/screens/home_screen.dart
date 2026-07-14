@@ -660,7 +660,7 @@ class _ItemCard extends StatelessWidget {
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: DesignSystem.surfaceAlt,
+                  color: Colors.white,
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(DesignSystem.radiusLg),
                     topRight: Radius.circular(DesignSystem.radiusLg),

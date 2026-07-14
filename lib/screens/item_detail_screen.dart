@@ -168,7 +168,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                   child: AspectRatio(
                     aspectRatio: 4 / 3,
                     child: Container(
-                      color: DesignSystem.surfaceAlt,
+                      color: Colors.white,
                       child: item.imageUrl == null
                           ? const Center(
                               child: Icon(
