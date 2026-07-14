@@ -98,7 +98,7 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
       builder: (context) => AlertDialog(
         title: const Text('Connect Gmail?'),
         content: const Text(
-          'Test mode will scan only Amazon order ${GmailImportService.testOrderId}. The complete decoded contents of that email will be printed in the local backend logs for debugging. Gmail tokens are never logged or stored.',
+          'StyleStack will scan only delivered Amazon order emails and add eligible fashion items to your wardrobe. Gmail tokens are never logged or stored.',
         ),
         actions: [
           TextButton(
@@ -309,8 +309,7 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
                 title: _importingGmail
                     ? 'Scanning order emails…'
                     : 'Auto-add from Gmail',
-                subtitle:
-                    'Test mode: Amazon order ${GmailImportService.testOrderId}',
+                subtitle: 'Imports only delivered Amazon order emails',
                 trailing: _importingGmail
                     ? const SizedBox.square(
                         dimension: 20,

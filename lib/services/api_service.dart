@@ -367,17 +367,11 @@ class ApiService {
     return _decode(response) as Map<String, dynamic>;
   }
 
-  Future<Map<String, int>> importGmailOrders(
-    String accessToken, {
-    String? orderId,
-  }) async {
+  Future<Map<String, int>> importGmailOrders(String accessToken) async {
     final payload = <String, Object>{
       'access_token': accessToken,
-      'max_messages': orderId == null ? 25 : 1,
+      'max_messages': 50,
     };
-    if (orderId != null) {
-      payload['order_id'] = orderId;
-    }
     final response = await _client.post(
       Uri.parse('${AppConfig.apiBaseUrl}/imports/gmail'),
       headers: {
