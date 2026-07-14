@@ -72,6 +72,7 @@ class ApiService {
     String? formality,
     String? description,
     List<String> tags = const [],
+    ClothingAnalysis? aiAnalysis,
   }) async {
     final request =
         http.MultipartRequest(
@@ -95,6 +96,16 @@ class ApiService {
     }
     if (tags.isNotEmpty) {
       request.fields['tags'] = tags.join(',');
+    }
+    if (aiAnalysis != null) {
+      request.fields.addAll({
+        'ai_category': aiAnalysis.category,
+        'ai_color': aiAnalysis.color,
+        'ai_season': aiAnalysis.season,
+        'ai_formality': aiAnalysis.formality,
+        'ai_description': aiAnalysis.description,
+        'ai_tags': aiAnalysis.tags.join(','),
+      });
     }
     final extension = image.path.split('.').last.toLowerCase();
     final subtype = extension == 'png'

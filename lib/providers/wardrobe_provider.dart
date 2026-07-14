@@ -56,6 +56,7 @@ class WardrobeProvider extends ChangeNotifier {
     String? formality,
     String? description,
     List<String> tags = const [],
+    ClothingAnalysis? aiAnalysis,
   }) async {
     _uploading = true;
     _error = null;
@@ -70,6 +71,7 @@ class WardrobeProvider extends ChangeNotifier {
         formality: formality,
         description: description,
         tags: tags,
+        aiAnalysis: aiAnalysis,
       );
       _items = [item, ..._items];
       _loaded = true;

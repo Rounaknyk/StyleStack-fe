@@ -11,6 +11,7 @@ import '../models/wardrobe_item.dart';
 import '../providers/auth_provider.dart';
 import '../providers/wardrobe_provider.dart';
 import 'camera_preview_screen.dart';
+import 'batch_add_screen.dart';
 import 'item_detail_screen.dart';
 import 'outfit_view.dart';
 import 'outfit_selfie_review_screen.dart';
@@ -54,7 +55,9 @@ class _HomeScreenState extends State<HomeScreen> {
               ListTile(
                 leading: const Icon(Icons.photo_library_outlined),
                 title: const Text('Choose from gallery'),
-                subtitle: const Text('Select an existing photo'),
+                subtitle: const Text(
+                  'Select up to $maxBatchImages photos for batch adding',
+                ),
                 onTap: () => Navigator.pop(context, ImageSource.gallery),
               ),
             ],
@@ -63,7 +66,43 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
     if (source == null || !mounted) return;
-    await _pickImage(source);
+    if (source == ImageSource.gallery) {
+      await _pickGalleryBatch();
+    } else {
+      await _pickImage(source);
+    }
+  }
+
+  Future<void> _pickGalleryBatch() async {
+    final picked = await _picker.pickMultiImage(
+      imageQuality: 88,
+      maxWidth: 1800,
+      limit: maxBatchImages,
+    );
+    if (picked.isEmpty || !mounted) return;
+    if (picked.length == 1) {
+      await _showPreview(File(picked.first.path), ImageSource.gallery);
+      return;
+    }
+    final uploaded = await Navigator.push<int>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BatchAddScreen(
+          images: picked
+              .take(maxBatchImages)
+              .map((image) => File(image.path))
+              .toList(),
+        ),
+      ),
+    );
+    if (!mounted || uploaded == null) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          '$uploaded ${uploaded == 1 ? 'item' : 'items'} added to your wardrobe.',
+        ),
+      ),
+    );
   }
 
   Future<void> _pickImage(ImageSource source) async {

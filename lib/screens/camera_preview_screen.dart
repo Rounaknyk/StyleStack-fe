@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../config/design_system.dart';
 import '../config/custom_widgets.dart';
+import '../models/clothing_analysis.dart';
 import '../providers/wardrobe_provider.dart';
 import 'item_detail_screen.dart';
 
@@ -30,6 +31,7 @@ class _CameraPreviewScreenState extends State<CameraPreviewScreen> {
   String? _color;
   String? _season;
   String? _formality;
+  ClothingAnalysis? _analysis;
 
   @override
   void initState() {
@@ -48,6 +50,7 @@ class _CameraPreviewScreenState extends State<CameraPreviewScreen> {
       return;
     }
     setState(() {
+      _analysis = analysis;
       _category.text = analysis.category;
       _color = analysis.color;
       _season = analysis.season;
@@ -91,6 +94,8 @@ class _CameraPreviewScreenState extends State<CameraPreviewScreen> {
       season: _season,
       formality: _formality,
       description: _description.text,
+      tags: _analysis?.tags ?? const [],
+      aiAnalysis: _analysis,
     );
     if (!mounted) return;
     if (created != null) {
