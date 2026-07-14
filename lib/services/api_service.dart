@@ -367,14 +367,24 @@ class ApiService {
     return _decode(response) as Map<String, dynamic>;
   }
 
-  Future<Map<String, int>> importGmailOrders(String accessToken) async {
+  Future<Map<String, int>> importGmailOrders(
+    String accessToken, {
+    String? orderId,
+  }) async {
+    final payload = <String, Object>{
+      'access_token': accessToken,
+      'max_messages': orderId == null ? 25 : 1,
+    };
+    if (orderId != null) {
+      payload['order_id'] = orderId;
+    }
     final response = await _client.post(
       Uri.parse('${AppConfig.apiBaseUrl}/imports/gmail'),
       headers: {
         'Authorization': 'Bearer ${await _token()}',
         'Content-Type': 'application/json',
       },
-      body: jsonEncode({'access_token': accessToken, 'max_messages': 25}),
+      body: jsonEncode(payload),
     );
     final result = _decode(response) as Map<String, dynamic>;
     return {

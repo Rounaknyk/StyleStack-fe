@@ -8,6 +8,7 @@ class GmailImportService {
 
   static const _gmailReadonly =
       'https://www.googleapis.com/auth/gmail.readonly';
+  static const testOrderId = '408-5421781-6928348';
 
   Future<Map<String, int>> connectAndImport() async {
     final google = GoogleSignIn(scopes: const [_gmailReadonly]);
@@ -18,6 +19,6 @@ class GmailImportService {
     if (token == null || token.isEmpty) {
       throw Exception('Google did not provide Gmail access.');
     }
-    return _api.importGmailOrders(token);
+    return _api.importGmailOrders(token, orderId: testOrderId);
   }
 }

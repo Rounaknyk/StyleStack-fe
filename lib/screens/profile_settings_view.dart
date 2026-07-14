@@ -98,7 +98,7 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
       builder: (context) => AlertDialog(
         title: const Text('Connect Gmail?'),
         content: const Text(
-          'Closet Sync uses read-only access and scans order emails from supported fashion stores. Gmail tokens and email contents are not stored.',
+          'Test mode will scan only Amazon order ${GmailImportService.testOrderId}. The complete decoded contents of that email will be printed in the local backend logs for debugging. Gmail tokens are never logged or stored.',
         ),
         actions: [
           TextButton(
@@ -309,7 +309,8 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
                 title: _importingGmail
                     ? 'Scanning order emails…'
                     : 'Auto-add from Gmail',
-                subtitle: 'Amazon, Flipkart, Myntra and Ajio',
+                subtitle:
+                    'Test mode: Amazon order ${GmailImportService.testOrderId}',
                 trailing: _importingGmail
                     ? const SizedBox.square(
                         dimension: 20,
