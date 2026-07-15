@@ -84,6 +84,30 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
   bool _saving = false;
   _PlacedCanvasItem? _gestureTarget;
 
+  _PlacedCanvasItem? get _selectedPlaced {
+    final id = _selectedId;
+    if (id == null) return null;
+    for (final item in _placed) {
+      if (item.item.id == id) return item;
+    }
+    return null;
+  }
+
+  void _beginCanvasGesture() {
+    final selected = _selectedPlaced;
+    if (selected == null) return;
+    _gestureTarget = selected;
+    selected.beginGesture();
+  }
+
+  void _updateCanvasGesture(ScaleUpdateDetails details) {
+    final target = _gestureTarget ?? _selectedPlaced;
+    if (target == null) return;
+    setState(() => target.updateGesture(details));
+  }
+
+  void _endCanvasGesture() => _gestureTarget = null;
+
   @override
   void initState() {
     super.initState();
@@ -302,22 +326,28 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
                       borderRadius: BorderRadius.circular(
                         DesignSystem.radiusLg,
                       ),
-                      child: CustomPaint(
-                        painter: _CanvasGridPainter(),
-                        child: Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            if (_placed.isEmpty)
-                              const Center(
-                                child: Text(
-                                  'Drag wardrobe pieces here',
-                                  style: TextStyle(
-                                    color: DesignSystem.textSecondary,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onScaleStart: (_) => _beginCanvasGesture(),
+                        onScaleUpdate: _updateCanvasGesture,
+                        onScaleEnd: (_) => _endCanvasGesture(),
+                        child: CustomPaint(
+                          painter: _CanvasGridPainter(),
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              if (_placed.isEmpty)
+                                const Center(
+                                  child: Text(
+                                    'Drag wardrobe pieces here',
+                                    style: TextStyle(
+                                      color: DesignSystem.textSecondary,
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ..._placed.map(_placedWidget),
-                          ],
+                              ..._placed.map(_placedWidget),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -391,8 +421,8 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
                   ),
                   if (selected)
                     Positioned(
-                      right: 3,
-                      top: 3,
+                      right: 0,
+                      top: 0,
                       child: Material(
                         color: DesignSystem.error,
                         shape: const CircleBorder(),
@@ -403,7 +433,7 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
                             _selectedId = null;
                           }),
                           child: const Padding(
-                            padding: EdgeInsets.all(5),
+                            padding: EdgeInsets.all(10),
                             child: Icon(
                               Icons.close,
                               size: 14,
@@ -415,8 +445,8 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
                     ),
                   if (selected)
                     Positioned(
-                      right: 3,
-                      bottom: 3,
+                      right: 0,
+                      bottom: 0,
                       child: GestureDetector(
                         onPanUpdate: (details) =>
                             setState(() => placed.resizeFromHandle(details)),
@@ -427,7 +457,7 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
                             boxShadow: DesignSystem.shadowSoft,
                           ),
                           child: const Padding(
-                            padding: EdgeInsets.all(7),
+                            padding: EdgeInsets.all(10),
                             child: Icon(
                               Icons.open_in_full,
                               size: 14,
