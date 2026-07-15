@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../config/design_system.dart';
-import '../models/clothing_analysis.dart';
 import '../providers/wardrobe_provider.dart';
 
 const int maxBatchImages = 3;
@@ -22,10 +21,8 @@ class _BatchAddScreenState extends State<BatchAddScreen> {
   late final List<_BatchItemDraft> _drafts;
   final _pageController = PageController();
   int _page = 0;
-  int? _analyzingIndex;
   int? _uploadingIndex;
 
-  bool get _analyzing => _analyzingIndex != null;
   bool get _uploading => _uploadingIndex != null;
 
   @override
@@ -35,7 +32,6 @@ class _BatchAddScreenState extends State<BatchAddScreen> {
         .take(maxBatchImages)
         .map(_BatchItemDraft.new)
         .toList();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _analyzeAll());
   }
 
   @override
@@ -45,38 +41,6 @@ class _BatchAddScreenState extends State<BatchAddScreen> {
       draft.dispose();
     }
     super.dispose();
-  }
-
-  Future<void> _analyzeAll() async {
-    for (var index = 0; index < _drafts.length; index++) {
-      if (!mounted) return;
-      await _analyze(index);
-    }
-  }
-
-  Future<void> _analyze(int index) async {
-    final draft = _drafts[index];
-    if (!draft.selected ||
-        draft.analysis != null ||
-        (_analyzing && _analyzingIndex != index)) {
-      return;
-    }
-    setState(() {
-      _analyzingIndex = index;
-      draft.error = null;
-    });
-    final analysis = await context.read<WardrobeProvider>().analyzeImage(
-      draft.image,
-    );
-    if (!mounted) return;
-    setState(() {
-      _analyzingIndex = null;
-      if (analysis == null) {
-        draft.error = 'AI analysis failed. You can enter details manually.';
-        return;
-      }
-      draft.apply(analysis);
-    });
   }
 
   void _toggleSelected(int index, bool selected) {
@@ -91,23 +55,8 @@ class _BatchAddScreenState extends State<BatchAddScreen> {
   }
 
   Future<void> _saveAll() async {
-    if (_analyzing || _uploading) return;
+    if (_uploading) return;
     final selected = _drafts.where((draft) => draft.selected).toList();
-    final unnamed = selected.indexWhere(
-      (draft) => draft.name.text.trim().isEmpty,
-    );
-    if (unnamed >= 0) {
-      final page = _drafts.indexOf(selected[unnamed]);
-      _pageController.animateToPage(
-        page,
-        duration: const Duration(milliseconds: 250),
-        curve: Curves.easeOut,
-      );
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Add a name for photo ${page + 1}.')),
-      );
-      return;
-    }
 
     var uploaded = 0;
     for (var index = 0; index < _drafts.length; index++) {
@@ -120,7 +69,9 @@ class _BatchAddScreenState extends State<BatchAddScreen> {
       });
       final created = await context.read<WardrobeProvider>().upload(
         image: draft.image,
-        name: draft.name.text,
+        name: draft.name.text.trim().isEmpty
+            ? 'New wardrobe item ${index + 1}'
+            : draft.name.text,
         category: draft.category.text.trim().isEmpty
             ? 'other'
             : draft.category.text,
@@ -128,8 +79,6 @@ class _BatchAddScreenState extends State<BatchAddScreen> {
         season: draft.season,
         formality: draft.formality,
         description: draft.description.text,
-        tags: draft.analysis?.tags ?? const [],
-        aiAnalysis: draft.analysis,
       );
       if (!mounted) return;
       if (created == null) {
@@ -172,7 +121,7 @@ class _BatchAddScreenState extends State<BatchAddScreen> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'AI processes one photo at a time • maximum $maxBatchImages per batch',
+                          'Upload up to $maxBatchImages photos. StyleStack processes and tags them in the background.',
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ),
@@ -244,11 +193,9 @@ class _BatchAddScreenState extends State<BatchAddScreen> {
                   draft: _drafts[index],
                   index: index,
                   total: _drafts.length,
-                  analyzing: _analyzingIndex == index,
                   uploading: _uploadingIndex == index,
                   disabled: _uploading,
                   onSelected: (value) => _toggleSelected(index, value),
-                  onRetry: () => _analyze(index),
                   onChanged: () => setState(() {}),
                 ),
               ),
@@ -262,17 +209,15 @@ class _BatchAddScreenState extends State<BatchAddScreen> {
               child: SizedBox(
                 width: double.infinity,
                 child: FilledButton.icon(
-                  onPressed: _analyzing || _uploading ? null : _saveAll,
-                  icon: _analyzing || _uploading
+                  onPressed: _uploading ? null : _saveAll,
+                  icon: _uploading
                       ? const SizedBox.square(
                           dimension: 18,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.cloud_upload_outlined),
                   label: Text(
-                    _analyzing
-                        ? 'Analyzing photo ${(_analyzingIndex ?? 0) + 1} of ${_drafts.length}'
-                        : _uploading
+                    _uploading
                         ? 'Uploading photo ${(_uploadingIndex ?? 0) + 1} of ${_drafts.length}'
                         : 'Add $selectedCount ${selectedCount == 1 ? 'item' : 'items'}',
                   ),
@@ -291,22 +236,18 @@ class _BatchDraftPage extends StatelessWidget {
     required this.draft,
     required this.index,
     required this.total,
-    required this.analyzing,
     required this.uploading,
     required this.disabled,
     required this.onSelected,
-    required this.onRetry,
     required this.onChanged,
   });
 
   final _BatchItemDraft draft;
   final int index;
   final int total;
-  final bool analyzing;
   final bool uploading;
   final bool disabled;
   final ValueChanged<bool> onSelected;
-  final VoidCallback onRetry;
   final VoidCallback onChanged;
 
   @override
@@ -341,11 +282,9 @@ class _BatchDraftPage extends StatelessWidget {
         ),
         child: Image.file(draft.image, fit: BoxFit.contain),
       ),
-      if (analyzing || uploading) ...[
+      if (uploading) ...[
         const SizedBox(height: 12),
-        LinearProgressIndicator(
-          semanticsLabel: analyzing ? 'Analyzing image' : 'Uploading image',
-        ),
+        LinearProgressIndicator(semanticsLabel: 'Uploading image'),
       ],
       if (draft.error != null) ...[
         const SizedBox(height: 12),
@@ -360,8 +299,6 @@ class _BatchDraftPage extends StatelessWidget {
               const Icon(Icons.error_outline, color: DesignSystem.error),
               const SizedBox(width: 8),
               Expanded(child: Text(draft.error!)),
-              if (draft.analysis == null)
-                TextButton(onPressed: onRetry, child: const Text('Retry AI')),
             ],
           ),
         ),
@@ -371,7 +308,7 @@ class _BatchDraftPage extends StatelessWidget {
         controller: draft.name,
         enabled: !disabled && draft.selected,
         decoration: const InputDecoration(
-          labelText: 'Item name *',
+          labelText: 'Item name (optional)',
           prefixIcon: Icon(Icons.label_outline),
         ),
       ),
@@ -447,16 +384,6 @@ class _BatchDraftPage extends StatelessWidget {
           alignLabelWithHint: true,
         ),
       ),
-      if (draft.analysis?.tags.isNotEmpty == true) ...[
-        const SizedBox(height: 14),
-        Wrap(
-          spacing: 7,
-          runSpacing: 7,
-          children: draft.analysis!.tags
-              .map((tag) => Chip(label: Text(tag)))
-              .toList(),
-        ),
-      ],
     ],
   );
 
@@ -478,24 +405,11 @@ class _BatchItemDraft {
   final category = TextEditingController();
   final color = TextEditingController();
   final description = TextEditingController();
-  ClothingAnalysis? analysis;
   String? season;
   String? formality;
   String? error;
   bool selected = true;
   bool uploaded = false;
-
-  void apply(ClothingAnalysis value) {
-    analysis = value;
-    category.text = value.category;
-    color.text = value.color;
-    description.text = value.description;
-    season = value.season;
-    formality = value.formality;
-    if (name.text.trim().isEmpty) {
-      name.text = _BatchDraftPage._title('${value.color} ${value.category}');
-    }
-  }
 
   void dispose() {
     name.dispose();

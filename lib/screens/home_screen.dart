@@ -75,8 +75,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _pickGalleryBatch() async {
     final picked = await _picker.pickMultiImage(
-      imageQuality: 88,
-      maxWidth: 1800,
+      imageQuality: 82,
+      maxWidth: 1600,
       limit: maxBatchImages,
     );
     if (picked.isEmpty || !mounted) return;
@@ -108,8 +108,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _pickImage(ImageSource source) async {
     final picked = await _picker.pickImage(
       source: source,
-      imageQuality: 88,
-      maxWidth: 1800,
+      imageQuality: 82,
+      maxWidth: 1600,
     );
     if (picked == null || !mounted) return;
     await _showPreview(File(picked.path), source);
@@ -125,8 +125,8 @@ class _HomeScreenState extends State<HomeScreen> {
           onRetake: () async {
             final replacement = await _picker.pickImage(
               source: source,
-              imageQuality: 88,
-              maxWidth: 1800,
+              imageQuality: 82,
+              maxWidth: 1600,
             );
             if (replacement == null || !mounted) return;
             Navigator.pop(context);
@@ -705,7 +705,7 @@ class _ItemCard extends StatelessWidget {
                     topRight: Radius.circular(DesignSystem.radiusLg),
                   ),
                 ),
-                child: item.imageUrl == null
+                child: item.gridImageUrl == null
                     ? const Center(
                         child: Icon(
                           Icons.image_outlined,
@@ -719,7 +719,7 @@ class _ItemCard extends StatelessWidget {
                           topRight: Radius.circular(DesignSystem.radiusLg),
                         ),
                         child: Image.network(
-                          item.imageUrl!,
+                          item.gridImageUrl!,
                           fit: BoxFit.contain,
                           errorBuilder: (context, error, stackTrace) =>
                               const Center(

@@ -5,7 +5,6 @@ import 'package:provider/provider.dart';
 
 import '../config/design_system.dart';
 import '../config/custom_widgets.dart';
-import '../models/clothing_analysis.dart';
 import '../providers/wardrobe_provider.dart';
 import 'item_detail_screen.dart';
 
@@ -31,44 +30,6 @@ class _CameraPreviewScreenState extends State<CameraPreviewScreen> {
   String? _color;
   String? _season;
   String? _formality;
-  ClothingAnalysis? _analysis;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _analyzeImage());
-  }
-
-  Future<void> _analyzeImage() async {
-    final wardrobe = context.read<WardrobeProvider>();
-    final analysis = await wardrobe.analyzeImage(widget.image);
-    if (!mounted) return;
-    if (analysis == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(wardrobe.error ?? 'AI analysis failed.')),
-      );
-      return;
-    }
-    setState(() {
-      _analysis = analysis;
-      _category.text = analysis.category;
-      _color = analysis.color;
-      _season = analysis.season;
-      _formality = analysis.formality;
-      _description.text = analysis.description;
-      if (_name.text.trim().isEmpty) {
-        final suggestion = '${analysis.color} ${analysis.category}';
-        _name.text = suggestion
-            .split(' ')
-            .map(
-              (word) => word.isEmpty
-                  ? word
-                  : '${word[0].toUpperCase()}${word.substring(1)}',
-            )
-            .join(' ');
-      }
-    });
-  }
 
   @override
   void dispose() {
@@ -79,23 +40,15 @@ class _CameraPreviewScreenState extends State<CameraPreviewScreen> {
   }
 
   Future<void> _save() async {
-    if (_name.text.trim().isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Add an item name.')));
-      return;
-    }
     final wardrobe = context.read<WardrobeProvider>();
     final created = await wardrobe.upload(
       image: widget.image,
-      name: _name.text,
+      name: _name.text.trim().isEmpty ? 'New wardrobe item' : _name.text,
       category: _category.text.trim().isEmpty ? 'other' : _category.text,
       color: _color ?? '',
       season: _season,
       formality: _formality,
       description: _description.text,
-      tags: _analysis?.tags ?? const [],
-      aiAnalysis: _analysis,
     );
     if (!mounted) return;
     if (created != null) {
@@ -114,7 +67,6 @@ class _CameraPreviewScreenState extends State<CameraPreviewScreen> {
   Widget build(BuildContext context) {
     final wardrobe = context.watch<WardrobeProvider>();
     final uploading = wardrobe.uploading;
-    final analyzing = wardrobe.analyzing;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Add to wardrobe'), elevation: 0),
@@ -139,43 +91,25 @@ class _CameraPreviewScreenState extends State<CameraPreviewScreen> {
             ),
             const SizedBox(height: DesignSystem.spacingXxl),
 
-            // AI analyzing indicator
-            if (analyzing) ...[
-              Container(
-                padding: const EdgeInsets.all(DesignSystem.spacingMd),
-                decoration: BoxDecoration(
-                  color: DesignSystem.secondary.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(DesignSystem.radiusMd),
-                  border: Border.all(
-                    color: DesignSystem.secondary.withOpacity(0.2),
-                  ),
-                ),
-                child: Column(
-                  children: [
-                    const LinearProgressIndicator(minHeight: 3),
-                    const SizedBox(height: DesignSystem.spacingMd),
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.auto_awesome,
-                          size: DesignSystem.iconSizeSmall,
-                          color: DesignSystem.primary,
-                        ),
-                        const SizedBox(width: DesignSystem.spacingMd),
-                        Expanded(
-                          child: Text(
-                            'AI is analyzing this item…',
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(fontWeight: FontWeight.w500),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+            Container(
+              padding: const EdgeInsets.all(DesignSystem.spacingMd),
+              decoration: BoxDecoration(
+                color: DesignSystem.secondary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(DesignSystem.radiusMd),
               ),
-              const SizedBox(height: DesignSystem.spacingXl),
-            ],
+              child: const Row(
+                children: [
+                  Icon(Icons.auto_awesome, color: DesignSystem.primary),
+                  SizedBox(width: DesignSystem.spacingMd),
+                  Expanded(
+                    child: Text(
+                      'Add any details you know, or save now. StyleStack will prepare the photo and fill AI details in the background.',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: DesignSystem.spacingXl),
 
             // Form section header
             StyleStackSectionHeader(title: 'Item Details'),
@@ -186,7 +120,7 @@ class _CameraPreviewScreenState extends State<CameraPreviewScreen> {
               controller: _name,
               enabled: !uploading,
               decoration: const InputDecoration(
-                labelText: 'Item name *',
+                labelText: 'Item name (optional)',
                 hintText: 'e.g., Blue Denim Jacket',
                 prefixIcon: Icon(Icons.label_outline),
               ),
