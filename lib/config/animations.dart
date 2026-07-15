@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'design_system.dart';
 
@@ -127,6 +129,7 @@ class StaggeredListAnimation extends StatefulWidget {
 class _StaggeredListAnimationState extends State<StaggeredListAnimation>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
+  Timer? _startTimer;
 
   @override
   void initState() {
@@ -135,13 +138,18 @@ class _StaggeredListAnimationState extends State<StaggeredListAnimation>
       duration: DesignSystem.transitionStandard,
       vsync: this,
     );
-    Future.delayed(widget.delay, () {
-      if (mounted) _controller.forward();
-    });
+    if (widget.delay == Duration.zero) {
+      _controller.forward();
+    } else {
+      _startTimer = Timer(widget.delay, () {
+        if (mounted) _controller.forward();
+      });
+    }
   }
 
   @override
   void dispose() {
+    _startTimer?.cancel();
     _controller.dispose();
     super.dispose();
   }

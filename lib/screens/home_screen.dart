@@ -694,8 +694,11 @@ class _ItemCard extends StatelessWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image container
-            Expanded(
+            // Keep the image region explicitly constrained. Flex children
+            // inside a sliver/Stack can receive loose constraints during the
+            // first layout pass and cascade into RenderBox hasSize errors.
+            AspectRatio(
+              aspectRatio: 1.05,
               child: Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
