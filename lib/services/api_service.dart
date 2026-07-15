@@ -5,7 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 
-import '../config/app_config.dart';
+import '../config/runtime_config.dart';
 import '../models/wardrobe_item.dart';
 import '../models/clothing_analysis.dart';
 import '../models/outfit.dart';
@@ -40,7 +40,7 @@ class ApiService {
   }
 
   Future<void> checkBackendHealth() async {
-    final apiUri = Uri.parse(AppConfig.apiBaseUrl);
+    final apiUri = Uri.parse(RuntimeConfig.apiBaseUrl);
     final healthUri = apiUri.replace(path: '/health', query: null);
     final response = await _client
         .get(healthUri)
@@ -54,7 +54,7 @@ class ApiService {
 
   Future<List<WardrobeItem>> fetchItems() async {
     final response = await _client.get(
-      Uri.parse('${AppConfig.apiBaseUrl}/wardrobe/items'),
+      Uri.parse('${RuntimeConfig.apiBaseUrl}/wardrobe/items'),
       headers: {'Authorization': 'Bearer ${await _token()}'},
     );
     final body = _decode(response);
@@ -77,7 +77,7 @@ class ApiService {
     final request =
         http.MultipartRequest(
             'POST',
-            Uri.parse('${AppConfig.apiBaseUrl}/wardrobe/items'),
+            Uri.parse('${RuntimeConfig.apiBaseUrl}/wardrobe/items'),
           )
           ..headers['Authorization'] = 'Bearer ${await _token()}'
           ..fields['name'] = name.trim()
@@ -128,7 +128,7 @@ class ApiService {
   Future<ClothingAnalysis> analyzeImage(File image) async {
     final request = http.MultipartRequest(
       'POST',
-      Uri.parse('${AppConfig.apiBaseUrl}/wardrobe/analyze-image'),
+      Uri.parse('${RuntimeConfig.apiBaseUrl}/wardrobe/analyze-image'),
     )..headers['Authorization'] = 'Bearer ${await _token()}';
     final extension = image.path.split('.').last.toLowerCase();
     final subtype = extension == 'png'
@@ -151,7 +151,7 @@ class ApiService {
   Future<List<ClothingAnalysis>> detectItems(File image) async {
     final request = http.MultipartRequest(
       'POST',
-      Uri.parse('${AppConfig.apiBaseUrl}/wardrobe/detect-items'),
+      Uri.parse('${RuntimeConfig.apiBaseUrl}/wardrobe/detect-items'),
     )..headers['Authorization'] = 'Bearer ${await _token()}';
     final extension = image.path.split('.').last.toLowerCase();
     final subtype = extension == 'png'
@@ -175,7 +175,7 @@ class ApiService {
   Future<OutfitSelfieAnalysis> analyzeOutfitSelfie(File image) async {
     final request = http.MultipartRequest(
       'POST',
-      Uri.parse('${AppConfig.apiBaseUrl}/wardrobe/outfit-selfies/analyze'),
+      Uri.parse('${RuntimeConfig.apiBaseUrl}/wardrobe/outfit-selfies/analyze'),
     )..headers['Authorization'] = 'Bearer ${await _token()}';
     final extension = image.path.split('.').last.toLowerCase();
     final subtype = extension == 'png'
@@ -202,7 +202,7 @@ class ApiService {
   ) async {
     final response = await _client.post(
       Uri.parse(
-        '${AppConfig.apiBaseUrl}/wardrobe/outfit-selfies/$selfieId/confirm',
+        '${RuntimeConfig.apiBaseUrl}/wardrobe/outfit-selfies/$selfieId/confirm',
       ),
       headers: {
         'Authorization': 'Bearer ${await _token()}',
@@ -227,7 +227,9 @@ class ApiService {
 
   Future<void> discardOutfitSelfie(String selfieId) async {
     final response = await _client.delete(
-      Uri.parse('${AppConfig.apiBaseUrl}/wardrobe/outfit-selfies/$selfieId'),
+      Uri.parse(
+        '${RuntimeConfig.apiBaseUrl}/wardrobe/outfit-selfies/$selfieId',
+      ),
       headers: {'Authorization': 'Bearer ${await _token()}'},
     );
     _decode(response);
@@ -235,7 +237,7 @@ class ApiService {
 
   Future<List<OutfitSelfieHistoryEntry>> fetchOutfitSelfieHistory() async {
     final response = await _client.get(
-      Uri.parse('${AppConfig.apiBaseUrl}/wardrobe/outfit-selfies/history'),
+      Uri.parse('${RuntimeConfig.apiBaseUrl}/wardrobe/outfit-selfies/history'),
       headers: {'Authorization': 'Bearer ${await _token()}'},
     );
     return (_decode(response) as List<dynamic>)
@@ -248,7 +250,7 @@ class ApiService {
 
   Future<void> deleteItem(String itemId) async {
     final response = await _client.delete(
-      Uri.parse('${AppConfig.apiBaseUrl}/wardrobe/items/$itemId'),
+      Uri.parse('${RuntimeConfig.apiBaseUrl}/wardrobe/items/$itemId'),
       headers: {'Authorization': 'Bearer ${await _token()}'},
     );
     _decode(response);
@@ -256,7 +258,7 @@ class ApiService {
 
   Future<WardrobeItem> fetchItem(String itemId) async {
     final response = await _client.get(
-      Uri.parse('${AppConfig.apiBaseUrl}/wardrobe/items/$itemId'),
+      Uri.parse('${RuntimeConfig.apiBaseUrl}/wardrobe/items/$itemId'),
       headers: {'Authorization': 'Bearer ${await _token()}'},
     );
     return WardrobeItem.fromJson(_decode(response) as Map<String, dynamic>);
@@ -267,7 +269,7 @@ class ApiService {
     Map<String, dynamic> fields,
   ) async {
     final response = await _client.put(
-      Uri.parse('${AppConfig.apiBaseUrl}/wardrobe/items/$itemId'),
+      Uri.parse('${RuntimeConfig.apiBaseUrl}/wardrobe/items/$itemId'),
       headers: {
         'Authorization': 'Bearer ${await _token()}',
         'Content-Type': 'application/json',
@@ -287,7 +289,7 @@ class ApiService {
       payload['calendar_event_id'] = calendarEventId;
     }
     final response = await _client.post(
-      Uri.parse('${AppConfig.apiBaseUrl}/outfits/suggest'),
+      Uri.parse('${RuntimeConfig.apiBaseUrl}/outfits/suggest'),
       headers: {
         'Authorization': 'Bearer ${await _token()}',
         'Content-Type': 'application/json',
@@ -299,7 +301,7 @@ class ApiService {
 
   Future<int> wearOutfit(String outfitId) async {
     final response = await _client.post(
-      Uri.parse('${AppConfig.apiBaseUrl}/outfits/$outfitId/wear'),
+      Uri.parse('${RuntimeConfig.apiBaseUrl}/outfits/$outfitId/wear'),
       headers: {'Authorization': 'Bearer ${await _token()}'},
     );
     return (_decode(response) as Map<String, dynamic>)['logged_items'] as int;
@@ -307,7 +309,7 @@ class ApiService {
 
   Future<Outfit> fetchOutfit(String outfitId) async {
     final response = await _client.get(
-      Uri.parse('${AppConfig.apiBaseUrl}/outfits/$outfitId'),
+      Uri.parse('${RuntimeConfig.apiBaseUrl}/outfits/$outfitId'),
       headers: {'Authorization': 'Bearer ${await _token()}'},
     );
     return Outfit.fromJson(_decode(response) as Map<String, dynamic>);
@@ -315,7 +317,7 @@ class ApiService {
 
   Future<UserPreferences> fetchPreferences() async {
     final response = await _client.get(
-      Uri.parse('${AppConfig.apiBaseUrl}/users/me/preferences'),
+      Uri.parse('${RuntimeConfig.apiBaseUrl}/users/me/preferences'),
       headers: {'Authorization': 'Bearer ${await _token()}'},
     );
     return UserPreferences.fromJson(_decode(response) as Map<String, dynamic>);
@@ -323,7 +325,7 @@ class ApiService {
 
   Future<UserPreferences> updatePreferences(Map<String, dynamic> fields) async {
     final response = await _client.put(
-      Uri.parse('${AppConfig.apiBaseUrl}/users/me/preferences'),
+      Uri.parse('${RuntimeConfig.apiBaseUrl}/users/me/preferences'),
       headers: {
         'Authorization': 'Bearer ${await _token()}',
         'Content-Type': 'application/json',
@@ -335,7 +337,7 @@ class ApiService {
 
   Future<void> registerDevice(String token, String platform) async {
     final response = await _client.post(
-      Uri.parse('${AppConfig.apiBaseUrl}/users/me/devices'),
+      Uri.parse('${RuntimeConfig.apiBaseUrl}/users/me/devices'),
       headers: {
         'Authorization': 'Bearer ${await _token()}',
         'Content-Type': 'application/json',
@@ -347,7 +349,7 @@ class ApiService {
 
   Future<Map<String, int>> sendTestNotification() async {
     final response = await _client.post(
-      Uri.parse('${AppConfig.apiBaseUrl}/users/me/test-notification'),
+      Uri.parse('${RuntimeConfig.apiBaseUrl}/users/me/test-notification'),
       headers: {'Authorization': 'Bearer ${await _token()}'},
     );
     final result = _decode(response) as Map<String, dynamic>;
@@ -361,7 +363,7 @@ class ApiService {
     String simulation,
   ) async {
     final response = await _client.post(
-      Uri.parse('${AppConfig.apiBaseUrl}/users/me/simulations/$simulation'),
+      Uri.parse('${RuntimeConfig.apiBaseUrl}/users/me/simulations/$simulation'),
       headers: {'Authorization': 'Bearer ${await _token()}'},
     );
     return _decode(response) as Map<String, dynamic>;
@@ -373,7 +375,7 @@ class ApiService {
       'max_messages': 50,
     };
     final response = await _client.post(
-      Uri.parse('${AppConfig.apiBaseUrl}/imports/gmail'),
+      Uri.parse('${RuntimeConfig.apiBaseUrl}/imports/gmail'),
       headers: {
         'Authorization': 'Bearer ${await _token()}',
         'Content-Type': 'application/json',
@@ -396,7 +398,7 @@ class ApiService {
     if (start != null) query['start'] = start.toUtc().toIso8601String();
     if (end != null) query['end'] = end.toUtc().toIso8601String();
     final uri = Uri.parse(
-      '${AppConfig.apiBaseUrl}/calendar/events',
+      '${RuntimeConfig.apiBaseUrl}/calendar/events',
     ).replace(queryParameters: query.isEmpty ? null : query);
     final response = await _client.get(
       uri,
@@ -413,7 +415,7 @@ class ApiService {
     Map<String, dynamic> fields,
   ) async {
     final response = await _client.post(
-      Uri.parse('${AppConfig.apiBaseUrl}/calendar/events'),
+      Uri.parse('${RuntimeConfig.apiBaseUrl}/calendar/events'),
       headers: {
         'Authorization': 'Bearer ${await _token()}',
         'Content-Type': 'application/json',
@@ -427,7 +429,7 @@ class ApiService {
 
   Future<void> deleteCalendarEvent(String eventId) async {
     final response = await _client.delete(
-      Uri.parse('${AppConfig.apiBaseUrl}/calendar/events/$eventId'),
+      Uri.parse('${RuntimeConfig.apiBaseUrl}/calendar/events/$eventId'),
       headers: {'Authorization': 'Bearer ${await _token()}'},
     );
     _decode(response);
@@ -435,7 +437,7 @@ class ApiService {
 
   Future<Map<String, dynamic>> fetchGoogleCalendarStatus() async {
     final response = await _client.get(
-      Uri.parse('${AppConfig.apiBaseUrl}/calendar/google/status'),
+      Uri.parse('${RuntimeConfig.apiBaseUrl}/calendar/google/status'),
       headers: {'Authorization': 'Bearer ${await _token()}'},
     );
     return _decode(response) as Map<String, dynamic>;
@@ -446,7 +448,7 @@ class ApiService {
     String email,
   ) async {
     final response = await _client.post(
-      Uri.parse('${AppConfig.apiBaseUrl}/calendar/google/connect'),
+      Uri.parse('${RuntimeConfig.apiBaseUrl}/calendar/google/connect'),
       headers: {
         'Authorization': 'Bearer ${await _token()}',
         'Content-Type': 'application/json',
@@ -458,7 +460,7 @@ class ApiService {
 
   Future<Map<String, dynamic>> syncGoogleCalendar() async {
     final response = await _client.post(
-      Uri.parse('${AppConfig.apiBaseUrl}/calendar/google/sync'),
+      Uri.parse('${RuntimeConfig.apiBaseUrl}/calendar/google/sync'),
       headers: {'Authorization': 'Bearer ${await _token()}'},
     );
     return _decode(response) as Map<String, dynamic>;
@@ -466,7 +468,7 @@ class ApiService {
 
   Future<void> disconnectGoogleCalendar() async {
     final response = await _client.delete(
-      Uri.parse('${AppConfig.apiBaseUrl}/calendar/google/connection'),
+      Uri.parse('${RuntimeConfig.apiBaseUrl}/calendar/google/connection'),
       headers: {'Authorization': 'Bearer ${await _token()}'},
     );
     _decode(response);
@@ -474,7 +476,7 @@ class ApiService {
 
   Future<List<StyleNotification>> fetchNotifications() async {
     final response = await _client.get(
-      Uri.parse('${AppConfig.apiBaseUrl}/calendar/notifications'),
+      Uri.parse('${RuntimeConfig.apiBaseUrl}/calendar/notifications'),
       headers: {'Authorization': 'Bearer ${await _token()}'},
     );
     return (_decode(response) as List<dynamic>)
@@ -485,7 +487,7 @@ class ApiService {
   Future<void> markNotificationRead(String notificationId) async {
     final response = await _client.post(
       Uri.parse(
-        '${AppConfig.apiBaseUrl}/calendar/notifications/$notificationId/read',
+        '${RuntimeConfig.apiBaseUrl}/calendar/notifications/$notificationId/read',
       ),
       headers: {'Authorization': 'Bearer ${await _token()}'},
     );

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -5,10 +6,9 @@ import 'package:provider/provider.dart';
 
 import '../config/design_system.dart';
 import '../providers/auth_provider.dart';
+import '../providers/gmail_sync_provider.dart';
 import '../providers/mvp_provider.dart';
 import '../providers/wardrobe_provider.dart';
-import '../services/api_service.dart';
-import '../services/gmail_import_service.dart';
 import '../services/location_service.dart';
 import '../services/notification_service.dart';
 import 'outfit_history_screen.dart';
@@ -22,12 +22,12 @@ class ProfileSettingsView extends StatefulWidget {
 class _ProfileSettingsViewState extends State<ProfileSettingsView> {
   final _city = TextEditingController();
   final _timezone = TextEditingController(text: 'Asia/Kolkata');
+  final _localhostUrl = TextEditingController();
   TimeOfDay _time = const TimeOfDay(hour: 8, minute: 0);
   bool _notifications = false;
   bool _seeded = false;
   bool _detectingLocation = false;
   bool _locationRequested = false;
-  bool _importingGmail = false;
 
   @override
   void initState() {
@@ -41,6 +41,7 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
   void dispose() {
     _city.dispose();
     _timezone.dispose();
+    _localhostUrl.dispose();
     super.dispose();
   }
 
@@ -113,20 +114,13 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
       ),
     );
     if (approved != true || !mounted) return;
-    setState(() => _importingGmail = true);
-    try {
-      final result = await GmailImportService(ApiService()).connectAndImport();
-      if (!mounted) return;
-      await context.read<WardrobeProvider>().loadItems(force: true);
-      if (!mounted) return;
-      _message(
-        '${result['imported_items']} items added from ${result['scanned_messages']} order emails.',
-      );
-    } catch (error) {
-      _message(error.toString().replaceFirst('Exception: ', ''));
-    } finally {
-      if (mounted) setState(() => _importingGmail = false);
-    }
+    final wardrobe = context.read<WardrobeProvider>();
+    unawaited(
+      context.read<GmailSyncProvider>().start(
+        refreshWardrobe: () => wardrobe.loadItems(force: true),
+      ),
+    );
+    _message('Closet Sync started. You can keep using StyleStack.');
   }
 
   Future<void> _sendTestNotification() async {
@@ -215,6 +209,7 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
       }
     }
     final auth = context.watch<AuthProvider>();
+    final gmailSync = context.watch<GmailSyncProvider>();
     final email = auth.user?.email ?? 'StyleStack user';
     final displayName = auth.user?.displayName?.trim();
     final title = displayName == null || displayName.isEmpty
@@ -302,21 +297,42 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
           const SizedBox(height: 18),
           _SettingsSection(
             title: 'Closet Sync',
-            subtitle: 'Bring eligible purchases into your wardrobe.',
+            subtitle: gmailSync.isRunning
+                ? 'Sync continues while you use the rest of StyleStack.'
+                : 'Bring eligible purchases into your wardrobe.',
             children: [
               _SettingsTile(
                 icon: Icons.mail_outline,
-                title: _importingGmail
-                    ? 'Scanning order emails…'
-                    : 'Auto-add from Gmail',
-                subtitle: 'Imports only delivered Amazon order emails',
-                trailing: _importingGmail
+                title: switch (gmailSync.phase) {
+                  GmailSyncPhase.connecting => 'Connecting Gmail…',
+                  GmailSyncPhase.syncing => 'Scanning delivered purchases…',
+                  GmailSyncPhase.refreshing => 'Refreshing your wardrobe…',
+                  GmailSyncPhase.completed => 'Closet Sync complete',
+                  GmailSyncPhase.failed => 'Closet Sync needs attention',
+                  GmailSyncPhase.idle => 'Auto-add from Gmail',
+                },
+                subtitle: switch (gmailSync.phase) {
+                  GmailSyncPhase.completed =>
+                    '${gmailSync.result?['imported_items'] ?? 0} items added or refreshed from ${gmailSync.result?['scanned_messages'] ?? 0} delivered emails. Tap to sync again.',
+                  GmailSyncPhase.failed =>
+                    gmailSync.error ??
+                        'Could not complete Gmail sync. Tap to retry.',
+                  GmailSyncPhase.connecting =>
+                    'Choose your Google account to begin securely',
+                  GmailSyncPhase.syncing =>
+                    'Only confirmed Amazon delivery emails are scanned',
+                  GmailSyncPhase.refreshing =>
+                    'Applying the latest items and AI details',
+                  GmailSyncPhase.idle =>
+                    'Imports only delivered Amazon order emails',
+                },
+                trailing: gmailSync.isRunning
                     ? const SizedBox.square(
                         dimension: 20,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.chevron_right),
-                onTap: _importingGmail ? null : _importFromGmail,
+                onTap: gmailSync.isRunning ? null : _importFromGmail,
               ),
             ],
           ),
@@ -348,6 +364,7 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
                 icon: Icons.logout,
                 title: 'Sign out',
                 onTap: () async {
+                  context.read<GmailSyncProvider>().reset();
                   context.read<WardrobeProvider>().reset();
                   context.read<MvpProvider>().reset();
                   await context.read<AuthProvider>().signOut();
@@ -416,12 +433,12 @@ class _SettingsSection extends StatelessWidget {
         Text(subtitle!, style: Theme.of(context).textTheme.bodySmall),
       ],
       const SizedBox(height: 10),
-      Container(
+      Material(
+        color: DesignSystem.surface,
         clipBehavior: Clip.antiAlias,
-        decoration: BoxDecoration(
-          color: Colors.white,
+        shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(DesignSystem.radiusLg),
-          border: Border.all(color: DesignSystem.border),
+          side: const BorderSide(color: DesignSystem.border),
         ),
         child: Column(children: children),
       ),

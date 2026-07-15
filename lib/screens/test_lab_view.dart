@@ -117,7 +117,7 @@ class _TestLabViewState extends State<TestLabView> {
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
-              colors: [Color(0xFF342B27), DesignSystem.primary],
+              colors: [DesignSystem.primaryDark, DesignSystem.primary],
             ),
             borderRadius: BorderRadius.circular(DesignSystem.radiusLg),
           ),
@@ -147,8 +147,11 @@ class _TestLabViewState extends State<TestLabView> {
           Container(
             padding: const EdgeInsets.all(13),
             decoration: BoxDecoration(
-              color: (_lastSuccess == true ? Colors.green : Colors.red)
-                  .withValues(alpha: .09),
+              color:
+                  (_lastSuccess == true
+                          ? DesignSystem.success
+                          : DesignSystem.error)
+                      .withValues(alpha: .09),
               borderRadius: BorderRadius.circular(13),
             ),
             child: Row(
@@ -158,7 +161,9 @@ class _TestLabViewState extends State<TestLabView> {
                   _lastSuccess == true
                       ? Icons.check_circle
                       : Icons.error_outline,
-                  color: _lastSuccess == true ? Colors.green : Colors.red,
+                  color: _lastSuccess == true
+                      ? DesignSystem.success
+                      : DesignSystem.error,
                 ),
                 const SizedBox(width: 9),
                 Expanded(child: Text(_lastResult!)),

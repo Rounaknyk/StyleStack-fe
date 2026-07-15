@@ -9,7 +9,9 @@ class GmailImportService {
   static const _gmailReadonly =
       'https://www.googleapis.com/auth/gmail.readonly';
 
-  Future<Map<String, int>> connectAndImport() async {
+  Future<Map<String, int>> connectAndImport({
+    void Function()? onConnectionComplete,
+  }) async {
     final google = GoogleSignIn(scopes: const [_gmailReadonly]);
     final account = await google.signIn();
     if (account == null) throw Exception('Gmail connection was cancelled.');
@@ -18,6 +20,7 @@ class GmailImportService {
     if (token == null || token.isEmpty) {
       throw Exception('Google did not provide Gmail access.');
     }
+    onConnectionComplete?.call();
     return _api.importGmailOrders(token);
   }
 }

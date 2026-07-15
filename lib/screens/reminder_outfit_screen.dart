@@ -75,7 +75,7 @@ class _ReminderOutfitBoard extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFFFFF8F3), Color(0xFFF0DDD3)],
+          colors: [DesignSystem.background, DesignSystem.surfaceAlt],
         ),
         borderRadius: BorderRadius.circular(DesignSystem.radiusLg),
       ),

@@ -84,18 +84,6 @@ class StyleStackButton extends StatelessWidget {
       ),
     };
 
-    final fontSize = switch (size) {
-      _ButtonSize.small => 12.0,
-      _ButtonSize.medium => 14.0,
-      _ButtonSize.large => 16.0,
-    };
-
-    final baseStyle = TextStyle(
-      fontSize: fontSize,
-      fontWeight: FontWeight.w600,
-      letterSpacing: 0.1,
-    );
-
     switch (variant) {
       case _ButtonVariant.filled:
         return FilledButton.icon(

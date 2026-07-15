@@ -344,8 +344,8 @@ class _DetectionCard extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: detection.matched
-                        ? Colors.green.withValues(alpha: .12)
-                        : Colors.orange.withValues(alpha: .12),
+                        ? DesignSystem.success.withValues(alpha: .12)
+                        : DesignSystem.warning.withValues(alpha: .12),
                     borderRadius: BorderRadius.circular(99),
                   ),
                   child: Text(

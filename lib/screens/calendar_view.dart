@@ -275,7 +275,7 @@ class _StyleCalendarViewState extends State<StyleCalendarView> {
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [DesignSystem.primary, Color(0xFFCB7858)],
+                colors: [DesignSystem.primary, DesignSystem.primaryLight],
               ),
               borderRadius: BorderRadius.circular(DesignSystem.radiusLg),
             ),
@@ -561,7 +561,7 @@ class _GoogleCalendarConnectionCard extends StatelessWidget {
                   ),
                 ),
                 if (connected)
-                  const Icon(Icons.check_circle, color: Colors.green),
+                  const Icon(Icons.check_circle, color: DesignSystem.success),
               ],
             ),
             const SizedBox(height: 11),

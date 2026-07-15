@@ -3,25 +3,26 @@ import 'package:flutter/material.dart';
 /// StyleStack Design System - Centralized design tokens and styling
 class DesignSystem {
   // === COLORS ===
-  static const Color primary = Color(0xFF173F35);
-  static const Color primaryLight = Color(0xFF3D6B5E);
-  static const Color primaryDark = Color(0xFF0D2922);
-  static const Color secondary = Color(0xFFB9784B);
-  static const Color secondaryLight = Color(0xFFD8AA87);
-  static const Color accent = Color(0xFFD9B36C);
+  static const Color primary = Color(0xFF006B6B);
+  static const Color primaryLight = Color(0xFF3A8E8E);
+  static const Color primaryDark = Color(0xFF004D4D);
+  static const Color cta = Color(0xFFE85D3A);
+  static const Color secondary = Color(0xFFD4A373);
+  static const Color secondaryLight = Color(0xFFE8C9A7);
+  static const Color accent = Color(0xFFC9A050);
 
-  static const Color background = Color(0xFFF7F6F2);
+  static const Color background = Color(0xFFFAF8F5);
   static const Color surface = Color(0xFFFFFFFF);
-  static const Color surfaceAlt = Color(0xFFF0EFEA);
+  static const Color surfaceAlt = Color(0xFFF3EFEA);
 
-  static const Color success = Color(0xFF4CAF50);
-  static const Color warning = Color(0xFFFFC107);
-  static const Color error = Color(0xFFEF5350);
+  static const Color success = Color(0xFF2E7D32);
+  static const Color warning = Color(0xFFC98324);
+  static const Color error = Color(0xFFD32F2F);
 
-  static const Color textPrimary = Color(0xFF2C2C2C);
-  static const Color textSecondary = Color(0xFF757575);
-  static const Color textTertiary = Color(0xFFAAAAAA);
-  static const Color border = Color(0xFFE3E0D8);
+  static const Color textPrimary = Color(0xFF1E1E1E);
+  static const Color textSecondary = Color(0xFF68635F);
+  static const Color textTertiary = Color(0xFF9B948E);
+  static const Color border = Color(0xFFE7E1DB);
 
   // === SPACING ===
   static const double spacingXs = 4.0;
@@ -48,7 +49,7 @@ class DesignSystem {
   // === SHADOW ===
   static List<BoxShadow> shadowSoft = [
     BoxShadow(
-      color: Colors.black.withOpacity(0.04),
+      color: Colors.black.withValues(alpha: 0.04),
       blurRadius: 8,
       offset: const Offset(0, 2),
     ),
@@ -56,7 +57,7 @@ class DesignSystem {
 
   static List<BoxShadow> shadowMedium = [
     BoxShadow(
-      color: Colors.black.withOpacity(0.08),
+      color: Colors.black.withValues(alpha: 0.08),
       blurRadius: 12,
       offset: const Offset(0, 4),
     ),
@@ -64,7 +65,7 @@ class DesignSystem {
 
   static List<BoxShadow> shadowLarge = [
     BoxShadow(
-      color: Colors.black.withOpacity(0.12),
+      color: Colors.black.withValues(alpha: 0.12),
       blurRadius: 16,
       offset: const Offset(0, 6),
     ),
@@ -91,16 +92,22 @@ class DesignSystem {
       brightness: Brightness.light,
 
       // Color scheme
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: primary,
-        brightness: Brightness.light,
+      colorScheme: const ColorScheme.light(
         primary: primary,
         onPrimary: Colors.white,
         secondary: secondary,
-        onSecondary: Colors.white,
+        onSecondary: textPrimary,
+        tertiary: cta,
+        onTertiary: Colors.white,
         error: error,
-        background: background,
-      ).copyWith(surface: surface),
+        onError: Colors.white,
+        surface: surface,
+        onSurface: textPrimary,
+        surfaceContainerLowest: surface,
+        surfaceContainerLow: background,
+        surfaceContainer: surfaceAlt,
+        outline: border,
+      ),
 
       // Scaffold
       scaffoldBackgroundColor: background,
@@ -297,7 +304,8 @@ class DesignSystem {
       // Card
       cardTheme: CardThemeData(
         color: surface,
-        elevation: 0,
+        elevation: elevationLow,
+        shadowColor: Colors.black12,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(radiusLg),
         ),
@@ -307,7 +315,7 @@ class DesignSystem {
       // Chip
       chipTheme: ChipThemeData(
         backgroundColor: surfaceAlt,
-        selectedColor: secondary.withOpacity(0.2),
+        selectedColor: primaryLight.withValues(alpha: 0.16),
         disabledColor: surface,
         padding: const EdgeInsets.symmetric(
           horizontal: spacingMd,
@@ -337,20 +345,20 @@ class DesignSystem {
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: surface,
         elevation: elevationMedium,
-        indicatorColor: secondary.withOpacity(0.15),
-        iconTheme: MaterialStateProperty.resolveWith(
+        indicatorColor: primaryLight.withValues(alpha: 0.14),
+        iconTheme: WidgetStateProperty.resolveWith(
           (states) => IconThemeData(
-            color: states.contains(MaterialState.selected)
+            color: states.contains(WidgetState.selected)
                 ? primary
                 : textSecondary,
             size: iconSizeMedium,
           ),
         ),
-        labelTextStyle: MaterialStateProperty.resolveWith(
+        labelTextStyle: WidgetStateProperty.resolveWith(
           (states) => TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w500,
-            color: states.contains(MaterialState.selected)
+            color: states.contains(WidgetState.selected)
                 ? primary
                 : textSecondary,
           ),
@@ -360,9 +368,9 @@ class DesignSystem {
       // Dropdown
       dropdownMenuTheme: DropdownMenuThemeData(
         menuStyle: MenuStyle(
-          backgroundColor: MaterialStatePropertyAll(surface),
-          elevation: MaterialStatePropertyAll(elevationHigh),
-          shape: MaterialStatePropertyAll(
+          backgroundColor: WidgetStatePropertyAll(surface),
+          elevation: WidgetStatePropertyAll(elevationHigh),
+          shape: WidgetStatePropertyAll(
             RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(radiusMd),
             ),
