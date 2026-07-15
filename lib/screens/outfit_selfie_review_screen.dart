@@ -15,10 +15,12 @@ class OutfitSelfieReviewScreen extends StatefulWidget {
     super.key,
     required this.image,
     required this.onRetake,
+    this.api,
   });
 
   final File image;
   final Future<void> Function() onRetake;
+  final ApiService? api;
 
   @override
   State<OutfitSelfieReviewScreen> createState() =>
@@ -26,7 +28,7 @@ class OutfitSelfieReviewScreen extends StatefulWidget {
 }
 
 class _OutfitSelfieReviewScreenState extends State<OutfitSelfieReviewScreen> {
-  final _api = ApiService();
+  late final ApiService _api;
   OutfitSelfieAnalysis? _analysis;
   String? _error;
   bool _analyzing = true;
@@ -36,6 +38,7 @@ class _OutfitSelfieReviewScreenState extends State<OutfitSelfieReviewScreen> {
   @override
   void initState() {
     super.initState();
+    _api = widget.api ?? ApiService();
     _analyze();
   }
 
@@ -305,6 +308,9 @@ class _DetectionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final percent = (detection.confidence * 100).round();
+    final statusColor = detection.matched
+        ? DesignSystem.success
+        : DesignSystem.warning;
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: StyleStackCard(
@@ -343,14 +349,15 @@ class _DetectionCard extends StatelessWidget {
                     vertical: 5,
                   ),
                   decoration: BoxDecoration(
-                    color: detection.matched
-                        ? DesignSystem.success.withValues(alpha: .12)
-                        : DesignSystem.warning.withValues(alpha: .12),
+                    color: statusColor.withValues(alpha: .12),
                     borderRadius: BorderRadius.circular(99),
                   ),
                   child: Text(
                     detection.matched ? '$percent% match' : 'Not found',
-                    style: Theme.of(context).textTheme.labelMedium,
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: statusColor,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ],
@@ -365,6 +372,7 @@ class _DetectionCard extends StatelessWidget {
                 '${detection.id}-${detection.wardrobeItemId ?? '__none__'}',
               ),
               initialValue: detection.wardrobeItemId ?? '__none__',
+              isExpanded: true,
               decoration: const InputDecoration(
                 labelText: 'Wardrobe match',
                 prefixIcon: Icon(Icons.checkroom_outlined),
@@ -372,14 +380,21 @@ class _DetectionCard extends StatelessWidget {
               items: [
                 const DropdownMenuItem(
                   value: '__none__',
-                  child: Text('Not in my wardrobe'),
+                  child: Text(
+                    'Not in my wardrobe',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    softWrap: false,
+                  ),
                 ),
                 ...wardrobe.map(
                   (item) => DropdownMenuItem(
                     value: item.id,
                     child: Text(
                       '${item.name} • ${item.displayColor ?? item.displayCategory}',
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
+                      softWrap: false,
                     ),
                   ),
                 ),
