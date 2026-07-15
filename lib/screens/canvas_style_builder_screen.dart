@@ -3,15 +3,18 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../config/design_system.dart';
 import '../models/wardrobe_item.dart';
+import '../models/canvas_style.dart';
 import '../providers/wardrobe_provider.dart';
 import '../services/api_service.dart';
 import 'saved_styles_screen.dart';
 
 class CanvasStyleBuilderScreen extends StatefulWidget {
-  const CanvasStyleBuilderScreen({super.key});
+  const CanvasStyleBuilderScreen({super.key, this.initialStyle});
+  final CanvasStyle? initialStyle;
 
   @override
   State<CanvasStyleBuilderScreen> createState() =>
@@ -75,6 +78,31 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
   String? _selectedId;
   bool _saving = false;
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _restoreInitialStyle());
+  }
+
+  void _restoreInitialStyle() {
+    final style = widget.initialStyle;
+    if (!mounted || style == null || _placed.isNotEmpty) return;
+    final byId = {
+      for (final item in context.read<WardrobeProvider>().items) item.id: item,
+    };
+    final restored = style.items
+        .map((saved) {
+          final item = byId[saved.itemId];
+          if (item == null) return null;
+          return _PlacedCanvasItem(item: item, x: saved.x, y: saved.y)
+            ..scale = saved.scale
+            ..rotation = saved.rotation;
+        })
+        .whereType<_PlacedCanvasItem>()
+        .toList();
+    if (restored.isNotEmpty) setState(() => _placed.addAll(restored));
+  }
+
   Future<void> _save() async {
     if (_placed.isEmpty || _saving) {
       if (_placed.isEmpty) _message('Add at least one wardrobe item first.');
@@ -83,7 +111,9 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
     final name = await showDialog<String>(
       context: context,
       builder: (context) {
-        final controller = TextEditingController(text: 'My style');
+        final controller = TextEditingController(
+          text: widget.initialStyle?.name ?? 'My style',
+        );
         return AlertDialog(
           title: const Text('Save your style'),
           content: TextField(
@@ -117,13 +147,25 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
       final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
       if (bytes == null)
         throw const ApiException('Could not capture the canvas.');
-      await _api.createCanvasStyle(
-        name: name.trim(),
-        items: _placed.map((item) => item.toJson()).toList(),
-        previewBytes: bytes.buffer.asUint8List(),
-      );
+      final styleId = widget.initialStyle?.id;
+      if (styleId == null) {
+        await _api.createCanvasStyle(
+          name: name.trim(),
+          items: _placed.map((item) => item.toJson()).toList(),
+          previewBytes: bytes.buffer.asUint8List(),
+        );
+      } else {
+        await _api.updateCanvasStyle(
+          styleId: styleId,
+          name: name.trim(),
+          items: _placed.map((item) => item.toJson()).toList(),
+          previewBytes: bytes.buffer.asUint8List(),
+        );
+      }
       if (!mounted) return;
-      _message('Style saved to My Styles.');
+      _message(
+        styleId == null ? 'Style saved to My Styles.' : 'Style updated.',
+      );
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => const SavedStylesScreen()),
@@ -134,6 +176,30 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
       _message('Could not save this style.');
     } finally {
       if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _shareCanvas() async {
+    final boundary =
+        _canvasKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+    if (boundary == null || _placed.isEmpty) {
+      _message('Add an item before sharing your style.');
+      return;
+    }
+    try {
+      final image = await boundary.toImage(pixelRatio: 2);
+      final data = await image.toByteData(format: ui.ImageByteFormat.png);
+      if (data == null)
+        throw const ApiException('Could not capture the canvas.');
+      await Share.shareXFiles([
+        XFile.fromData(
+          data.buffer.asUint8List(),
+          name: 'stylestack-style.png',
+          mimeType: 'image/png',
+        ),
+      ], text: widget.initialStyle?.name ?? 'My Style on StyleStack');
+    } catch (_) {
+      _message('Could not share this style.');
     }
   }
 
@@ -174,8 +240,23 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
     final items = wardrobe.items;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Create Style'),
+        title: Text(
+          widget.initialStyle == null ? 'Create Style' : 'Edit Style',
+        ),
         actions: [
+          IconButton(
+            onPressed: _shareCanvas,
+            icon: const Icon(Icons.ios_share_outlined),
+            tooltip: 'Share style',
+          ),
+          IconButton(
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SavedStylesScreen()),
+            ),
+            icon: const Icon(Icons.collections_bookmark_outlined),
+            tooltip: 'My Styles',
+          ),
           IconButton(
             onPressed: _placed.isEmpty ? null : () => setState(_placed.clear),
             icon: const Icon(Icons.delete_sweep_outlined),
@@ -196,12 +277,12 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
       body: Row(
         children: [
           SizedBox(
-            width: MediaQuery.sizeOf(context).width * .30,
+            width: (MediaQuery.sizeOf(context).width * .25).clamp(96.0, 180.0),
             child: _Sidebar(items: items, onAdd: _add),
           ),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.fromLTRB(6, 8, 8, 8),
               child: DragTarget<WardrobeItem>(
                 onAcceptWithDetails: (details) =>
                     _drop(details.data, details.offset),
@@ -245,14 +326,6 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const SavedStylesScreen()),
-        ),
-        icon: const Icon(Icons.collections_bookmark_outlined),
-        label: const Text('My Styles'),
-      ),
     );
   }
 
@@ -271,46 +344,26 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
           child: Transform.scale(
             scale: placed.scale,
             child: SizedBox(
-              width: 116,
+              width: 118,
+              height: 118,
               child: Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  Column(
-                    children: [
-                      Container(
-                        height: 96,
-                        padding: const EdgeInsets.all(5),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: DesignSystem.shadowMedium,
-                          border: selected
-                              ? Border.all(
-                                  color: DesignSystem.primary,
-                                  width: 2,
-                                )
-                              : null,
-                        ),
-                        child: placed.item.gridImageUrl == null
-                            ? const Icon(Icons.checkroom_outlined, size: 38)
-                            : Image.network(
-                                placed.item.gridImageUrl!,
-                                fit: BoxFit.contain,
-                                errorBuilder: (_, _, _) =>
-                                    const Icon(Icons.broken_image_outlined),
-                              ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        placed.item.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      border: selected
+                          ? Border.all(color: DesignSystem.primary, width: 2)
+                          : null,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: placed.item.canvasImageUrl == null
+                        ? const Icon(Icons.checkroom_outlined, size: 38)
+                        : Image.network(
+                            placed.item.canvasImageUrl!,
+                            fit: BoxFit.contain,
+                            errorBuilder: (_, _, _) =>
+                                const Icon(Icons.broken_image_outlined),
+                          ),
                   ),
                   if (selected)
                     Positioned(
@@ -371,7 +424,8 @@ class _Sidebar extends StatelessWidget {
             ),
           );
         final item = items[index - 1];
-        return Draggable<WardrobeItem>(
+        return LongPressDraggable<WardrobeItem>(
+          delay: const Duration(milliseconds: 260),
           data: item,
           feedback: Material(
             color: Colors.transparent,

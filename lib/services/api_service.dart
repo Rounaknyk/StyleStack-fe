@@ -282,6 +282,32 @@ class ApiService {
     return CanvasStyle.fromJson(_decode(response) as Map<String, dynamic>);
   }
 
+  Future<CanvasStyle> updateCanvasStyle({
+    required String styleId,
+    required String name,
+    required List<Map<String, dynamic>> items,
+    required List<int> previewBytes,
+  }) async {
+    final request =
+        http.MultipartRequest(
+            'PUT',
+            Uri.parse('${RuntimeConfig.apiBaseUrl}/canvas/styles/$styleId'),
+          )
+          ..headers['Authorization'] = 'Bearer ${await _token()}'
+          ..fields['name'] = name.trim()
+          ..fields['items'] = jsonEncode(items);
+    request.files.add(
+      http.MultipartFile.fromBytes(
+        'preview_image',
+        previewBytes,
+        filename: 'style-preview.png',
+        contentType: MediaType('image', 'png'),
+      ),
+    );
+    final response = await http.Response.fromStream(await request.send());
+    return CanvasStyle.fromJson(_decode(response) as Map<String, dynamic>);
+  }
+
   Future<List<CanvasStyle>> fetchCanvasStyles() async {
     final response = await _client.get(
       Uri.parse('${RuntimeConfig.apiBaseUrl}/canvas/styles'),

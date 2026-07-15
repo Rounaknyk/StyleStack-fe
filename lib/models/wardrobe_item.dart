@@ -9,6 +9,7 @@ class WardrobeItem {
     this.formality,
     this.imageUrl,
     this.thumbnailUrl,
+    this.cutoutUrl,
     this.isFavorite = false,
     this.seasons = const [],
     this.tags = const [],
@@ -31,6 +32,7 @@ class WardrobeItem {
   final String? formality;
   final String? imageUrl;
   final String? thumbnailUrl;
+  final String? cutoutUrl;
   final bool isFavorite;
   final List<String> seasons;
   final List<String> tags;
@@ -53,6 +55,7 @@ class WardrobeItem {
   String? get displayFormality => formality ?? aiFormality;
   String? get displaySeason => seasons.isNotEmpty ? seasons.first : aiSeason;
   String? get gridImageUrl => thumbnailUrl ?? imageUrl;
+  String? get canvasImageUrl => cutoutUrl ?? imageUrl ?? thumbnailUrl;
 
   factory WardrobeItem.fromJson(Map<String, dynamic> json) => WardrobeItem(
     id: json['id'] as String,
@@ -64,6 +67,7 @@ class WardrobeItem {
     formality: json['formality'] as String?,
     imageUrl: json['image_url'] as String?,
     thumbnailUrl: json['thumbnail_url'] as String?,
+    cutoutUrl: json['cutout_url'] as String?,
     isFavorite: json['is_favorite'] as bool? ?? false,
     seasons: (json['season'] as List<dynamic>? ?? const [])
         .whereType<String>()

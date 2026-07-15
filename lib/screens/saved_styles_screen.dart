@@ -93,48 +93,60 @@ class _SavedStylesScreenState extends State<SavedStylesScreen> {
               final style = styles[index];
               return Card(
                 clipBehavior: Clip.antiAlias,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: style.previewUrl == null
-                          ? const Center(
-                              child: Icon(Icons.image_outlined, size: 42),
-                            )
-                          : Image.network(
-                              style.previewUrl!,
-                              fit: BoxFit.contain,
-                              width: double.infinity,
-                              errorBuilder: (_, _, _) => const Center(
-                                child: Icon(Icons.broken_image_outlined),
-                              ),
-                            ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(10, 8, 4, 4),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              style.name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                          IconButton(
-                            onPressed: () async {
-                              await _api.deleteCanvasStyle(style.id);
-                              if (context.mounted) _reload();
-                            },
-                            icon: const Icon(Icons.delete_outline, size: 20),
-                          ),
-                        ],
+                child: InkWell(
+                  onTap: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            CanvasStyleBuilderScreen(initialStyle: style),
                       ),
-                    ),
-                  ],
+                    );
+                    if (context.mounted) _reload();
+                  },
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: style.previewUrl == null
+                            ? const Center(
+                                child: Icon(Icons.image_outlined, size: 42),
+                              )
+                            : Image.network(
+                                style.previewUrl!,
+                                fit: BoxFit.contain,
+                                width: double.infinity,
+                                errorBuilder: (_, _, _) => const Center(
+                                  child: Icon(Icons.broken_image_outlined),
+                                ),
+                              ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(10, 8, 4, 4),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                style.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                            IconButton(
+                              onPressed: () async {
+                                await _api.deleteCanvasStyle(style.id);
+                                if (context.mounted) _reload();
+                              },
+                              icon: const Icon(Icons.delete_outline, size: 20),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               );
             },
