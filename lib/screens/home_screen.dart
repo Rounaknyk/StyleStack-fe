@@ -593,7 +593,9 @@ class _WardrobeViewState extends State<WardrobeView> {
                   crossAxisCount: 2,
                   crossAxisSpacing: 12,
                   mainAxisSpacing: 12,
-                  childAspectRatio: .72,
+                  // The card contains an image plus two metadata rows; give
+                  // it enough height so text never overflows the sliver tile.
+                  childAspectRatio: .64,
                 ),
                 itemCount: visibleItems.length,
                 itemBuilder: (_, index) {
@@ -688,7 +690,9 @@ class _ItemCard extends StatelessWidget {
         : DesignSystem.surface,
     borderRadius: DesignSystem.radiusLg,
     padding: EdgeInsets.zero,
-    margin: const EdgeInsets.only(bottom: DesignSystem.spacingMd),
+    // SliverGrid already supplies main-axis spacing. An additional card
+    // margin makes the child taller than its tile and causes bottom overflow.
+    margin: EdgeInsets.zero,
     child: Stack(
       children: [
         Column(
