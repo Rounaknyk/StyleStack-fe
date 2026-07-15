@@ -43,6 +43,11 @@ class _PlacedCanvasItem {
     rotation = _startRotation + details.rotation;
   }
 
+  void resizeFromHandle(DragUpdateDetails details) {
+    final delta = (details.delta.dx + details.delta.dy) / 180;
+    scale = (scale + delta).clamp(.35, 3.5).toDouble();
+  }
+
   Map<String, dynamic> toJson() => {
     'item_id': item.id,
     'x': x,
@@ -77,6 +82,7 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
   final List<_PlacedCanvasItem> _placed = [];
   String? _selectedId;
   bool _saving = false;
+  _PlacedCanvasItem? _gestureTarget;
 
   @override
   void initState() {
@@ -274,15 +280,11 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
           ),
         ],
       ),
-      body: Row(
+      body: Column(
         children: [
-          SizedBox(
-            width: (MediaQuery.sizeOf(context).width * .25).clamp(96.0, 180.0),
-            child: _Sidebar(items: items, onAdd: _add),
-          ),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(6, 8, 8, 8),
+              padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
               child: DragTarget<WardrobeItem>(
                 onAcceptWithDetails: (details) =>
                     _drop(details.data, details.offset),
@@ -324,6 +326,10 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
               ),
             ),
           ),
+          SizedBox(
+            height: 148,
+            child: _Sidebar(items: items, onAdd: _add),
+          ),
         ],
       ),
     );
@@ -331,14 +337,32 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
 
   Widget _placedWidget(_PlacedCanvasItem placed) {
     final selected = _selectedId == placed.item.id;
+    void beginGesture() {
+      // Once a piece is selected, a drag that starts over another overlapping
+      // piece still manipulates the selected piece. A simple tap can still
+      // change selection via onTap below.
+      _gestureTarget = _selectedId == null || selected
+          ? placed
+          : _placed.firstWhere(
+              (candidate) => candidate.item.id == _selectedId,
+              orElse: () => placed,
+            );
+      _gestureTarget!.beginGesture();
+    }
+
+    void updateGesture(ScaleUpdateDetails details) {
+      final target = _gestureTarget ?? placed;
+      setState(() => target.updateGesture(details));
+    }
+
     return Positioned(
       left: placed.x,
       top: placed.y,
       child: GestureDetector(
         onTap: () => setState(() => _selectedId = placed.item.id),
-        onScaleStart: (_) => placed.beginGesture(),
-        onScaleUpdate: (details) =>
-            setState(() => placed.updateGesture(details)),
+        onScaleStart: (_) => beginGesture(),
+        onScaleUpdate: updateGesture,
+        onScaleEnd: (_) => _gestureTarget = null,
         child: Transform.rotate(
           angle: placed.rotation,
           child: Transform.scale(
@@ -389,6 +413,30 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
                         ),
                       ),
                     ),
+                  if (selected)
+                    Positioned(
+                      right: -12,
+                      bottom: -12,
+                      child: GestureDetector(
+                        onPanUpdate: (details) =>
+                            setState(() => placed.resizeFromHandle(details)),
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: DesignSystem.primary,
+                            shape: BoxShape.circle,
+                            boxShadow: DesignSystem.shadowSoft,
+                          ),
+                          child: const Padding(
+                            padding: EdgeInsets.all(7),
+                            child: Icon(
+                              Icons.open_in_full,
+                              size: 14,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -408,32 +456,42 @@ class _Sidebar extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     decoration: const BoxDecoration(
       color: DesignSystem.surfaceAlt,
-      border: Border(right: BorderSide(color: DesignSystem.border)),
+      border: Border(top: BorderSide(color: DesignSystem.border)),
     ),
-    child: ListView.separated(
-      padding: const EdgeInsets.all(8),
-      itemCount: items.length + 1,
-      separatorBuilder: (_, _) => const SizedBox(height: 8),
-      itemBuilder: (context, index) {
-        if (index == 0)
-          return const Padding(
-            padding: EdgeInsets.symmetric(vertical: 5),
-            child: Text(
-              'Your pieces',
-              style: TextStyle(fontWeight: FontWeight.w700),
-            ),
-          );
-        final item = items[index - 1];
-        return LongPressDraggable<WardrobeItem>(
-          delay: const Duration(milliseconds: 260),
-          data: item,
-          feedback: Material(
-            color: Colors.transparent,
-            child: SizedBox(width: 90, child: _SidebarTile(item: item)),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.fromLTRB(12, 6, 12, 2),
+          child: Text(
+            'Add items',
+            style: TextStyle(fontWeight: FontWeight.w700),
           ),
-          child: _SidebarTile(item: item, onTap: () => onAdd(item)),
-        );
-      },
+        ),
+        Expanded(
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            itemCount: items.length,
+            separatorBuilder: (_, _) => const SizedBox(width: 8),
+            itemBuilder: (context, index) {
+              final item = items[index];
+              return LongPressDraggable<WardrobeItem>(
+                delay: const Duration(milliseconds: 260),
+                data: item,
+                feedback: Material(
+                  color: Colors.transparent,
+                  child: SizedBox(width: 86, child: _SidebarTile(item: item)),
+                ),
+                child: SizedBox(
+                  width: 86,
+                  child: _SidebarTile(item: item, onTap: () => onAdd(item)),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     ),
   );
 }
