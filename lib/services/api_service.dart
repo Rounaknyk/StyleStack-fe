@@ -11,6 +11,7 @@ import '../models/clothing_analysis.dart';
 import '../models/outfit.dart';
 import '../models/calendar_models.dart';
 import '../models/outfit_selfie.dart';
+import '../models/canvas_style.dart';
 
 class ApiException implements Exception {
   const ApiException(this.message, [this.statusCode]);
@@ -251,6 +252,49 @@ class ApiService {
   Future<void> deleteItem(String itemId) async {
     final response = await _client.delete(
       Uri.parse('${RuntimeConfig.apiBaseUrl}/wardrobe/items/$itemId'),
+      headers: {'Authorization': 'Bearer ${await _token()}'},
+    );
+    _decode(response);
+  }
+
+  Future<CanvasStyle> createCanvasStyle({
+    required String name,
+    required List<Map<String, dynamic>> items,
+    required List<int> previewBytes,
+  }) async {
+    final request =
+        http.MultipartRequest(
+            'POST',
+            Uri.parse('${RuntimeConfig.apiBaseUrl}/canvas/styles'),
+          )
+          ..headers['Authorization'] = 'Bearer ${await _token()}'
+          ..fields['name'] = name.trim()
+          ..fields['items'] = jsonEncode(items);
+    request.files.add(
+      http.MultipartFile.fromBytes(
+        'preview_image',
+        previewBytes,
+        filename: 'style-preview.png',
+        contentType: MediaType('image', 'png'),
+      ),
+    );
+    final response = await http.Response.fromStream(await request.send());
+    return CanvasStyle.fromJson(_decode(response) as Map<String, dynamic>);
+  }
+
+  Future<List<CanvasStyle>> fetchCanvasStyles() async {
+    final response = await _client.get(
+      Uri.parse('${RuntimeConfig.apiBaseUrl}/canvas/styles'),
+      headers: {'Authorization': 'Bearer ${await _token()}'},
+    );
+    return (_decode(response) as List<dynamic>)
+        .map((item) => CanvasStyle.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<void> deleteCanvasStyle(String styleId) async {
+    final response = await _client.delete(
+      Uri.parse('${RuntimeConfig.apiBaseUrl}/canvas/styles/$styleId'),
       headers: {'Authorization': 'Bearer ${await _token()}'},
     );
     _decode(response);

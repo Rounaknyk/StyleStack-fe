@@ -12,6 +12,8 @@ import '../models/wardrobe_item.dart';
 import '../providers/auth_provider.dart';
 import '../providers/mvp_provider.dart';
 import '../providers/wardrobe_provider.dart';
+import 'canvas_style_builder_screen.dart';
+import 'saved_styles_screen.dart';
 
 class DailyOutfitView extends StatefulWidget {
   const DailyOutfitView({
@@ -260,6 +262,32 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
             style: Theme.of(
               context,
             ).textTheme.bodyLarge?.copyWith(color: DesignSystem.textSecondary),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const CanvasStyleBuilderScreen(),
+                    ),
+                  ),
+                  icon: const Icon(Icons.dashboard_customize_outlined),
+                  label: const Text('Create Style'),
+                ),
+              ),
+              const SizedBox(width: 10),
+              IconButton(
+                tooltip: 'My Styles',
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SavedStylesScreen()),
+                ),
+                icon: const Icon(Icons.collections_bookmark_outlined),
+              ),
+            ],
           ),
           const SizedBox(height: 18),
           if (priorityEvent != null) ...[
@@ -602,7 +630,7 @@ class _OutfitBoard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final visibleItems = items.take(6).toList();
-    final columns = visibleItems.length <= 3 ? visibleItems.length : 3;
+    final columns = visibleItems.length <= 2 ? 2 : 3;
     final rows = (visibleItems.length / (columns == 0 ? 1 : columns)).ceil();
     return Container(
       padding: const EdgeInsets.all(16),
@@ -619,8 +647,15 @@ class _OutfitBoard extends StatelessWidget {
             children: [
               const Icon(Icons.auto_awesome, color: DesignSystem.secondary),
               const SizedBox(width: 8),
-              Text(title, style: Theme.of(context).textTheme.titleLarge),
-              const Spacer(),
+              Expanded(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ),
+              const SizedBox(width: 8),
               Text(
                 '${items.length} pieces',
                 style: Theme.of(context).textTheme.bodySmall,
@@ -631,20 +666,32 @@ class _OutfitBoard extends StatelessWidget {
           if (visibleItems.isEmpty)
             const Text('No pieces were selected.')
           else
-            SizedBox(
-              height: rows * 154,
-              child: GridView.builder(
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: visibleItems.length,
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: columns,
-                  crossAxisSpacing: 10,
-                  mainAxisSpacing: 10,
-                  childAspectRatio: .72,
-                ),
-                itemBuilder: (context, index) =>
-                    _OutfitPiece(item: visibleItems[index]),
-              ),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                const spacing = 10.0;
+                const aspectRatio = .72;
+                final itemWidth =
+                    (constraints.maxWidth - spacing * (columns - 1)) / columns;
+                final itemHeight = itemWidth / aspectRatio;
+                final gridHeight =
+                    itemHeight * rows +
+                    spacing * (rows - 1).clamp(0, rows).toDouble();
+                return SizedBox(
+                  height: gridHeight,
+                  child: GridView.builder(
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: visibleItems.length,
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: columns,
+                      crossAxisSpacing: spacing,
+                      mainAxisSpacing: spacing,
+                      childAspectRatio: aspectRatio,
+                    ),
+                    itemBuilder: (context, index) =>
+                        _OutfitPiece(item: visibleItems[index]),
+                  ),
+                );
+              },
             ),
         ],
       ),
