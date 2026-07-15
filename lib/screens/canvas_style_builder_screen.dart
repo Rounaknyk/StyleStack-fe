@@ -391,8 +391,8 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
                   ),
                   if (selected)
                     Positioned(
-                      right: -8,
-                      top: -8,
+                      right: 3,
+                      top: 3,
                       child: Material(
                         color: DesignSystem.error,
                         shape: const CircleBorder(),
@@ -415,8 +415,8 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
                     ),
                   if (selected)
                     Positioned(
-                      right: -12,
-                      bottom: -12,
+                      right: 3,
+                      bottom: 3,
                       child: GestureDetector(
                         onPanUpdate: (details) =>
                             setState(() => placed.resizeFromHandle(details)),
