@@ -395,10 +395,8 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
             _OutfitBoard(items: mvp.outfit!.items),
             const SizedBox(height: 14),
             _WhyItWorks(reasoning: mvp.outfit!.reasoning),
-            if (mvp.outfit!.inspirationImages.isNotEmpty) ...[
-              const SizedBox(height: 18),
-              _InspirationStrip(images: mvp.outfit!.inspirationImages),
-            ],
+            const SizedBox(height: 18),
+            _InspirationStrip(images: mvp.outfit!.inspirationImages),
             const SizedBox(height: 18),
             StyleStackButton(
               label: 'Log This Outfit',
@@ -801,34 +799,66 @@ class _InspirationStrip extends StatelessWidget {
         style: Theme.of(context).textTheme.bodySmall,
       ),
       const SizedBox(height: 10),
-      SizedBox(
-        height: 178,
-        child: ListView.separated(
-          scrollDirection: Axis.horizontal,
-          itemCount: images.length,
-          separatorBuilder: (_, _) => const SizedBox(width: 10),
-          itemBuilder: (context, index) {
-            final image = images[index];
-            final url = image['image_url']?.toString();
-            return ClipRRect(
-              borderRadius: BorderRadius.circular(DesignSystem.radiusMd),
-              child: SizedBox(
-                width: 120,
-                child: url == null
-                    ? const ColoredBox(color: DesignSystem.surfaceAlt)
-                    : Image.network(
-                        url,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) => const ColoredBox(
-                          color: DesignSystem.surfaceAlt,
-                          child: Icon(Icons.image_not_supported_outlined),
-                        ),
-                      ),
+      if (images.isEmpty)
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: DesignSystem.surfaceAlt,
+            borderRadius: BorderRadius.circular(DesignSystem.radiusMd),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.auto_awesome, color: DesignSystem.primary),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Style references will appear here when available.',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               ),
-            );
-          },
+              OutlinedButton(
+                onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                      'Style references are unavailable right now.',
+                    ),
+                  ),
+                ),
+                child: const Text('See the vibe'),
+              ),
+            ],
+          ),
+        )
+      else
+        SizedBox(
+          height: 178,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: images.length,
+            separatorBuilder: (_, _) => const SizedBox(width: 10),
+            itemBuilder: (context, index) {
+              final image = images[index];
+              final url = image['image_url']?.toString();
+              return ClipRRect(
+                borderRadius: BorderRadius.circular(DesignSystem.radiusMd),
+                child: SizedBox(
+                  width: 120,
+                  child: url == null
+                      ? const ColoredBox(color: DesignSystem.surfaceAlt)
+                      : Image.network(
+                          url,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, _, _) => const ColoredBox(
+                            color: DesignSystem.surfaceAlt,
+                            child: Icon(Icons.image_not_supported_outlined),
+                          ),
+                        ),
+                ),
+              );
+            },
+          ),
         ),
-      ),
     ],
   );
 }
