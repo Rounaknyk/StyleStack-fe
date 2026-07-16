@@ -395,6 +395,10 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
             _OutfitBoard(items: mvp.outfit!.items),
             const SizedBox(height: 14),
             _WhyItWorks(reasoning: mvp.outfit!.reasoning),
+            if (mvp.outfit!.inspirationImages.isNotEmpty) ...[
+              const SizedBox(height: 18),
+              _InspirationStrip(images: mvp.outfit!.inspirationImages),
+            ],
             const SizedBox(height: 18),
             StyleStackButton(
               label: 'Log This Outfit',
@@ -779,6 +783,53 @@ class _WhyItWorks extends StatelessWidget {
         ),
       ],
     ),
+  );
+}
+
+class _InspirationStrip extends StatelessWidget {
+  const _InspirationStrip({required this.images});
+  final List<Map<String, dynamic>> images;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text('See the vibe', style: Theme.of(context).textTheme.headlineSmall),
+      const SizedBox(height: 4),
+      Text(
+        'A little visual inspiration for the look from your own wardrobe.',
+        style: Theme.of(context).textTheme.bodySmall,
+      ),
+      const SizedBox(height: 10),
+      SizedBox(
+        height: 178,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          itemCount: images.length,
+          separatorBuilder: (_, _) => const SizedBox(width: 10),
+          itemBuilder: (context, index) {
+            final image = images[index];
+            final url = image['image_url']?.toString();
+            return ClipRRect(
+              borderRadius: BorderRadius.circular(DesignSystem.radiusMd),
+              child: SizedBox(
+                width: 120,
+                child: url == null
+                    ? const ColoredBox(color: DesignSystem.surfaceAlt)
+                    : Image.network(
+                        url,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, _, _) => const ColoredBox(
+                          color: DesignSystem.surfaceAlt,
+                          child: Icon(Icons.image_not_supported_outlined),
+                        ),
+                      ),
+              ),
+            );
+          },
+        ),
+      ),
+    ],
   );
 }
 

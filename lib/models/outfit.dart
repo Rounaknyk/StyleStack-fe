@@ -7,12 +7,14 @@ class Outfit {
     required this.reasoning,
     required this.weather,
     required this.items,
+    this.inspirationImages = const [],
   });
   final String id;
   final String occasion;
   final String reasoning;
   final Map<String, dynamic> weather;
   final List<WardrobeItem> items;
+  final List<Map<String, dynamic>> inspirationImages;
 
   factory Outfit.fromJson(Map<String, dynamic> json) => Outfit(
     id: json['id'] as String,
@@ -22,6 +24,10 @@ class Outfit {
     items: (json['items'] as List<dynamic>? ?? const [])
         .map((item) => WardrobeItem.fromJson(item as Map<String, dynamic>))
         .toList(),
+    inspirationImages:
+        (json['inspiration_images'] as List<dynamic>? ?? const [])
+            .whereType<Map<String, dynamic>>()
+            .toList(),
   );
 }
 
