@@ -258,6 +258,16 @@ class _WardrobeViewState extends State<WardrobeView> {
     'Jackets',
     'Shoes',
     'Accessories',
+    'Kurtas',
+    'Sarees',
+    'Lehengas',
+    'Sherwanis',
+    'Salwar Suits',
+    'Dhotis',
+    'Dupattas',
+    'Blouses',
+    'Anarkalis',
+    'Ethnic Sets',
     'Other',
   ];
   static const _colors = [
@@ -307,6 +317,16 @@ class _WardrobeViewState extends State<WardrobeView> {
     if (normalized == 'dresses') return 'dress';
     if (normalized == 'jackets') return 'jacket';
     if (normalized == 'accessories') return 'accessory';
+    if (normalized == 'kurtas') return 'kurta';
+    if (normalized == 'sarees') return 'saree';
+    if (normalized == 'lehengas') return 'lehenga';
+    if (normalized == 'sherwanis') return 'sherwani';
+    if (normalized == 'salwar suits') return 'salwar';
+    if (normalized == 'dhotis') return 'dhoti';
+    if (normalized == 'dupattas') return 'dupatta';
+    if (normalized == 'blouses') return 'blouse';
+    if (normalized == 'anarkalis') return 'anarkali';
+    if (normalized == 'ethnic sets') return 'ethnic_set';
     if (normalized == 'shoes') return 'shoes';
     return normalized;
   }
