@@ -7,7 +7,8 @@ plugins {
 
 android {
     namespace = "com.stylestack.stylestack"
-    compileSdk = flutter.compileSdkVersion
+    // receive_sharing_intent requires Android API 37 at compile time.
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
