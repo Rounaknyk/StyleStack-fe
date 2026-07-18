@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -11,23 +9,21 @@ import '../models/outfit.dart';
 import '../models/wardrobe_item.dart';
 import '../providers/auth_provider.dart';
 import '../providers/mvp_provider.dart';
-import '../providers/wardrobe_provider.dart';
-import 'canvas_style_builder_screen.dart';
 import 'saved_styles_screen.dart';
 
 class DailyOutfitView extends StatefulWidget {
   const DailyOutfitView({
     super.key,
     required this.onOutfitSelfie,
-    required this.onAddItem,
     required this.onOpenHistory,
     required this.onOpenProfile,
+    required this.onCreateStyle,
   });
 
   final Future<void> Function() onOutfitSelfie;
-  final Future<void> Function() onAddItem;
   final VoidCallback onOpenHistory;
   final VoidCallback onOpenProfile;
+  final Future<void> Function() onCreateStyle;
 
   @override
   State<DailyOutfitView> createState() => _DailyOutfitViewState();
@@ -49,14 +45,12 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
     _bootstrapped = true;
     _bootstrapping = true;
     try {
-      final wardrobe = context.read<WardrobeProvider>();
       final mvp = context.read<MvpProvider>();
       await Future.wait([
-        wardrobe.loadItems(force: refresh),
         mvp.loadPreferences(force: refresh),
         mvp.loadTodayEvents(force: refresh),
       ]);
-      if (!mounted || wardrobe.items.length < 5) return;
+      if (!mounted) return;
       final city = mvp.preferences?.city?.trim() ?? '';
       if (city.isEmpty) return;
       final event = mvp.priorityEvent;
@@ -71,11 +65,7 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
       } else if (refresh || mvp.outfit == null) {
         await mvp.generateOutfit(city, 'daily');
       }
-      if (!mounted) return;
       _autoRequestScheduled = true;
-      if (refresh || mvp.tomorrowOutfit == null) {
-        unawaited(mvp.generateTomorrowOutfit(city));
-      }
     } finally {
       _bootstrapping = false;
       if (mounted) setState(() {});
@@ -220,7 +210,6 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
 
   @override
   Widget build(BuildContext context) {
-    final wardrobe = context.watch<WardrobeProvider>();
     final mvp = context.watch<MvpProvider>();
     final user = context.watch<AuthProvider>().user;
     final name = (user?.displayName?.trim().isNotEmpty ?? false)
@@ -229,9 +218,8 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
 
     final city = mvp.preferences?.city?.trim() ?? '';
     final priorityEvent = mvp.priorityEvent;
-    final canStyle = wardrobe.items.length >= 5 && city.isNotEmpty;
-    if (wardrobe.items.length >= 5 &&
-        city.isNotEmpty &&
+    final canStyle = city.isNotEmpty;
+    if (city.isNotEmpty &&
         mvp.outfit == null &&
         !mvp.loadingOutfit &&
         !_bootstrapping &&
@@ -243,8 +231,7 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
       });
     }
 
-    if ((wardrobe.loading && !wardrobe.loaded) ||
-        (mvp.loadingPreferences && !mvp.preferencesAttempted)) {
+    if (mvp.loadingPreferences && !mvp.preferencesAttempted) {
       return const _TodaySkeleton();
     }
 
@@ -272,12 +259,7 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => const CanvasStyleBuilderScreen(),
-                    ),
-                  ),
+                  onPressed: widget.onCreateStyle,
                   icon: const Icon(Icons.dashboard_customize_outlined),
                   label: const Text('Create Style'),
                 ),
@@ -356,25 +338,7 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
             ] else
               const SizedBox(height: 6),
           ],
-          if (wardrobe.items.isEmpty)
-            _WardrobeGate(
-              icon: Icons.checkroom_outlined,
-              title: 'Your personal stylist is ready',
-              body:
-                  'Add your first pieces and StyleStack will build complete looks for you.',
-              action: 'Add your first item',
-              onPressed: widget.onAddItem,
-            )
-          else if (wardrobe.items.length < 5)
-            _WardrobeGate(
-              icon: Icons.auto_awesome,
-              title: '${wardrobe.items.length} of 5 pieces added',
-              body:
-                  'Add ${5 - wardrobe.items.length} more ${5 - wardrobe.items.length == 1 ? 'piece' : 'pieces'} so your stylist has enough variety.',
-              action: 'Add another item',
-              onPressed: widget.onAddItem,
-            )
-          else if ((mvp.preferences?.city?.trim() ?? '').isEmpty)
+          if ((mvp.preferences?.city?.trim() ?? '').isEmpty)
             _WardrobeGate(
               icon: Icons.location_on_outlined,
               title: 'One quick setup step',
@@ -418,11 +382,6 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
                     )
                   : const Icon(Icons.auto_awesome),
               label: const Text('Show me a new look'),
-            ),
-            const SizedBox(height: 28),
-            _TomorrowPreview(
-              outfit: mvp.tomorrowOutfit,
-              loading: mvp.loadingTomorrow,
             ),
           ],
         ],
@@ -867,73 +826,6 @@ class _InspirationStrip extends StatelessWidget {
   );
 }
 
-class _TomorrowPreview extends StatelessWidget {
-  const _TomorrowPreview({required this.outfit, required this.loading});
-  final Outfit? outfit;
-  final bool loading;
-
-  @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(
-        'Tomorrow’s preview',
-        style: Theme.of(context).textTheme.headlineSmall,
-      ),
-      const SizedBox(height: 4),
-      Text(
-        'An early style option. Comfort details refresh tomorrow.',
-        style: Theme.of(context).textTheme.bodySmall,
-      ),
-      const SizedBox(height: 11),
-      Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: DesignSystem.surfaceAlt,
-          borderRadius: BorderRadius.circular(DesignSystem.radiusLg),
-        ),
-        child: loading && outfit == null
-            ? const LinearProgressIndicator()
-            : outfit == null
-            ? const Text('Your preview will appear here shortly.')
-            : Row(
-                children: [
-                  ...outfit!.items
-                      .take(3)
-                      .map(
-                        (item) => Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: CircleAvatar(
-                            radius: 25,
-                            backgroundColor: Colors.white,
-                            backgroundImage: item.imageUrl == null
-                                ? null
-                                : NetworkImage(item.imageUrl!),
-                            child: item.imageUrl == null
-                                ? const Icon(Icons.checkroom_outlined)
-                                : null,
-                          ),
-                        ),
-                      ),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      outfit!.items.map((item) => item.name).join(' + '),
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-      ),
-    ],
-  );
-}
-
 class _WardrobeGate extends StatelessWidget {
   const _WardrobeGate({
     required this.icon,
@@ -990,7 +882,36 @@ class _WardrobeGate extends StatelessWidget {
 class _TodaySkeleton extends StatelessWidget {
   const _TodaySkeleton();
   @override
-  Widget build(BuildContext context) => const _SkeletonList();
+  Widget build(BuildContext context) => ListView(
+    physics: const AlwaysScrollableScrollPhysics(),
+    padding: const EdgeInsets.fromLTRB(18, 28, 18, 120),
+    children: [
+      Text('Today', style: Theme.of(context).textTheme.displaySmall),
+      const SizedBox(height: 8),
+      Text(
+        'Curating a look from your style profile…',
+        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+          color: DesignSystem.textSecondary,
+        ),
+      ),
+      const SizedBox(height: 24),
+      const LinearProgressIndicator(minHeight: 3),
+      const SizedBox(height: 20),
+      ...List.generate(
+        3,
+        (index) => Container(
+          height: index == 1 ? 240 : 58,
+          margin: const EdgeInsets.only(bottom: 14),
+          decoration: BoxDecoration(
+            color: DesignSystem.surfaceAlt,
+            borderRadius: BorderRadius.all(
+              Radius.circular(DesignSystem.radiusLg),
+            ),
+          ),
+        ),
+      ),
+    ],
+  );
 }
 
 class _OutfitSkeleton extends StatelessWidget {

@@ -12,6 +12,7 @@ import '../providers/auth_provider.dart';
 import '../providers/wardrobe_provider.dart';
 import 'camera_preview_screen.dart';
 import 'batch_add_screen.dart';
+import 'canvas_style_builder_screen.dart';
 import 'item_detail_screen.dart';
 import 'outfit_view.dart';
 import 'outfit_selfie_review_screen.dart';
@@ -28,7 +29,22 @@ class _HomeScreenState extends State<HomeScreen> {
   final _picker = ImagePicker();
   int _tab = 0;
 
-  void _selectTab(int value) => setState(() => _tab = value);
+  void _selectTab(int value) {
+    setState(() => _tab = value);
+    if (value == 1) {
+      // Wardrobe is deliberately lazy: Today never downloads the full closet.
+      context.read<WardrobeProvider>().loadItems();
+    }
+  }
+
+  Future<void> _openCreateStyle() async {
+    await context.read<WardrobeProvider>().loadItems();
+    if (!mounted) return;
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const CanvasStyleBuilderScreen()),
+    );
+  }
 
   Future<void> _chooseImageSource() async {
     final source = await showModalBottomSheet<ImageSource>(
@@ -138,6 +154,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _startOutfitSelfie() async {
+    // Outfit Selfie review needs local wardrobe matches, so load it only for
+    // this flow rather than during Today startup.
+    await context.read<WardrobeProvider>().loadItems();
     final picked = await _picker.pickImage(
       source: ImageSource.camera,
       preferredCameraDevice: CameraDevice.front,
@@ -186,9 +205,9 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             DailyOutfitView(
               onOutfitSelfie: _startOutfitSelfie,
-              onAddItem: _chooseImageSource,
               onOpenHistory: () => _selectTab(2),
               onOpenProfile: () => _selectTab(3),
+              onCreateStyle: _openCreateStyle,
             ),
             WardrobeView(onAddItem: _chooseImageSource),
             const OutfitHistoryView(),
