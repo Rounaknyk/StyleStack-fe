@@ -68,6 +68,7 @@ class ApiService {
     required File image,
     required String name,
     required String category,
+    String? brand,
     String? color,
     String? season,
     String? formality,
@@ -83,6 +84,9 @@ class ApiService {
           ..headers['Authorization'] = 'Bearer ${await _token()}'
           ..fields['name'] = name.trim()
           ..fields['category'] = category.trim();
+    if (brand?.trim().isNotEmpty == true) {
+      request.fields['brand'] = brand!.trim();
+    }
     if (color?.trim().isNotEmpty == true) {
       request.fields['color'] = color!.trim();
     }

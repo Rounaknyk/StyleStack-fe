@@ -32,6 +32,7 @@ class CameraPreviewScreen extends StatefulWidget {
 
 class _CameraPreviewScreenState extends State<CameraPreviewScreen> {
   final _name = TextEditingController();
+  final _brand = TextEditingController();
   final _category = TextEditingController();
   final _description = TextEditingController();
   String? _color;
@@ -54,7 +55,11 @@ class _CameraPreviewScreenState extends State<CameraPreviewScreen> {
     if (result != null) {
       _analysis = result;
       if (_name.text.trim().isEmpty) {
-        _name.text = _titleCase('${result.color} ${result.category}'.trim());
+        final brand = result.brand == null ? '' : '${result.brand} ';
+        _name.text = _titleCase('$brand${result.color} ${result.category}'.trim());
+      }
+      if (_brand.text.trim().isEmpty && result.brand != null) {
+        _brand.text = result.brand!;
       }
       if (_category.text.trim().isEmpty) _category.text = result.category;
       _color ??= result.color;
@@ -68,6 +73,7 @@ class _CameraPreviewScreenState extends State<CameraPreviewScreen> {
   @override
   void dispose() {
     _name.dispose();
+    _brand.dispose();
     _category.dispose();
     _description.dispose();
     super.dispose();
@@ -79,6 +85,7 @@ class _CameraPreviewScreenState extends State<CameraPreviewScreen> {
       image: widget.image,
       name: _name.text.trim().isEmpty ? 'New wardrobe item' : _name.text,
       category: _category.text.trim().isEmpty ? 'other' : _category.text,
+      brand: _brand.text,
       color: _color ?? '',
       season: _season,
       formality: _formality,
@@ -164,6 +171,17 @@ class _CameraPreviewScreenState extends State<CameraPreviewScreen> {
                 labelText: 'Item name (optional)',
                 hintText: 'e.g., Blue Denim Jacket',
                 prefixIcon: Icon(Icons.label_outline),
+              ),
+            ),
+            const SizedBox(height: DesignSystem.spacingMd),
+
+            TextFormField(
+              controller: _brand,
+              enabled: !uploading,
+              decoration: const InputDecoration(
+                labelText: 'Brand (optional)',
+                hintText: 'e.g., Crocs',
+                prefixIcon: Icon(Icons.workspace_premium_outlined),
               ),
             ),
             const SizedBox(height: DesignSystem.spacingMd),

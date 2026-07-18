@@ -1,5 +1,6 @@
 class ClothingAnalysis {
   const ClothingAnalysis({
+    this.brand,
     required this.category,
     required this.color,
     required this.season,
@@ -8,6 +9,7 @@ class ClothingAnalysis {
     this.tags = const [],
   });
 
+  final String? brand;
   final String category;
   final String color;
   final String season;
@@ -17,6 +19,9 @@ class ClothingAnalysis {
 
   factory ClothingAnalysis.fromJson(Map<String, dynamic> json) =>
       ClothingAnalysis(
+        brand: (json['brand'] as String?)?.trim().isEmpty == true
+            ? null
+            : (json['brand'] as String?)?.trim(),
         category: json['category'] as String,
         color: json['color'] as String,
         season: json['season'] as String,
