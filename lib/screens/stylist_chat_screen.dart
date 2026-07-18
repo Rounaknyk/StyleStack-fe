@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../config/design_system.dart';
 import '../models/outfit.dart';
+import '../models/wardrobe_item.dart';
 import '../services/api_service.dart';
 
 class StylistChatScreen extends StatefulWidget {
@@ -98,20 +99,19 @@ class _StylistChatScreenState extends State<StylistChatScreen> {
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               const SizedBox(height: 12),
+              _ChatOutfitBoard(outfit: _outfit!),
+              const SizedBox(height: 14),
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Wrap(
-                        spacing: 10,
-                        runSpacing: 10,
-                        children: _outfit!.items
-                            .map((item) => Chip(label: Text(item.name)))
-                            .toList(),
+                      const Text(
+                        'Why this works',
+                        style: TextStyle(fontWeight: FontWeight.w700),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 8),
                       Text(_outfit!.reasoning),
                     ],
                   ),
@@ -121,6 +121,102 @@ class _StylistChatScreenState extends State<StylistChatScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _ChatOutfitBoard extends StatelessWidget {
+  const _ChatOutfitBoard({required this.outfit});
+  final Outfit outfit;
+
+  @override
+  Widget build(BuildContext context) {
+    final items = outfit.items.take(6).toList();
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(DesignSystem.radiusXl),
+        border: Border.all(color: DesignSystem.border),
+        boxShadow: DesignSystem.shadowMedium,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.auto_awesome, color: DesignSystem.secondary),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  outfit.occasion,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ),
+              Text('${items.length} pieces', style: Theme.of(context).textTheme.bodySmall),
+            ],
+          ),
+          const SizedBox(height: 14),
+          if (items.isEmpty)
+            const Text('No wardrobe pieces were selected.')
+          else
+            GridView.builder(
+              itemCount: items.length,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 10,
+                mainAxisSpacing: 10,
+                childAspectRatio: .72,
+              ),
+              itemBuilder: (_, index) => _ChatOutfitPiece(item: items[index]),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ChatOutfitPiece extends StatelessWidget {
+  const _ChatOutfitPiece({required this.item});
+  final WardrobeItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    final imageUrl = item.gridImageUrl;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: ColoredBox(
+              color: Colors.white,
+              child: imageUrl == null
+                  ? const Icon(Icons.checkroom_outlined, size: 34)
+                  : Image.network(
+                      imageUrl,
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, _, _) =>
+                          const Icon(Icons.checkroom_outlined),
+                    ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 7),
+        Text(
+          item.name,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+        ),
+      ],
     );
   }
 }
