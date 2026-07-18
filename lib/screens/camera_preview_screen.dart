@@ -5,8 +5,15 @@ import 'package:provider/provider.dart';
 
 import '../config/design_system.dart';
 import '../config/custom_widgets.dart';
+import '../models/clothing_analysis.dart';
 import '../providers/wardrobe_provider.dart';
 import 'item_detail_screen.dart';
+
+String _titleCase(String value) => value
+    .split(RegExp(r'\s+'))
+    .where((word) => word.isNotEmpty)
+    .map((word) => '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}')
+    .join(' ');
 
 class CameraPreviewScreen extends StatefulWidget {
   const CameraPreviewScreen({
@@ -30,6 +37,33 @@ class _CameraPreviewScreenState extends State<CameraPreviewScreen> {
   String? _color;
   String? _season;
   String? _formality;
+  ClothingAnalysis? _analysis;
+  bool _analyzingImage = true;
+
+  @override
+  void initState() {
+    super.initState();
+    // Analyze immediately when the preview opens so the user can review and
+    // edit the detected details before saving the item.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _analyzeImage());
+  }
+
+  Future<void> _analyzeImage() async {
+    final result = await context.read<WardrobeProvider>().analyzeImage(widget.image);
+    if (!mounted) return;
+    if (result != null) {
+      _analysis = result;
+      if (_name.text.trim().isEmpty) {
+        _name.text = _titleCase('${result.color} ${result.category}'.trim());
+      }
+      if (_category.text.trim().isEmpty) _category.text = result.category;
+      _color ??= result.color;
+      _season ??= result.season;
+      _formality ??= result.formality;
+      if (_description.text.trim().isEmpty) _description.text = result.description;
+    }
+    setState(() => _analyzingImage = false);
+  }
 
   @override
   void dispose() {
@@ -49,6 +83,8 @@ class _CameraPreviewScreenState extends State<CameraPreviewScreen> {
       season: _season,
       formality: _formality,
       description: _description.text,
+      tags: _analysis?.tags ?? const [],
+      aiAnalysis: _analysis,
     );
     if (!mounted) return;
     if (created != null) {
@@ -97,15 +133,20 @@ class _CameraPreviewScreenState extends State<CameraPreviewScreen> {
                 color: DesignSystem.secondary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(DesignSystem.radiusMd),
               ),
-              child: const Row(
+              child: Row(
                 children: [
                   Icon(Icons.auto_awesome, color: DesignSystem.primary),
                   SizedBox(width: DesignSystem.spacingMd),
                   Expanded(
                     child: Text(
-                      'Add any details you know, or save now. StyleStack will prepare the photo and fill AI details in the background.',
+                      'AI is analyzing this photo. You can review and edit the detected details before saving.',
                     ),
                   ),
+                  if (_analyzingImage)
+                    SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
                 ],
               ),
             ),
