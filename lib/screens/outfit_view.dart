@@ -61,14 +61,18 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
       if (city.isEmpty) return;
       final event = mvp.priorityEvent;
       if (event != null) {
-        await mvp.generateEventOutfit(city, event);
-      }
-      if (!mounted) return;
-      if (refresh || mvp.outfit == null) {
-        _autoRequestScheduled = true;
+        // Event and everyday looks are independent. Start both together so
+        // the slower AI request for one never delays the other.
+        await Future.wait([
+          mvp.generateEventOutfit(city, event),
+          if (refresh || mvp.outfit == null)
+            mvp.generateOutfit(city, 'daily'),
+        ]);
+      } else if (refresh || mvp.outfit == null) {
         await mvp.generateOutfit(city, 'daily');
       }
       if (!mounted) return;
+      _autoRequestScheduled = true;
       if (refresh || mvp.tomorrowOutfit == null) {
         unawaited(mvp.generateTomorrowOutfit(city));
       }
