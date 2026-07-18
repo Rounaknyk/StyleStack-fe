@@ -373,6 +373,18 @@ class ApiService {
     return Outfit.fromJson(_decode(response) as Map<String, dynamic>);
   }
 
+  Future<Outfit> askStylist({required String message, required String city}) async {
+    final response = await _client.post(
+      Uri.parse('${RuntimeConfig.apiBaseUrl}/outfits/chat'),
+      headers: {
+        'Authorization': 'Bearer ${await _token()}',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'message': message, 'city': city}),
+    );
+    return Outfit.fromJson(_decode(response) as Map<String, dynamic>);
+  }
+
   Future<int> wearOutfit(String outfitId) async {
     final response = await _client.post(
       Uri.parse('${RuntimeConfig.apiBaseUrl}/outfits/$outfitId/wear'),

@@ -10,6 +10,7 @@ import '../models/wardrobe_item.dart';
 import '../providers/auth_provider.dart';
 import '../providers/mvp_provider.dart';
 import 'saved_styles_screen.dart';
+import 'stylist_chat_screen.dart';
 
 class DailyOutfitView extends StatefulWidget {
   const DailyOutfitView({
@@ -253,6 +254,24 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
             style: Theme.of(
               context,
             ).textTheme.bodyLarge?.copyWith(color: DesignSystem.textSecondary),
+          ),
+          const SizedBox(height: 14),
+          OutlinedButton.icon(
+            onPressed: () {
+              final city = mvp.preferences?.city?.trim() ?? '';
+              if (city.isNotEmpty) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => StylistChatScreen(city: city),
+                  ),
+                );
+              } else {
+                widget.onOpenProfile();
+              }
+            },
+            icon: const Icon(Icons.chat_bubble_outline),
+            label: const Text('Ask your stylist anything'),
           ),
           const SizedBox(height: 14),
           Row(
