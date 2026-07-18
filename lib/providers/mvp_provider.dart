@@ -249,6 +249,10 @@ class MvpProvider extends ChangeNotifier {
     }
   }
 
+  Future<Map<String, dynamic>> runNotificationSimulation(String simulation) {
+    return _api.runNotificationSimulation(simulation);
+  }
+
   void reset() {
     outfit = null;
     tomorrowOutfit = null;

@@ -28,6 +28,8 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
   bool _seeded = false;
   bool _detectingLocation = false;
   bool _locationRequested = false;
+  bool _runningNotificationSimulation = false;
+  bool _schedulingNotificationSimulation = false;
 
   @override
   void initState() {
@@ -143,6 +145,58 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
       );
     } catch (_) {
       _message('Could not get a notification token on this device.');
+    }
+  }
+
+  Future<String?> _registerPushDevice() async {
+    final token = await NotificationService.requestToken();
+    if (token == null) return null;
+    await context.read<MvpProvider>().registerDevice(
+      token,
+      Platform.operatingSystem,
+    );
+    return token;
+  }
+
+  Future<void> _runMorningSimulation() async {
+    if (mounted) setState(() => _runningNotificationSimulation = true);
+    try {
+      final token = await _registerPushDevice();
+      if (token == null) {
+        _message('Allow notifications on this physical device first.');
+        return;
+      }
+      final result = await context.read<MvpProvider>().runNotificationSimulation(
+        'daily-outfit',
+      );
+      if (mounted) _message(result['detail']?.toString() ?? 'Morning flow ran.');
+    } catch (error) {
+      _message('Morning flow failed: ${error.toString()}');
+    } finally {
+      if (mounted) setState(() => _runningNotificationSimulation = false);
+    }
+  }
+
+  Future<void> _scheduleDelayedSimulation() async {
+    if (mounted) setState(() => _schedulingNotificationSimulation = true);
+    try {
+      final token = await _registerPushDevice();
+      if (token == null) {
+        _message('Allow notifications on this physical device first.');
+        return;
+      }
+      final result = await context.read<MvpProvider>().runNotificationSimulation(
+        'daily-outfit-delay',
+      );
+      if (mounted) {
+        _message(
+          '${result['detail'] ?? 'Notification scheduled.'} You can close the app now.',
+        );
+      }
+    } catch (error) {
+      _message('Delayed notification failed: ${error.toString()}');
+    } finally {
+      if (mounted) setState(() => _schedulingNotificationSimulation = false);
     }
   }
 
@@ -288,6 +342,50 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : const Icon(Icons.notifications_active_outlined),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Notification test lab',
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'These buttons use the same backend delivery logic as the real 8 AM flow.',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                    const SizedBox(height: 10),
+                    OutlinedButton.icon(
+                      onPressed: _runningNotificationSimulation
+                          ? null
+                          : _runMorningSimulation,
+                      icon: _runningNotificationSimulation
+                          ? const SizedBox.square(
+                              dimension: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.play_circle_outline),
+                      label: const Text('Run 8 AM flow now'),
+                    ),
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      onPressed: _schedulingNotificationSimulation
+                          ? null
+                          : _scheduleDelayedSimulation,
+                      icon: _schedulingNotificationSimulation
+                          ? const SizedBox.square(
+                              dimension: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.timer_outlined),
+                      label: const Text('Send 10 seconds after I close the app'),
                     ),
                   ],
                 ),
