@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
 import 'package:image_picker/image_picker.dart';
@@ -133,7 +134,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _showPreview(File image, ImageSource source) async {
-    await Navigator.push<bool>(
+    final queued = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
         builder: (_) => CameraPreviewScreen(
@@ -152,6 +153,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+    if (queued == true && mounted) _selectTab(1);
   }
 
   Future<void> _startOutfitSelfie() async {
@@ -508,6 +510,13 @@ class _WardrobeViewState extends State<WardrobeView> {
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
+          if (wardrobe.syncing && wardrobe.items.isNotEmpty)
+            const SliverToBoxAdapter(
+              child: LinearProgressIndicator(
+                minHeight: 2,
+                semanticsLabel: 'Refreshing wardrobe',
+              ),
+            ),
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
@@ -562,6 +571,41 @@ class _WardrobeViewState extends State<WardrobeView> {
               ),
             ),
           ),
+          if (wardrobe.error != null)
+            SliverToBoxAdapter(
+              child: Container(
+                margin: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                padding: const EdgeInsets.fromLTRB(12, 10, 6, 10),
+                decoration: BoxDecoration(
+                  color: DesignSystem.error.withValues(alpha: .08),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: DesignSystem.error.withValues(alpha: .18),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.cloud_off_outlined,
+                      color: DesignSystem.error,
+                      size: 19,
+                    ),
+                    const SizedBox(width: 9),
+                    Expanded(
+                      child: Text(
+                        '${wardrobe.error} The local wardrobe is still available.',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: wardrobe.clearError,
+                      icon: const Icon(Icons.close, size: 18),
+                      tooltip: 'Dismiss',
+                    ),
+                  ],
+                ),
+              ),
+            ),
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
@@ -641,10 +685,22 @@ class _WardrobeViewState extends State<WardrobeView> {
                     child: _ItemCard(
                       item: item,
                       selected: _selectedIds.contains(item.id),
-                      onLongPress: () => _toggleSelection(item.id),
+                      onLongPress: item.isUploading
+                          ? null
+                          : () => _toggleSelection(item.id),
                       onTap: _selectionMode
                           ? () => _toggleSelection(item.id)
                           : () {
+                              if (item.isUploading) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'This item is still syncing. It will be editable in a moment.',
+                                    ),
+                                  ),
+                                );
+                                return;
+                              }
                               Navigator.push(
                                 context,
                                 StyleStackAnimations.fadeSlideTransition(
@@ -843,7 +899,16 @@ class _ItemCard extends StatelessWidget {
                     color: Colors.white,
                     child: Padding(
                       padding: const EdgeInsets.all(8),
-                      child: item.gridImageUrl == null
+                      child: item.localImagePath != null
+                          ? Image.file(
+                              File(item.localImagePath!),
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  const Center(
+                                    child: Icon(Icons.broken_image_outlined),
+                                  ),
+                            )
+                          : item.gridImageUrl == null
                           ? const Center(
                               child: Icon(
                                 Icons.image_outlined,
@@ -851,10 +916,19 @@ class _ItemCard extends StatelessWidget {
                                 color: DesignSystem.textTertiary,
                               ),
                             )
-                          : Image.network(
-                              item.gridImageUrl!,
+                          : CachedNetworkImage(
+                              imageUrl: item.gridImageUrl!,
+                              cacheKey: 'wardrobe-${item.id}',
                               fit: BoxFit.contain,
-                              errorBuilder: (context, error, stackTrace) =>
+                              placeholder: (context, url) => const Center(
+                                child: SizedBox.square(
+                                  dimension: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 1.5,
+                                  ),
+                                ),
+                              ),
+                              errorWidget: (context, url, error) =>
                                   const Center(
                                     child: Icon(Icons.broken_image_outlined),
                                   ),
@@ -938,6 +1012,43 @@ class _ItemCard extends StatelessWidget {
               ),
             ],
           ),
+
+          if (item.isUploading)
+            Positioned(
+              left: 12,
+              right: 12,
+              bottom: 12,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: DesignSystem.primary.withValues(alpha: .92),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox.square(
+                        dimension: 12,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 1.5,
+                          color: Colors.white,
+                        ),
+                      ),
+                      SizedBox(width: 7),
+                      Text(
+                        'Syncing',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
 
           // Selection indicator
           if (selected)

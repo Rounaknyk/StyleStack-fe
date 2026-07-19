@@ -20,6 +20,8 @@ class WardrobeItem {
     this.aiDescription,
     this.aiTagStatus = 'pending',
     this.wearCount = 0,
+    this.localImagePath,
+    this.isUploading = false,
     required this.createdAt,
   });
 
@@ -43,6 +45,8 @@ class WardrobeItem {
   final String? aiDescription;
   final String aiTagStatus;
   final int wearCount;
+  final String? localImagePath;
+  final bool isUploading;
   final DateTime createdAt;
 
   String get displayCategory =>
@@ -82,8 +86,36 @@ class WardrobeItem {
     aiDescription: json['ai_description'] as String?,
     aiTagStatus: json['ai_tag_status'] as String? ?? 'pending',
     wearCount: json['wear_count'] as int? ?? 0,
+    localImagePath: json['_local_image_path'] as String?,
+    isUploading: json['_is_uploading'] as bool? ?? false,
     createdAt:
         DateTime.tryParse(json['created_at'] as String? ?? '') ??
         DateTime.fromMillisecondsSinceEpoch(0),
   );
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'category': category,
+    'brand': brand,
+    'color': color,
+    'description': description,
+    'formality': formality,
+    'image_url': imageUrl,
+    'thumbnail_url': thumbnailUrl,
+    'cutout_url': cutoutUrl,
+    'is_favorite': isFavorite,
+    'season': seasons,
+    'tags': tags,
+    'ai_category': aiCategory,
+    'ai_color': aiColor,
+    'ai_season': aiSeason,
+    'ai_formality': aiFormality,
+    'ai_description': aiDescription,
+    'ai_tag_status': aiTagStatus,
+    'wear_count': wearCount,
+    'created_at': createdAt.toIso8601String(),
+    if (localImagePath != null) '_local_image_path': localImagePath,
+    if (isUploading) '_is_uploading': true,
+  };
 }

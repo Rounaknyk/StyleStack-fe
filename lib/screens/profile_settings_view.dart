@@ -307,14 +307,18 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
     final confirmed = await showDeleteAccountConfirmation(context);
     if (!confirmed || !mounted) return;
 
+    final gmailSync = context.read<GmailSyncProvider>();
+    final wardrobe = context.read<WardrobeProvider>();
+    final mvp = context.read<MvpProvider>();
+    final auth = context.read<AuthProvider>();
     setState(() => _deletingAccount = true);
     try {
       await ApiService().deleteAccount();
       if (!mounted) return;
-      context.read<GmailSyncProvider>().reset();
-      context.read<WardrobeProvider>().reset();
-      context.read<MvpProvider>().reset();
-      await context.read<AuthProvider>().signOut();
+      gmailSync.reset();
+      await wardrobe.reset(clearCache: true);
+      mvp.reset();
+      await auth.signOut();
     } on ApiException catch (error) {
       _message(error.message);
     } catch (_) {
@@ -471,7 +475,9 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : const Icon(Icons.timer_outlined),
-                      label: const Text('Send 10 seconds after I close the app'),
+                      label: const Text(
+                        'Send 10 seconds after I close the app',
+                      ),
                     ),
                   ],
                 ),

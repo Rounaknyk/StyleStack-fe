@@ -7,7 +7,6 @@ import '../config/design_system.dart';
 import '../config/custom_widgets.dart';
 import '../models/clothing_analysis.dart';
 import '../providers/wardrobe_provider.dart';
-import 'item_detail_screen.dart';
 
 String _titleCase(String value) => value
     .split(RegExp(r'\s+'))
@@ -50,13 +49,17 @@ class _CameraPreviewScreenState extends State<CameraPreviewScreen> {
   }
 
   Future<void> _analyzeImage() async {
-    final result = await context.read<WardrobeProvider>().analyzeImage(widget.image);
+    final result = await context.read<WardrobeProvider>().analyzeImage(
+      widget.image,
+    );
     if (!mounted) return;
     if (result != null) {
       _analysis = result;
       if (_name.text.trim().isEmpty) {
         final brand = result.brand == null ? '' : '${result.brand} ';
-        _name.text = _titleCase('$brand${result.color} ${result.category}'.trim());
+        _name.text = _titleCase(
+          '$brand${result.color} ${result.category}'.trim(),
+        );
       }
       if (_brand.text.trim().isEmpty && result.brand != null) {
         _brand.text = result.brand!;
@@ -65,7 +68,9 @@ class _CameraPreviewScreenState extends State<CameraPreviewScreen> {
       _color ??= result.color;
       _season ??= result.season;
       _formality ??= result.formality;
-      if (_description.text.trim().isEmpty) _description.text = result.description;
+      if (_description.text.trim().isEmpty) {
+        _description.text = result.description;
+      }
     }
     setState(() => _analyzingImage = false);
   }
@@ -81,7 +86,7 @@ class _CameraPreviewScreenState extends State<CameraPreviewScreen> {
 
   Future<void> _save() async {
     final wardrobe = context.read<WardrobeProvider>();
-    final created = await wardrobe.upload(
+    await wardrobe.uploadOptimistically(
       image: widget.image,
       name: _name.text.trim().isEmpty ? 'New wardrobe item' : _name.text,
       category: _category.text.trim().isEmpty ? 'other' : _category.text,
@@ -94,16 +99,7 @@ class _CameraPreviewScreenState extends State<CameraPreviewScreen> {
       aiAnalysis: _analysis,
     );
     if (!mounted) return;
-    if (created != null) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => ItemDetailScreen(itemId: created.id)),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(wardrobe.error ?? 'Upload failed.')),
-      );
-    }
+    Navigator.pop(context, true);
   }
 
   @override
@@ -146,7 +142,11 @@ class _CameraPreviewScreenState extends State<CameraPreviewScreen> {
                   SizedBox(width: DesignSystem.spacingMd),
                   Expanded(
                     child: Text(
-                      'AI is analyzing this photo. You can review and edit the detected details before saving.',
+                      _analyzingImage
+                          ? 'AI is identifying the item and auto-filling every detail.'
+                          : _analysis != null
+                          ? 'Details were auto-filled by AI. Review or edit anything before saving.'
+                          : 'AI could not auto-fill this photo. You can still enter the details manually.',
                     ),
                   ),
                   if (_analyzingImage)
@@ -284,7 +284,7 @@ class _CameraPreviewScreenState extends State<CameraPreviewScreen> {
                 const SizedBox(width: DesignSystem.spacingMd),
                 Expanded(
                   child: FilledButton.icon(
-                    onPressed: uploading ? null : _save,
+                    onPressed: uploading || _analyzingImage ? null : _save,
                     icon: uploading
                         ? const SizedBox.square(
                             dimension: 18,
@@ -296,7 +296,13 @@ class _CameraPreviewScreenState extends State<CameraPreviewScreen> {
                             ),
                           )
                         : const Icon(Icons.cloud_upload_outlined),
-                    label: Text(uploading ? 'Uploading…' : 'Save item'),
+                    label: Text(
+                      _analyzingImage
+                          ? 'Auto-filling…'
+                          : uploading
+                          ? 'Saving…'
+                          : 'Save item',
+                    ),
                     style: FilledButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
                         vertical: DesignSystem.spacingMd,

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../config/design_system.dart';
+import '../models/clothing_analysis.dart';
 import '../providers/wardrobe_provider.dart';
 
 const int maxBatchImages = 3;
@@ -24,6 +25,7 @@ class _BatchAddScreenState extends State<BatchAddScreen> {
   int? _uploadingIndex;
 
   bool get _uploading => _uploadingIndex != null;
+  bool get _analyzing => _drafts.any((draft) => draft.analyzing);
 
   @override
   void initState() {
@@ -32,6 +34,32 @@ class _BatchAddScreenState extends State<BatchAddScreen> {
         .take(maxBatchImages)
         .map(_BatchItemDraft.new)
         .toList();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _analyzeDrafts());
+  }
+
+  Future<void> _analyzeDrafts() async {
+    for (final draft in _drafts) {
+      if (!mounted) return;
+      setState(() => draft.analyzing = true);
+      final analysis = await context.read<WardrobeProvider>().analyzeImage(
+        draft.image,
+      );
+      if (!mounted) return;
+      if (analysis != null) {
+        draft.analysis = analysis;
+        final brand = analysis.brand == null ? '' : '${analysis.brand} ';
+        draft.name.text = _titleCase(
+          '$brand${analysis.color} ${analysis.category}'.trim(),
+        );
+        draft.brand.text = analysis.brand ?? '';
+        draft.category.text = analysis.category;
+        draft.color.text = analysis.color;
+        draft.season = analysis.season;
+        draft.formality = analysis.formality;
+        draft.description.text = analysis.description;
+      }
+      setState(() => draft.analyzing = false);
+    }
   }
 
   @override
@@ -55,7 +83,7 @@ class _BatchAddScreenState extends State<BatchAddScreen> {
   }
 
   Future<void> _saveAll() async {
-    if (_uploading) return;
+    if (_uploading || _analyzing) return;
     final selected = _drafts.where((draft) => draft.selected).toList();
 
     var uploaded = 0;
@@ -67,7 +95,7 @@ class _BatchAddScreenState extends State<BatchAddScreen> {
         _uploadingIndex = index;
         draft.error = null;
       });
-      final created = await context.read<WardrobeProvider>().upload(
+      await context.read<WardrobeProvider>().uploadOptimistically(
         image: draft.image,
         name: draft.name.text.trim().isEmpty
             ? 'New wardrobe item ${index + 1}'
@@ -75,21 +103,17 @@ class _BatchAddScreenState extends State<BatchAddScreen> {
         category: draft.category.text.trim().isEmpty
             ? 'other'
             : draft.category.text,
+        brand: draft.brand.text,
         color: draft.color.text,
         season: draft.season,
         formality: draft.formality,
         description: draft.description.text,
+        tags: draft.analysis?.tags ?? const [],
+        aiAnalysis: draft.analysis,
       );
       if (!mounted) return;
-      if (created == null) {
-        setState(() {
-          draft.error =
-              context.read<WardrobeProvider>().error ?? 'Upload failed.';
-        });
-      } else {
-        setState(() => draft.uploaded = true);
-        uploaded++;
-      }
+      setState(() => draft.uploaded = true);
+      uploaded++;
     }
     if (!mounted) return;
     setState(() => _uploadingIndex = null);
@@ -209,15 +233,17 @@ class _BatchAddScreenState extends State<BatchAddScreen> {
               child: SizedBox(
                 width: double.infinity,
                 child: FilledButton.icon(
-                  onPressed: _uploading ? null : _saveAll,
-                  icon: _uploading
+                  onPressed: _uploading || _analyzing ? null : _saveAll,
+                  icon: _uploading || _analyzing
                       ? const SizedBox.square(
                           dimension: 18,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.cloud_upload_outlined),
                   label: Text(
-                    _uploading
+                    _analyzing
+                        ? 'Auto-filling item details…'
+                        : _uploading
                         ? 'Uploading photo ${(_uploadingIndex ?? 0) + 1} of ${_drafts.length}'
                         : 'Add $selectedCount ${selectedCount == 1 ? 'item' : 'items'}',
                   ),
@@ -282,9 +308,20 @@ class _BatchDraftPage extends StatelessWidget {
         ),
         child: Image.file(draft.image, fit: BoxFit.contain),
       ),
-      if (uploading) ...[
+      if (uploading || draft.analyzing) ...[
         const SizedBox(height: 12),
-        LinearProgressIndicator(semanticsLabel: 'Uploading image'),
+        LinearProgressIndicator(
+          semanticsLabel: draft.analyzing
+              ? 'Auto-filling item details'
+              : 'Saving image',
+        ),
+        const SizedBox(height: 6),
+        Text(
+          draft.analyzing
+              ? 'AI is identifying this item and filling every field…'
+              : 'Saving locally and syncing in the background…',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
       ],
       if (draft.error != null) ...[
         const SizedBox(height: 12),
@@ -310,6 +347,15 @@ class _BatchDraftPage extends StatelessWidget {
         decoration: const InputDecoration(
           labelText: 'Item name (optional)',
           prefixIcon: Icon(Icons.label_outline),
+        ),
+      ),
+      const SizedBox(height: 14),
+      TextField(
+        controller: draft.brand,
+        enabled: !disabled && draft.selected,
+        decoration: const InputDecoration(
+          labelText: 'Brand',
+          prefixIcon: Icon(Icons.workspace_premium_outlined),
         ),
       ),
       const SizedBox(height: 14),
@@ -402,6 +448,7 @@ class _BatchItemDraft {
 
   final File image;
   final name = TextEditingController();
+  final brand = TextEditingController();
   final category = TextEditingController();
   final color = TextEditingController();
   final description = TextEditingController();
@@ -410,11 +457,20 @@ class _BatchItemDraft {
   String? error;
   bool selected = true;
   bool uploaded = false;
+  bool analyzing = false;
+  ClothingAnalysis? analysis;
 
   void dispose() {
     name.dispose();
+    brand.dispose();
     category.dispose();
     color.dispose();
     description.dispose();
   }
 }
+
+String _titleCase(String value) => value
+    .split(RegExp(r'\s+'))
+    .where((word) => word.isNotEmpty)
+    .map((word) => '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}')
+    .join(' ');
