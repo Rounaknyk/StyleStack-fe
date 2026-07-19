@@ -14,6 +14,57 @@ import '../services/notification_service.dart';
 import '../services/api_service.dart';
 import 'outfit_history_screen.dart';
 
+Future<bool> showDeleteAccountConfirmation(BuildContext context) async {
+  var canDelete = false;
+  return await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) => StatefulBuilder(
+          builder: (context, setDialogState) => AlertDialog(
+            title: const Text('Delete your account?'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'This permanently deletes your wardrobe photos, outfits, '
+                  'style history, calendar data, preferences, notifications, '
+                  'and StyleStack sign-in account. This cannot be undone.',
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  autocorrect: false,
+                  textCapitalization: TextCapitalization.characters,
+                  decoration: const InputDecoration(
+                    labelText: 'Type DELETE to confirm',
+                  ),
+                  onChanged: (value) => setDialogState(
+                    () => canDelete = value.trim().toUpperCase() == 'DELETE',
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: const Text('Keep account'),
+              ),
+              FilledButton(
+                style: FilledButton.styleFrom(
+                  backgroundColor: DesignSystem.error,
+                ),
+                onPressed: canDelete
+                    ? () => Navigator.pop(dialogContext, true)
+                    : null,
+                child: const Text('Delete permanently'),
+              ),
+            ],
+          ),
+        ),
+      ) ??
+      false;
+}
+
 class ProfileSettingsView extends StatefulWidget {
   const ProfileSettingsView({super.key});
   @override
@@ -253,57 +304,8 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
 
   Future<void> _deleteAccount() async {
     if (_deletingAccount) return;
-    final confirmation = TextEditingController();
-    var canDelete = false;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Delete your account?'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'This permanently deletes your wardrobe photos, outfits, '
-                'style history, calendar data, preferences, notifications, '
-                'and StyleStack sign-in account. This cannot be undone.',
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: confirmation,
-                autocorrect: false,
-                textCapitalization: TextCapitalization.characters,
-                decoration: const InputDecoration(
-                  labelText: 'Type DELETE to confirm',
-                ),
-                onChanged: (value) => setDialogState(
-                  () => canDelete = value.trim().toUpperCase() == 'DELETE',
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('Keep account'),
-            ),
-            FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: DesignSystem.error,
-              ),
-              onPressed: canDelete
-                  ? () => Navigator.pop(dialogContext, true)
-                  : null,
-              child: const Text('Delete permanently'),
-            ),
-          ],
-        ),
-      ),
-    );
-    confirmation.dispose();
-    if (confirmed != true || !mounted) return;
+    final confirmed = await showDeleteAccountConfirmation(context);
+    if (!confirmed || !mounted) return;
 
     setState(() => _deletingAccount = true);
     try {
