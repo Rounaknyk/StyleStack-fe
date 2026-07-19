@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'config/design_system.dart';
+import 'config/brand_logo.dart';
 import 'config/runtime_config.dart';
 import 'providers/auth_provider.dart';
 import 'providers/gmail_sync_provider.dart';
@@ -205,7 +206,7 @@ class _StartupView extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.checkroom_rounded, size: 48, color: DesignSystem.primary),
+          StyleStackLogo(size: 58),
           SizedBox(height: 18),
           CircularProgressIndicator(),
         ],

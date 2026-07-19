@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../config/design_system.dart';
+import '../config/brand_logo.dart';
 import '../providers/auth_provider.dart';
 
 enum _AuthPanel { chooser, phone, email }
@@ -490,9 +491,8 @@ class _BrandHeader extends StatelessWidget {
             ),
             boxShadow: DesignSystem.shadowSoft,
           ),
-          child: Icon(
-            Icons.checkroom_rounded,
-            size: compact ? 30 : 40,
+          child: StyleStackLogo(
+            size: compact ? 34 : 48,
             color: Colors.white,
           ),
         ),
