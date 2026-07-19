@@ -416,6 +416,38 @@ class WardrobeProvider extends ChangeNotifier {
     }
   }
 
+  Future<WardrobeItem?> retryItemProcessing(String itemId) async {
+    _error = null;
+    try {
+      final item = await _api.retryItemProcessing(itemId);
+      final index = _items.indexWhere((existing) => existing.id == itemId);
+      if (index >= 0) {
+        _items = [..._items]..[index] = item;
+      } else {
+        _items = [item, ..._items];
+      }
+      final ownerUid = _ownerUid;
+      if (ownerUid != null) {
+        try {
+          await _cache.upsert(ownerUid, item);
+        } catch (_) {
+          // Keep the fresh server item in memory.
+        }
+      }
+      _scheduleTagRefresh();
+      notifyListeners();
+      return item;
+    } on ApiException catch (error) {
+      _error = error.message;
+      notifyListeners();
+      return null;
+    } catch (_) {
+      _error = 'Could not retry analysis. Enter the details manually.';
+      notifyListeners();
+      return null;
+    }
+  }
+
   Future<WardrobeItem?> updateItem(
     String itemId,
     Map<String, dynamic> fields,

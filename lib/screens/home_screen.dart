@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
@@ -11,6 +12,7 @@ import '../config/design_system.dart';
 import '../config/custom_widgets.dart';
 import '../models/wardrobe_item.dart';
 import '../providers/auth_provider.dart';
+import '../providers/gmail_sync_provider.dart';
 import '../providers/wardrobe_provider.dart';
 import 'camera_preview_screen.dart';
 import 'batch_add_screen.dart';
@@ -49,7 +51,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _chooseImageSource() async {
-    final source = await showModalBottomSheet<ImageSource>(
+    final gmailSync = context.read<GmailSyncProvider>();
+    final source = await showModalBottomSheet<_AddItemSource>(
       context: context,
       showDragHandle: true,
       builder: (context) => SafeArea(
@@ -68,7 +71,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 leading: const Icon(Icons.camera_alt_outlined),
                 title: const Text('Take a photo'),
                 subtitle: const Text('Open the camera'),
-                onTap: () => Navigator.pop(context, ImageSource.camera),
+                onTap: () => Navigator.pop(context, _AddItemSource.camera),
               ),
               ListTile(
                 leading: const Icon(Icons.photo_library_outlined),
@@ -76,7 +79,26 @@ class _HomeScreenState extends State<HomeScreen> {
                 subtitle: const Text(
                   'Select up to $maxBatchImages photos for batch adding',
                 ),
-                onTap: () => Navigator.pop(context, ImageSource.gallery),
+                onTap: () => Navigator.pop(context, _AddItemSource.gallery),
+              ),
+              ListTile(
+                enabled: !gmailSync.isRunning,
+                leading: const Icon(Icons.mark_email_read_outlined),
+                title: Text(
+                  gmailSync.isRunning
+                      ? 'Closet Sync is running'
+                      : 'Fetch purchases from Gmail',
+                ),
+                subtitle: Text(
+                  gmailSync.isRunning
+                      ? 'You can keep using StyleStack'
+                      : gmailSync.result == null
+                      ? 'Connect the Gmail used for your shopping receipts'
+                      : '${gmailSync.result?['imported_items'] ?? 0} items added or refreshed in the last sync',
+                ),
+                onTap: gmailSync.isRunning
+                    ? null
+                    : () => Navigator.pop(context, _AddItemSource.gmail),
               ),
             ],
           ),
@@ -84,11 +106,48 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
     if (source == null || !mounted) return;
-    if (source == ImageSource.gallery) {
+    if (source == _AddItemSource.gmail) {
+      await _startGmailSync();
+    } else if (source == _AddItemSource.gallery) {
       await _pickGalleryBatch();
     } else {
-      await _pickImage(source);
+      await _pickImage(ImageSource.camera);
     }
+  }
+
+  Future<void> _startGmailSync() async {
+    final approved = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Bring purchases into your wardrobe'),
+        content: const Text(
+          'Connect the Gmail account you use for Amazon, Myntra or Flipkart. StyleStack reads only supported delivered-purchase emails needed for Closet Sync; it never stores your Gmail access token. During this pilot, automatic extraction is available for confirmed Amazon deliveries and imports up to 10 new delivery emails per sync. Run it again to continue older purchases.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Not now'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Connect Gmail'),
+          ),
+        ],
+      ),
+    );
+    if (approved != true || !mounted) return;
+    final wardrobe = context.read<WardrobeProvider>();
+    final sync = context.read<GmailSyncProvider>();
+    unawaited(
+      sync.start(refreshWardrobe: () => wardrobe.loadItems(force: true)),
+    );
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Closet Sync started. You can continue using StyleStack.',
+        ),
+      ),
+    );
   }
 
   Future<void> _pickGalleryBatch() async {
@@ -237,13 +296,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
-      floatingActionButton: _tab == 0
-          ? FloatingActionButton.extended(
-              onPressed: _startOutfitSelfie,
-              icon: const Icon(Icons.camera_alt_outlined),
-              label: const Text('Outfit Selfie'),
-            )
-          : _tab == 1
+      floatingActionButton: _tab == 1
           ? FloatingActionButton.extended(
               onPressed: _chooseImageSource,
               icon: const Icon(Icons.add_photo_alternate_outlined),
@@ -293,6 +346,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
+
+enum _AddItemSource { camera, gallery, gmail }
 
 enum _WardrobeSort { newest, oldest, mostWorn }
 
@@ -747,6 +802,21 @@ class _WardrobeViewState extends State<WardrobeView> {
                     child: _ItemCard(
                       item: item,
                       selected: _selectedIds.contains(item.id),
+                      onRetry: item.aiTagStatus == 'failed'
+                          ? () async {
+                              final retried = await wardrobe
+                                  .retryItemProcessing(item.id);
+                              if (!context.mounted || retried != null) return;
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    wardrobe.error ??
+                                        'Could not retry analysis.',
+                                  ),
+                                ),
+                              );
+                            }
+                          : null,
                       onLongPress: item.isUploading
                           ? null
                           : () => _toggleSelection(item.id),
@@ -924,11 +994,13 @@ class _ItemCard extends StatelessWidget {
   const _ItemCard({
     required this.item,
     required this.selected,
+    this.onRetry,
     this.onTap,
     this.onLongPress,
   });
   final WardrobeItem item;
   final bool selected;
+  final VoidCallback? onRetry;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
 
@@ -1153,6 +1225,46 @@ class _ItemCard extends StatelessWidget {
                     ],
                   ),
                 ),
+              ),
+            ),
+          if (!item.isUploading && item.aiTagStatus == 'failed')
+            Positioned(
+              left: 8,
+              right: 8,
+              bottom: 8,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: FilledButton(
+                      onPressed: onRetry,
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size(0, 34),
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                        textStyle: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      child: const Text('Retry'),
+                    ),
+                  ),
+                  const SizedBox(width: 5),
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: onTap,
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size(0, 34),
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        backgroundColor: Colors.white,
+                        textStyle: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      child: const Text('Enter manually'),
+                    ),
+                  ),
+                ],
               ),
             ),
 

@@ -164,7 +164,7 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
       builder: (context) => AlertDialog(
         title: const Text('Connect Gmail?'),
         content: const Text(
-          'StyleStack will scan only delivered Amazon order emails and add eligible fashion items to your wardrobe. Gmail tokens are never logged or stored.',
+          'Connect the Gmail account you use for Amazon, Myntra or Flipkart. StyleStack reads only supported delivered-purchase emails needed for Closet Sync and never stores your Gmail token. During this pilot, automatic extraction is available for confirmed Amazon deliveries and imports up to 10 new delivery emails per sync. Run it again to continue older purchases.',
         ),
         actions: [
           TextButton(
@@ -510,11 +510,11 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
                   GmailSyncPhase.connecting =>
                     'Choose your Google account to begin securely',
                   GmailSyncPhase.syncing =>
-                    'Only confirmed Amazon delivery emails are scanned',
+                    'Checking supported confirmed delivery emails',
                   GmailSyncPhase.refreshing =>
                     'Applying the latest items and AI details',
                   GmailSyncPhase.idle =>
-                    'Imports only delivered Amazon order emails',
+                    'Use the Gmail linked to your shopping accounts. Amazon imports are available now.',
                 },
                 trailing: gmailSync.isRunning
                     ? const SizedBox.square(

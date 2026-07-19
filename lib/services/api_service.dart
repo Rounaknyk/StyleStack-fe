@@ -399,6 +399,16 @@ class ApiService {
     return WardrobeItem.fromJson(_decode(response) as Map<String, dynamic>);
   }
 
+  Future<WardrobeItem> retryItemProcessing(String itemId) async {
+    final response = await _client.post(
+      Uri.parse(
+        '${RuntimeConfig.apiBaseUrl}/wardrobe/items/$itemId/retry-processing',
+      ),
+      headers: {'Authorization': 'Bearer ${await _token()}'},
+    );
+    return WardrobeItem.fromJson(_decode(response) as Map<String, dynamic>);
+  }
+
   Future<WardrobeItem> updateItem(
     String itemId,
     Map<String, dynamic> fields,

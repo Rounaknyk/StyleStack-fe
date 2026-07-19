@@ -98,6 +98,9 @@ class StyleStackButton extends StatelessWidget {
       _ButtonSize.medium => 44.0,
       _ButtonSize.large => 48.0,
     };
+    final contentColor = variant == _ButtonVariant.filled
+        ? Colors.white
+        : DesignSystem.primary;
 
     return SizedBox(
       height: height,
@@ -109,18 +112,26 @@ class StyleStackButton extends StatelessWidget {
           padding: const EdgeInsets.symmetric(
             horizontal: DesignSystem.spacingMd,
           ),
-          child: Center(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (isLoading)
-                  const FCircularProgress.loader(size: .sm)
-                else if (icon != null)
-                  Icon(icon),
-                if (isLoading || icon != null)
-                  const SizedBox(width: DesignSystem.spacingSm),
-                Flexible(child: Text(label, overflow: TextOverflow.ellipsis)),
-              ],
+          child: IconTheme(
+            data: IconThemeData(color: contentColor),
+            child: DefaultTextStyle.merge(
+              style: TextStyle(color: contentColor),
+              child: Center(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (isLoading)
+                      const FCircularProgress.loader(size: .sm)
+                    else if (icon != null)
+                      Icon(icon),
+                    if (isLoading || icon != null)
+                      const SizedBox(width: DesignSystem.spacingSm),
+                    Flexible(
+                      child: Text(label, overflow: TextOverflow.ellipsis),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ),

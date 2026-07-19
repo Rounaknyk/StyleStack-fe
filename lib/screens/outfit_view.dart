@@ -62,8 +62,7 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
         // the slower AI request for one never delays the other.
         await Future.wait([
           mvp.generateEventOutfit(city, event),
-          if (refresh || mvp.outfit == null)
-            mvp.generateOutfit(city, 'daily'),
+          if (refresh || mvp.outfit == null) mvp.generateOutfit(city, 'daily'),
         ]);
       } else if (refresh || mvp.outfit == null) {
         await mvp.generateOutfit(city, 'daily');
@@ -259,7 +258,9 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  priorityEvent == null ? 'STYLE EDIT  /  TODAY' : 'PRIORITY EDIT',
+                  priorityEvent == null
+                      ? 'STYLE EDIT  /  TODAY'
+                      : 'PRIORITY EDIT',
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
                     color: DesignSystem.secondaryLight,
                     fontWeight: FontWeight.w800,
@@ -412,7 +413,8 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
             _WardrobeGate(
               icon: Icons.checkroom_outlined,
               title: 'Build your style library',
-              body: 'Add pieces from your closet and your stylist will create looks from what you actually own.',
+              body:
+                  'Add pieces from your closet and your stylist will create looks from what you actually own.',
               action: 'Add items',
               onPressed: widget.onAddItem,
               secondaryAction: 'Try again',
@@ -451,6 +453,8 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
                 padding: EdgeInsets.only(top: 8),
               ),
           ],
+          const SizedBox(height: 24),
+          _OutfitSelfieExplainer(onPressed: widget.onOutfitSelfie),
         ],
       ),
     );
@@ -821,71 +825,144 @@ class _InspirationStrip extends StatelessWidget {
       Text('See the vibe', style: Theme.of(context).textTheme.headlineSmall),
       const SizedBox(height: 4),
       Text(
-        'A little visual inspiration for the look from your own wardrobe.',
+        'Open a general style moodboard inspired by this look.',
         style: Theme.of(context).textTheme.bodySmall,
       ),
       const SizedBox(height: 10),
-      if (images.isEmpty)
+      OutlinedButton.icon(
+        onPressed: () {
+          if (images.isEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('A style moodboard is unavailable right now.'),
+              ),
+            );
+            return;
+          }
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => _VibeMoodboardScreen(images: images),
+            ),
+          );
+        },
+        icon: const Icon(Icons.auto_awesome_outlined),
+        label: const Text('See the vibe'),
+      ),
+    ],
+  );
+}
+
+class _VibeMoodboardScreen extends StatelessWidget {
+  const _VibeMoodboardScreen({required this.images});
+  final List<Map<String, dynamic>> images;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('The vibe')),
+    body: ListView(
+      padding: const EdgeInsets.fromLTRB(18, 8, 18, 32),
+      children: [
         Container(
-          width: double.infinity,
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: DesignSystem.surfaceAlt,
-            borderRadius: BorderRadius.circular(DesignSystem.radiusMd),
+            color: DesignSystem.secondary.withValues(alpha: .12),
+            borderRadius: BorderRadius.circular(DesignSystem.radiusLg),
           ),
-          child: Row(
+          child: const Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.auto_awesome, color: DesignSystem.primary),
-              const SizedBox(width: 10),
+              Icon(Icons.info_outline, color: DesignSystem.primary),
+              SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  'Style references will appear here when available.',
-                  style: Theme.of(context).textTheme.bodySmall,
+                  'This is a moodboard, not an exact outfit match. These editorial references use broad colour, occasion and style cues. Use them for the overall energy, silhouette and styling direction; the wardrobe pieces on Today remain your actual recommendation.',
                 ),
-              ),
-              OutlinedButton(
-                onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      'Style references are unavailable right now.',
-                    ),
-                  ),
-                ),
-                child: const Text('See the vibe'),
               ),
             ],
           ),
-        )
-      else
-        SizedBox(
-          height: 178,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: images.length,
-            separatorBuilder: (_, _) => const SizedBox(width: 10),
-            itemBuilder: (context, index) {
-              final image = images[index];
-              final url = image['image_url']?.toString();
-              return ClipRRect(
-                borderRadius: BorderRadius.circular(DesignSystem.radiusMd),
-                child: SizedBox(
-                  width: 120,
-                  child: url == null
-                      ? const ColoredBox(color: DesignSystem.surfaceAlt)
-                      : Image.network(
-                          url,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, _, _) => const ColoredBox(
-                            color: DesignSystem.surfaceAlt,
-                            child: Icon(Icons.image_not_supported_outlined),
-                          ),
-                        ),
-                ),
-              );
-            },
-          ),
         ),
-    ],
+        const SizedBox(height: 18),
+        ...images.map((image) {
+          final url = image['image_url']?.toString();
+          if (url == null || url.isEmpty) return const SizedBox.shrink();
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 14),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(DesignSystem.radiusLg),
+              child: AspectRatio(
+                aspectRatio: 3 / 4,
+                child: Image.network(
+                  url,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => const ColoredBox(
+                    color: DesignSystem.surfaceAlt,
+                    child: Center(
+                      child: Icon(Icons.image_not_supported_outlined),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }),
+      ],
+    ),
+  );
+}
+
+class _OutfitSelfieExplainer extends StatelessWidget {
+  const _OutfitSelfieExplainer({required this.onPressed});
+  final Future<void> Function() onPressed;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(18),
+    decoration: BoxDecoration(
+      color: DesignSystem.surface,
+      borderRadius: BorderRadius.circular(DesignSystem.radiusXl),
+      border: Border.all(color: DesignSystem.border),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: DesignSystem.primary.withValues(alpha: .09),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.camera_alt_outlined,
+                color: DesignSystem.primary,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'Teach your stylist what you actually wear',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'Take one outfit selfie after getting dressed. StyleStack identifies visible pieces, asks you to confirm every match, logs the confirmed items as worn, and builds your private visual outfit history. This helps avoid repetitive suggestions.',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.45),
+        ),
+        const SizedBox(height: 14),
+        FilledButton.icon(
+          onPressed: onPressed,
+          icon: const Icon(Icons.camera_alt_outlined),
+          label: const Text('Take an outfit selfie'),
+        ),
+      ],
+    ),
   );
 }
 

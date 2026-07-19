@@ -17,15 +17,24 @@ class ItemDetailScreen extends StatefulWidget {
 }
 
 class _ItemDetailScreenState extends State<ItemDetailScreen> {
+  static const _seasonOptions = ['summer', 'winter', 'spring', 'autumn', 'all'];
+  static const _formalityOptions = [
+    'casual',
+    'sporty',
+    'semi-formal',
+    'formal',
+  ];
   final _name = TextEditingController();
   final _category = TextEditingController();
-  final _season = TextEditingController();
-  final _formality = TextEditingController();
   final _description = TextEditingController();
+  final _editSectionKey = GlobalKey();
   String? _color;
+  String? _season;
+  String? _formality;
   WardrobeItem? _item;
   Timer? _pollTimer;
   bool _saving = false;
+  bool _retrying = false;
   bool _seeded = false;
 
   @override
@@ -56,8 +65,10 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
           ? ''
           : item.category;
       _color = item.color;
-      _season.text = item.seasons.isEmpty ? '' : item.seasons.first;
-      _formality.text = item.formality ?? '';
+      _season = _normalizedSeason(
+        item.seasons.isEmpty ? null : item.seasons.first,
+      );
+      _formality = _normalizedFormality(item.formality);
       _description.text = item.description ?? '';
       _seeded = true;
     }
@@ -67,15 +78,64 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
     if ((_color == null || _color!.trim().isEmpty) && item.aiColor != null) {
       _color = item.aiColor!;
     }
-    if (_season.text.trim().isEmpty && item.aiSeason != null) {
-      _season.text = item.aiSeason!;
+    if (_season == null && item.aiSeason != null) {
+      _season = _normalizedSeason(item.aiSeason);
     }
-    if (_formality.text.trim().isEmpty && item.aiFormality != null) {
-      _formality.text = item.aiFormality!;
+    if (_formality == null && item.aiFormality != null) {
+      _formality = _normalizedFormality(item.aiFormality);
     }
     if (_description.text.trim().isEmpty && item.aiDescription != null) {
       _description.text = item.aiDescription!;
     }
+  }
+
+  String? _normalizedSeason(String? value) {
+    final normalized = value?.trim().toLowerCase();
+    if (normalized == 'fall') return 'autumn';
+    return _seasonOptions.contains(normalized) ? normalized : null;
+  }
+
+  String? _normalizedFormality(String? value) {
+    final normalized = value?.trim().toLowerCase();
+    if (normalized == 'smart casual' || normalized == 'smart-casual') {
+      return 'semi-formal';
+    }
+    return _formalityOptions.contains(normalized) ? normalized : null;
+  }
+
+  Future<void> _retryAnalysis() async {
+    if (_retrying) return;
+    setState(() => _retrying = true);
+    final item = await context.read<WardrobeProvider>().retryItemProcessing(
+      widget.itemId,
+    );
+    if (!mounted) return;
+    setState(() {
+      _retrying = false;
+      if (item != null) _item = item;
+    });
+    if (item != null) {
+      _pollTimer ??= Timer.periodic(const Duration(seconds: 2), (_) => _load());
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          context.read<WardrobeProvider>().error ??
+              'Could not retry analysis. Enter details manually.',
+        ),
+      ),
+    );
+  }
+
+  void _editManually() {
+    final editContext = _editSectionKey.currentContext;
+    if (editContext == null) return;
+    Scrollable.ensureVisible(
+      editContext,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
   }
 
   Future<void> _save() async {
@@ -94,12 +154,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
         'color': _color == null || _color!.trim().isEmpty
             ? null
             : _color!.trim(),
-        'season': _season.text.trim().isEmpty
-            ? <String>[]
-            : [_season.text.trim().toLowerCase()],
-        'formality': _formality.text.trim().isEmpty
-            ? null
-            : _formality.text.trim().toLowerCase(),
+        'season': _season == null ? <String>[] : [_season!],
+        'formality': _formality,
         'description': _description.text.trim().isEmpty
             ? null
             : _description.text.trim(),
@@ -122,13 +178,7 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   @override
   void dispose() {
     _pollTimer?.cancel();
-    for (final controller in [
-      _name,
-      _category,
-      _season,
-      _formality,
-      _description,
-    ]) {
+    for (final controller in [_name, _category, _description]) {
       controller.dispose();
     }
     super.dispose();
@@ -191,11 +241,19 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                 const SizedBox(height: DesignSystem.spacingXxl),
 
                 // AI Result Card
-                _AiResultCard(item: item),
+                _AiResultCard(
+                  item: item,
+                  retrying: _retrying,
+                  onRetry: _retryAnalysis,
+                  onEditManually: _editManually,
+                ),
                 const SizedBox(height: DesignSystem.spacingXxl),
 
                 // Edit section
-                StyleStackSectionHeader(title: 'Edit Details'),
+                KeyedSubtree(
+                  key: _editSectionKey,
+                  child: const StyleStackSectionHeader(title: 'Edit Details'),
+                ),
                 const SizedBox(height: DesignSystem.spacingMd),
 
                 // Name field
@@ -234,9 +292,19 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                 Row(
                   children: [
                     Expanded(
-                      child: TextFormField(
-                        controller: _season,
-                        enabled: !_saving,
+                      child: DropdownButtonFormField<String>(
+                        initialValue: _season,
+                        items: _seasonOptions
+                            .map(
+                              (value) => DropdownMenuItem(
+                                value: value,
+                                child: Text(_titleCase(value)),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: _saving
+                            ? null
+                            : (value) => setState(() => _season = value),
                         decoration: const InputDecoration(
                           labelText: 'Season',
                           prefixIcon: Icon(Icons.calendar_month),
@@ -245,9 +313,19 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
                     ),
                     const SizedBox(width: DesignSystem.spacingMd),
                     Expanded(
-                      child: TextFormField(
-                        controller: _formality,
-                        enabled: !_saving,
+                      child: DropdownButtonFormField<String>(
+                        initialValue: _formality,
+                        items: _formalityOptions
+                            .map(
+                              (value) => DropdownMenuItem(
+                                value: value,
+                                child: Text(_titleCase(value)),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: _saving
+                            ? null
+                            : (value) => setState(() => _formality = value),
                         decoration: const InputDecoration(
                           labelText: 'Formality',
                           prefixIcon: Icon(Icons.event_outlined),
@@ -276,9 +354,25 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   }
 }
 
+String _titleCase(String value) => value
+    .split(RegExp(r'[- ]'))
+    .map(
+      (word) =>
+          word.isEmpty ? word : '${word[0].toUpperCase()}${word.substring(1)}',
+    )
+    .join(' ');
+
 class _AiResultCard extends StatelessWidget {
-  const _AiResultCard({required this.item});
+  const _AiResultCard({
+    required this.item,
+    required this.retrying,
+    required this.onRetry,
+    required this.onEditManually,
+  });
   final WardrobeItem item;
+  final bool retrying;
+  final VoidCallback onRetry;
+  final VoidCallback onEditManually;
 
   @override
   Widget build(BuildContext context) {
@@ -491,6 +585,35 @@ class _AiResultCard extends StatelessWidget {
                 ),
               ),
             ],
+          ] else if (!processing) ...[
+            const SizedBox(height: DesignSystem.spacingMd),
+            Row(
+              children: [
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: retrying ? null : onRetry,
+                    icon: retrying
+                        ? const SizedBox.square(
+                            dimension: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.refresh),
+                    label: const Text('Retry'),
+                  ),
+                ),
+                const SizedBox(width: DesignSystem.spacingSm),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: onEditManually,
+                    icon: const Icon(Icons.edit_outlined),
+                    label: const Text('Enter manually'),
+                  ),
+                ),
+              ],
+            ),
           ],
         ],
       ),
