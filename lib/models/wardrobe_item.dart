@@ -59,6 +59,8 @@ class WardrobeItem {
   String? get displayFormality => formality ?? aiFormality;
   String? get displaySeason => seasons.isNotEmpty ? seasons.first : aiSeason;
   String? get gridImageUrl => thumbnailUrl ?? imageUrl;
+  String get gridImageCacheKey =>
+      'wardrobe-$id-$aiTagStatus-${thumbnailUrl == null ? 'original' : 'thumbnail'}';
   String? get canvasImageUrl => cutoutUrl ?? imageUrl ?? thumbnailUrl;
 
   factory WardrobeItem.fromJson(Map<String, dynamic> json) => WardrobeItem(

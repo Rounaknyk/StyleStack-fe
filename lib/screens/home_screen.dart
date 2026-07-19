@@ -980,7 +980,8 @@ class _ItemCard extends StatelessWidget {
                             )
                           : CachedNetworkImage(
                               imageUrl: item.gridImageUrl!,
-                              cacheKey: 'wardrobe-${item.id}',
+                              key: ValueKey(item.gridImageCacheKey),
+                              cacheKey: item.gridImageCacheKey,
                               fit: BoxFit.contain,
                               placeholder: (context, url) => const Center(
                                 child: SizedBox.square(

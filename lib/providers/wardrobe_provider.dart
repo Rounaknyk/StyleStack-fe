@@ -233,6 +233,7 @@ class WardrobeProvider extends ChangeNotifier {
     _error = null;
     _items = [pending, ..._items];
     _loaded = true;
+    notifyListeners();
     final ownerUid = _ownerUid;
     if (ownerUid != null) {
       try {
@@ -241,7 +242,6 @@ class WardrobeProvider extends ChangeNotifier {
         // Keep the in-memory optimistic update even if local persistence fails.
       }
     }
-    notifyListeners();
     return pending;
   }
 
@@ -517,7 +517,7 @@ class WardrobeProvider extends ChangeNotifier {
       try {
         await CachedNetworkImage.evictFromCache(
           imageUrl,
-          cacheKey: 'wardrobe-${item.id}',
+          cacheKey: item.gridImageCacheKey,
         );
       } catch (_) {
         // Image-cache cleanup is best-effort.

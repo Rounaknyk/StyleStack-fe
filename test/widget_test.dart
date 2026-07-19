@@ -29,4 +29,24 @@ void main() {
 
     expect(item.gridImageUrl, 'https://example.test/incoming.jpg');
   });
+
+  test('processed thumbnail receives a fresh wardrobe image cache key', () {
+    final pending = WardrobeItem.fromJson({
+      'id': 'item-3',
+      'name': 'New wardrobe item',
+      'category': 'other',
+      'image_url': 'https://example.test/incoming.jpg',
+      'ai_tag_status': 'processing',
+    });
+    final completed = WardrobeItem.fromJson({
+      'id': 'item-3',
+      'name': 'Black shirt',
+      'category': 'shirt',
+      'image_url': 'https://example.test/processed.jpg',
+      'thumbnail_url': 'https://example.test/thumbnail.jpg',
+      'ai_tag_status': 'completed',
+    });
+
+    expect(pending.gridImageCacheKey, isNot(completed.gridImageCacheKey));
+  });
 }
