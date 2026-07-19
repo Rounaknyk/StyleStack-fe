@@ -85,6 +85,7 @@ class DesignSystem {
   /// they are replaced incrementally.
   static FThemeData buildForuiTheme() {
     final base = FTheme.neutral.light.touch;
+    final manrope = FTypeface(fontFamily: 'Manrope');
     return FThemeData(
       debugLabel: 'StyleStack ForUI',
       touch: true,
@@ -104,7 +105,7 @@ class DesignSystem {
         card: surface,
         border: border,
       ),
-      typography: base.typography,
+      typography: FTypography(display: manrope, body: manrope),
       style: base.style,
     );
   }
@@ -121,6 +122,7 @@ class DesignSystem {
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
+      fontFamily: 'Manrope',
 
       // Color scheme
       colorScheme: const ColorScheme.light(
@@ -150,6 +152,7 @@ class DesignSystem {
         elevation: 0,
         centerTitle: false,
         titleTextStyle: const TextStyle(
+          fontFamily: 'Manrope',
           fontSize: 19,
           fontWeight: FontWeight.w700,
           color: textPrimary,
@@ -161,35 +164,35 @@ class DesignSystem {
       // Text themes
       textTheme: TextTheme(
         displayLarge: const TextStyle(
-          fontFamily: 'Georgia',
+          fontFamily: 'Manrope',
           fontSize: 32,
           fontWeight: FontWeight.w700,
           color: textPrimary,
           letterSpacing: 0,
         ),
         displayMedium: const TextStyle(
-          fontFamily: 'Georgia',
+          fontFamily: 'Manrope',
           fontSize: 28,
           fontWeight: FontWeight.w700,
           color: textPrimary,
           letterSpacing: 0,
         ),
         displaySmall: const TextStyle(
-          fontFamily: 'Georgia',
+          fontFamily: 'Manrope',
           fontSize: 24,
           fontWeight: FontWeight.w700,
           color: textPrimary,
           letterSpacing: 0.15,
         ),
         headlineMedium: const TextStyle(
-          fontFamily: 'Georgia',
+          fontFamily: 'Manrope',
           fontSize: 20,
           fontWeight: FontWeight.w600,
           color: textPrimary,
           letterSpacing: 0.15,
         ),
         headlineSmall: const TextStyle(
-          fontFamily: 'Georgia',
+          fontFamily: 'Manrope',
           fontSize: 18,
           fontWeight: FontWeight.w600,
           color: textPrimary,

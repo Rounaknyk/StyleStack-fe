@@ -205,7 +205,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 titles[_tab],
                 style: _tab == 1
                     ? const TextStyle(
-                        fontFamily: 'Manrope',
                         fontWeight: FontWeight.w700,
                         letterSpacing: -0.4,
                       )
@@ -504,21 +503,6 @@ class _WardrobeViewState extends State<WardrobeView> {
       );
     }
     final visibleItems = _visibleItems(wardrobe.items);
-    final materialTheme = Theme.of(context);
-    final wardrobeTheme = materialTheme.copyWith(
-      textTheme: materialTheme.textTheme.apply(fontFamily: 'Manrope'),
-      primaryTextTheme: materialTheme.primaryTextTheme.apply(
-        fontFamily: 'Manrope',
-      ),
-    );
-    final manrope = FTypeface(fontFamily: 'Manrope');
-    final wardrobeForuiTheme = FThemeData(
-      debugLabel: 'Wardrobe Manrope preview',
-      colors: context.theme.colors,
-      touch: true,
-      typography: FTypography(display: manrope, body: manrope),
-    );
-
     final content = RefreshIndicator(
       onRefresh: () => wardrobe.loadItems(force: true),
       child: CustomScrollView(
@@ -527,23 +511,20 @@ class _WardrobeViewState extends State<WardrobeView> {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
-              child: FTheme(
-                data: wardrobeForuiTheme,
-                child: FTextField(
-                  control: FTextFieldControl.managed(
-                    controller: _searchController,
-                    onChange: (_) => setState(() {}),
-                  ),
-                  hint: 'Search your wardrobe',
-                  prefixBuilder: (context, style, variants) =>
-                      FTextField.prefixIconBuilder(
-                        context,
-                        style,
-                        variants,
-                        const Icon(Icons.search_rounded, size: 20),
-                      ),
-                  clearable: (value) => value.text.isNotEmpty,
+              child: FTextField(
+                control: FTextFieldControl.managed(
+                  controller: _searchController,
+                  onChange: (_) => setState(() {}),
                 ),
+                hint: 'Search your wardrobe',
+                prefixBuilder: (context, style, variants) =>
+                    FTextField.prefixIconBuilder(
+                      context,
+                      style,
+                      variants,
+                      const Icon(Icons.search_rounded, size: 20),
+                    ),
+                clearable: (value) => value.text.isNotEmpty,
               ),
             ),
           ),
@@ -680,7 +661,7 @@ class _WardrobeViewState extends State<WardrobeView> {
       ),
     );
 
-    return Theme(data: wardrobeTheme, child: content);
+    return content;
   }
 }
 
@@ -808,9 +789,10 @@ class _SortPill extends StatelessWidget {
         children: [
           Text(
             _label(value),
-            style: Theme.of(
-              context,
-            ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              color: DesignSystem.textPrimary,
+              fontWeight: FontWeight.w600,
+            ),
           ),
           const SizedBox(width: 4),
           const Icon(Icons.keyboard_arrow_down_rounded, size: 18),
@@ -836,103 +818,68 @@ class _ItemCard extends StatelessWidget {
   Widget build(BuildContext context) => GestureDetector(
     onTap: onTap,
     onLongPress: onLongPress,
-    child: AnimatedContainer(
-      duration: const Duration(milliseconds: 180),
+    child: ClipRRect(
+      borderRadius: BorderRadius.circular(20),
       clipBehavior: Clip.antiAlias,
-      decoration: BoxDecoration(
-        color: DesignSystem.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: selected ? DesignSystem.primary : DesignSystem.border,
-          width: selected ? 2 : 1,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        decoration: BoxDecoration(
+          color: DesignSystem.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: selected ? DesignSystem.primary : DesignSystem.border,
+            width: selected ? 2 : 1,
+          ),
         ),
-      ),
-      child: Stack(
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Container(
-                  width: double.infinity,
-                  color: Colors.white,
-                  padding: const EdgeInsets.all(8),
-                  child: item.gridImageUrl == null
-                      ? const Center(
-                          child: Icon(
-                            Icons.image_outlined,
-                            size: 48,
-                            color: DesignSystem.textTertiary,
-                          ),
-                        )
-                      : Image.network(
-                          item.gridImageUrl!,
-                          fit: BoxFit.contain,
-                          errorBuilder: (context, error, stackTrace) =>
-                              const Center(
-                                child: Icon(Icons.broken_image_outlined),
-                              ),
-                        ),
-                ),
-              ),
-
-              Padding(
-                padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: -0.15,
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            item.displayCategory,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: DesignSystem.textSecondary,
-                                  height: 1.2,
+        child: Stack(
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Container(
+                    width: double.infinity,
+                    color: Colors.white,
+                    padding: const EdgeInsets.all(8),
+                    child: item.gridImageUrl == null
+                        ? const Center(
+                            child: Icon(
+                              Icons.image_outlined,
+                              size: 48,
+                              color: DesignSystem.textTertiary,
+                            ),
+                          )
+                        : Image.network(
+                            item.gridImageUrl!,
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) =>
+                                const Center(
+                                  child: Icon(Icons.broken_image_outlined),
                                 ),
                           ),
+                  ),
+                ),
+
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: -0.15,
                         ),
-                        if (item.displayColor != null) ...[
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 6),
-                            child: Text(
-                              '·',
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(
-                                    color: DesignSystem.textTertiary,
-                                    height: 1.2,
-                                  ),
-                            ),
-                          ),
-                          Container(
-                            width: 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              color: _getColorFromString(item.displayColor!),
-                              shape: BoxShape.circle,
-                              border:
-                                  item.displayColor!.toLowerCase() == 'white'
-                                  ? Border.all(color: DesignSystem.border)
-                                  : null,
-                            ),
-                          ),
-                          const SizedBox(width: 5),
+                      ),
+                      const SizedBox(height: 5),
+                      Row(
+                        children: [
                           Flexible(
                             child: Text(
-                              item.displayColor!,
+                              item.displayCategory,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: Theme.of(context).textTheme.bodySmall
@@ -942,50 +889,90 @@ class _ItemCard extends StatelessWidget {
                                   ),
                             ),
                           ),
+                          if (item.displayColor != null) ...[
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                              ),
+                              child: Text(
+                                '·',
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(
+                                      color: DesignSystem.textTertiary,
+                                      height: 1.2,
+                                    ),
+                              ),
+                            ),
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: _getColorFromString(item.displayColor!),
+                                shape: BoxShape.circle,
+                                border:
+                                    item.displayColor!.toLowerCase() == 'white'
+                                    ? Border.all(color: DesignSystem.border)
+                                    : null,
+                              ),
+                            ),
+                            const SizedBox(width: 5),
+                            Flexible(
+                              child: Text(
+                                item.displayColor!,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(
+                                      color: DesignSystem.textSecondary,
+                                      height: 1.2,
+                                    ),
+                              ),
+                            ),
+                          ],
                         ],
-                      ],
-                    ),
-                  ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
-
-          // Selection indicator
-          if (selected)
-            Positioned(
-              top: DesignSystem.spacingMd,
-              right: DesignSystem.spacingMd,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: DesignSystem.primary,
-                  shape: BoxShape.circle,
-                ),
-                padding: const EdgeInsets.all(7),
-                child: const Icon(Icons.check, color: Colors.white, size: 16),
-              ),
+              ],
             ),
 
-          // Favorite indicator
-          if (item.isFavorite)
-            Positioned(
-              top: DesignSystem.spacingMd,
-              left: DesignSystem.spacingMd,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.94),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: DesignSystem.border),
-                ),
-                padding: const EdgeInsets.all(7),
-                child: const Icon(
-                  Icons.favorite_rounded,
-                  color: DesignSystem.error,
-                  size: 14,
+            // Selection indicator
+            if (selected)
+              Positioned(
+                top: DesignSystem.spacingMd,
+                right: DesignSystem.spacingMd,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: DesignSystem.primary,
+                    shape: BoxShape.circle,
+                  ),
+                  padding: const EdgeInsets.all(7),
+                  child: const Icon(Icons.check, color: Colors.white, size: 16),
                 ),
               ),
-            ),
-        ],
+
+            // Favorite indicator
+            if (item.isFavorite)
+              Positioned(
+                top: DesignSystem.spacingMd,
+                left: DesignSystem.spacingMd,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.94),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: DesignSystem.border),
+                  ),
+                  padding: const EdgeInsets.all(7),
+                  child: const Icon(
+                    Icons.favorite_rounded,
+                    color: DesignSystem.error,
+                    size: 14,
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     ),
   );
