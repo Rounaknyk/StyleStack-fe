@@ -198,7 +198,20 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final titles = ['Today', 'My Wardrobe', 'Outfit History', 'Profile'];
     return Scaffold(
-      appBar: _tab == 0 ? null : AppBar(title: Text(titles[_tab])),
+      appBar: _tab == 0
+          ? null
+          : AppBar(
+              title: Text(
+                titles[_tab],
+                style: _tab == 1
+                    ? const TextStyle(
+                        fontFamily: 'Manrope',
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.4,
+                      )
+                    : null,
+              ),
+            ),
       body: SafeArea(
         top: _tab == 0,
         child: IndexedStack(
@@ -491,30 +504,46 @@ class _WardrobeViewState extends State<WardrobeView> {
       );
     }
     final visibleItems = _visibleItems(wardrobe.items);
-    return RefreshIndicator(
+    final materialTheme = Theme.of(context);
+    final wardrobeTheme = materialTheme.copyWith(
+      textTheme: materialTheme.textTheme.apply(fontFamily: 'Manrope'),
+      primaryTextTheme: materialTheme.primaryTextTheme.apply(
+        fontFamily: 'Manrope',
+      ),
+    );
+    final manrope = FTypeface(fontFamily: 'Manrope');
+    final wardrobeForuiTheme = FThemeData(
+      debugLabel: 'Wardrobe Manrope preview',
+      colors: context.theme.colors,
+      touch: true,
+      typography: FTypography(display: manrope, body: manrope),
+    );
+
+    final content = RefreshIndicator(
       onRefresh: () => wardrobe.loadItems(force: true),
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-              child: SearchBar(
-                controller: _searchController,
-                hintText: 'Search description, category, color, brand',
-                leading: const Icon(Icons.search),
-                trailing: _searchController.text.isEmpty
-                    ? null
-                    : [
-                        IconButton(
-                          onPressed: () {
-                            _searchController.clear();
-                            setState(() {});
-                          },
-                          icon: const Icon(Icons.close),
-                        ),
-                      ],
-                onChanged: (_) => setState(() {}),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+              child: FTheme(
+                data: wardrobeForuiTheme,
+                child: FTextField(
+                  control: FTextFieldControl.managed(
+                    controller: _searchController,
+                    onChange: (_) => setState(() {}),
+                  ),
+                  hint: 'Search your wardrobe',
+                  prefixBuilder: (context, style, variants) =>
+                      FTextField.prefixIconBuilder(
+                        context,
+                        style,
+                        variants,
+                        const Icon(Icons.search_rounded, size: 20),
+                      ),
+                  clearable: (value) => value.text.isNotEmpty,
+                ),
               ),
             ),
           ),
@@ -524,25 +553,25 @@ class _WardrobeViewState extends State<WardrobeView> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Row(
                 children: [
-                  _FilterDropdown(
+                  _FilterPill(
                     label: 'Category',
                     value: _category,
                     values: _categories,
                     onChanged: (value) => setState(() => _category = value),
                   ),
-                  _FilterDropdown(
+                  _FilterPill(
                     label: 'Color',
                     value: _color,
                     values: _colors,
                     onChanged: (value) => setState(() => _color = value),
                   ),
-                  _FilterDropdown(
+                  _FilterPill(
                     label: 'Season',
                     value: _season,
                     values: _seasons,
                     onChanged: (value) => setState(() => _season = value),
                   ),
-                  _FilterDropdown(
+                  _FilterPill(
                     label: 'Formality',
                     value: _formality,
                     values: _formalities,
@@ -554,7 +583,7 @@ class _WardrobeViewState extends State<WardrobeView> {
           ),
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 8, 4),
+              padding: const EdgeInsets.fromLTRB(16, 6, 16, 6),
               child: _selectionMode
                   ? Row(
                       children: [
@@ -586,30 +615,17 @@ class _WardrobeViewState extends State<WardrobeView> {
                       children: [
                         Expanded(
                           child: Text(
-                            '${visibleItems.length} ${visibleItems.length == 1 ? 'item' : 'items'}',
-                            style: Theme.of(context).textTheme.titleMedium,
+                            '${visibleItems.length} ${visibleItems.length == 1 ? 'piece' : 'pieces'}',
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  color: DesignSystem.textSecondary,
+                                  fontWeight: FontWeight.w600,
+                                ),
                           ),
                         ),
-                        DropdownButton<_WardrobeSort>(
+                        _SortPill(
                           value: _sort,
-                          underline: const SizedBox.shrink(),
-                          items: const [
-                            DropdownMenuItem(
-                              value: _WardrobeSort.newest,
-                              child: Text('Newest'),
-                            ),
-                            DropdownMenuItem(
-                              value: _WardrobeSort.oldest,
-                              child: Text('Oldest'),
-                            ),
-                            DropdownMenuItem(
-                              value: _WardrobeSort.mostWorn,
-                              child: Text('Most worn'),
-                            ),
-                          ],
-                          onChanged: (value) {
-                            if (value != null) setState(() => _sort = value);
-                          },
+                          onChanged: (value) => setState(() => _sort = value),
                         ),
                       ],
                     ),
@@ -634,9 +650,7 @@ class _WardrobeViewState extends State<WardrobeView> {
                   crossAxisCount: 2,
                   crossAxisSpacing: 12,
                   mainAxisSpacing: 12,
-                  // The card contains an image plus two metadata rows; give
-                  // it enough height so text never overflows the sliver tile.
-                  childAspectRatio: .64,
+                  childAspectRatio: .73,
                 ),
                 itemCount: visibleItems.length,
                 itemBuilder: (_, index) {
@@ -665,11 +679,13 @@ class _WardrobeViewState extends State<WardrobeView> {
         ],
       ),
     );
+
+    return Theme(data: wardrobeTheme, child: content);
   }
 }
 
-class _FilterDropdown extends StatelessWidget {
-  const _FilterDropdown({
+class _FilterPill extends StatelessWidget {
+  const _FilterPill({
     required this.label,
     required this.value,
     required this.values,
@@ -681,31 +697,125 @@ class _FilterDropdown extends StatelessWidget {
   final ValueChanged<String> onChanged;
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(right: DesignSystem.spacingSm),
-    child: DropdownMenu<String>(
-      key: ValueKey('$label-$value'),
-      label: Text(label),
-      initialSelection: value,
-      width: 150,
-      inputDecorationTheme: InputDecorationTheme(
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: DesignSystem.spacingMd,
-          vertical: DesignSystem.spacingSm,
-        ),
-        filled: true,
-        fillColor: DesignSystem.surfaceAlt,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(DesignSystem.radiusSm),
-          borderSide: const BorderSide(color: DesignSystem.border),
+  Widget build(BuildContext context) {
+    final active = value != 'All';
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: PopupMenuButton<String>(
+        initialValue: value,
+        onSelected: onChanged,
+        color: DesignSystem.surface,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        itemBuilder: (context) => values
+            .map(
+              (entry) => PopupMenuItem<String>(
+                value: entry,
+                child: Row(
+                  children: [
+                    Expanded(child: Text(entry)),
+                    if (entry == value)
+                      const Icon(
+                        Icons.check_rounded,
+                        size: 18,
+                        color: DesignSystem.primary,
+                      ),
+                  ],
+                ),
+              ),
+            )
+            .toList(),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          height: 40,
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          decoration: BoxDecoration(
+            color: active
+                ? DesignSystem.primary.withValues(alpha: 0.08)
+                : DesignSystem.surface,
+            borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: active
+                  ? DesignSystem.primary.withValues(alpha: 0.35)
+                  : DesignSystem.border,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                active ? value : label,
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: active
+                      ? DesignSystem.primary
+                      : DesignSystem.textPrimary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Icon(
+                Icons.keyboard_arrow_down_rounded,
+                size: 18,
+                color: active
+                    ? DesignSystem.primary
+                    : DesignSystem.textSecondary,
+              ),
+            ],
+          ),
         ),
       ),
-      dropdownMenuEntries: values
-          .map((entry) => DropdownMenuEntry(value: entry, label: entry))
-          .toList(),
-      onSelected: (selected) {
-        if (selected != null) onChanged(selected);
-      },
+    );
+  }
+}
+
+class _SortPill extends StatelessWidget {
+  const _SortPill({required this.value, required this.onChanged});
+
+  final _WardrobeSort value;
+  final ValueChanged<_WardrobeSort> onChanged;
+
+  String _label(_WardrobeSort sort) => switch (sort) {
+    _WardrobeSort.newest => 'Newest',
+    _WardrobeSort.oldest => 'Oldest',
+    _WardrobeSort.mostWorn => 'Most worn',
+  };
+
+  @override
+  Widget build(BuildContext context) => PopupMenuButton<_WardrobeSort>(
+    initialValue: value,
+    onSelected: onChanged,
+    color: DesignSystem.surface,
+    surfaceTintColor: Colors.transparent,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    itemBuilder: (context) => _WardrobeSort.values
+        .map(
+          (sort) => PopupMenuItem<_WardrobeSort>(
+            value: sort,
+            child: Text(_label(sort)),
+          ),
+        )
+        .toList(),
+    child: Container(
+      height: 38,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: DesignSystem.surface,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: DesignSystem.border),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            _label(value),
+            style: Theme.of(
+              context,
+            ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(width: 4),
+          const Icon(Icons.keyboard_arrow_down_rounded, size: 18),
+        ],
+      ),
     ),
   );
 }
@@ -723,50 +833,39 @@ class _ItemCard extends StatelessWidget {
   final VoidCallback? onLongPress;
 
   @override
-  Widget build(BuildContext context) => StyleStackCard(
+  Widget build(BuildContext context) => GestureDetector(
     onTap: onTap,
     onLongPress: onLongPress,
-    backgroundColor: selected
-        ? DesignSystem.secondary.withOpacity(0.15)
-        : DesignSystem.surface,
-    borderRadius: DesignSystem.radiusLg,
-    padding: EdgeInsets.zero,
-    // SliverGrid already supplies main-axis spacing. An additional card
-    // margin makes the child taller than its tile and causes bottom overflow.
-    margin: EdgeInsets.zero,
-    child: Stack(
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Keep the image region explicitly constrained. Flex children
-            // inside a sliver/Stack can receive loose constraints during the
-            // first layout pass and cascade into RenderBox hasSize errors.
-            AspectRatio(
-              aspectRatio: 1.05,
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
+    child: AnimatedContainer(
+      duration: const Duration(milliseconds: 180),
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        color: DesignSystem.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: selected ? DesignSystem.primary : DesignSystem.border,
+          width: selected ? 2 : 1,
+        ),
+      ),
+      child: Stack(
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Container(
+                  width: double.infinity,
                   color: Colors.white,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(DesignSystem.radiusLg),
-                    topRight: Radius.circular(DesignSystem.radiusLg),
-                  ),
-                ),
-                child: item.gridImageUrl == null
-                    ? const Center(
-                        child: Icon(
-                          Icons.image_outlined,
-                          size: 48,
-                          color: DesignSystem.textTertiary,
-                        ),
-                      )
-                    : ClipRRect(
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(DesignSystem.radiusLg),
-                          topRight: Radius.circular(DesignSystem.radiusLg),
-                        ),
-                        child: Image.network(
+                  padding: const EdgeInsets.all(8),
+                  child: item.gridImageUrl == null
+                      ? const Center(
+                          child: Icon(
+                            Icons.image_outlined,
+                            size: 48,
+                            color: DesignSystem.textTertiary,
+                          ),
+                        )
+                      : Image.network(
                           item.gridImageUrl!,
                           fit: BoxFit.contain,
                           errorBuilder: (context, error, stackTrace) =>
@@ -774,111 +873,120 @@ class _ItemCard extends StatelessWidget {
                                 child: Icon(Icons.broken_image_outlined),
                               ),
                         ),
-                      ),
+                ),
               ),
-            ),
 
-            // Item details
-            Padding(
-              padding: const EdgeInsets.all(DesignSystem.spacingMd),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Name
-                  Text(
-                    item.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.2,
-                    ),
-                  ),
-                  const SizedBox(height: DesignSystem.spacingSm),
-
-                  // Category
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: DesignSystem.spacingSm,
-                      vertical: DesignSystem.spacingXs,
-                    ),
-                    decoration: BoxDecoration(
-                      color: DesignSystem.secondary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(
-                        DesignSystem.radiusSm,
+              Padding(
+                padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.15,
                       ),
                     ),
-                    child: Text(
-                      item.displayCategory,
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: DesignSystem.primary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-
-                  // Color if available
-                  if (item.displayColor != null) ...[
-                    const SizedBox(height: DesignSystem.spacingSm),
+                    const SizedBox(height: 5),
                     Row(
                       children: [
-                        Container(
-                          width: 12,
-                          height: 12,
-                          decoration: BoxDecoration(
-                            color: _getColorFromString(item.displayColor!),
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                        const SizedBox(width: DesignSystem.spacingSm),
-                        Expanded(
+                        Flexible(
                           child: Text(
-                            item.displayColor!,
+                            item.displayCategory,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodySmall,
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: DesignSystem.textSecondary,
+                                  height: 1.2,
+                                ),
                           ),
                         ),
+                        if (item.displayColor != null) ...[
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 6),
+                            child: Text(
+                              '·',
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: DesignSystem.textTertiary,
+                                    height: 1.2,
+                                  ),
+                            ),
+                          ),
+                          Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: _getColorFromString(item.displayColor!),
+                              shape: BoxShape.circle,
+                              border:
+                                  item.displayColor!.toLowerCase() == 'white'
+                                  ? Border.all(color: DesignSystem.border)
+                                  : null,
+                            ),
+                          ),
+                          const SizedBox(width: 5),
+                          Flexible(
+                            child: Text(
+                              item.displayColor!,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: DesignSystem.textSecondary,
+                                    height: 1.2,
+                                  ),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ],
-                ],
+                ),
               ),
-            ),
-          ],
-        ),
-
-        // Selection indicator
-        if (selected)
-          Positioned(
-            top: DesignSystem.spacingMd,
-            right: DesignSystem.spacingMd,
-            child: Container(
-              decoration: BoxDecoration(
-                color: DesignSystem.primary,
-                shape: BoxShape.circle,
-                boxShadow: DesignSystem.shadowMedium,
-              ),
-              padding: const EdgeInsets.all(DesignSystem.spacingSm),
-              child: const Icon(Icons.check, color: Colors.white, size: 16),
-            ),
+            ],
           ),
 
-        // Favorite indicator
-        if (item.isFavorite)
-          Positioned(
-            top: DesignSystem.spacingMd,
-            left: DesignSystem.spacingMd,
-            child: Container(
-              decoration: BoxDecoration(
-                color: DesignSystem.secondary.withOpacity(0.9),
-                shape: BoxShape.circle,
+          // Selection indicator
+          if (selected)
+            Positioned(
+              top: DesignSystem.spacingMd,
+              right: DesignSystem.spacingMd,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: DesignSystem.primary,
+                  shape: BoxShape.circle,
+                ),
+                padding: const EdgeInsets.all(7),
+                child: const Icon(Icons.check, color: Colors.white, size: 16),
               ),
-              padding: const EdgeInsets.all(DesignSystem.spacingSm),
-              child: const Icon(Icons.favorite, color: Colors.white, size: 14),
             ),
-          ),
-      ],
+
+          // Favorite indicator
+          if (item.isFavorite)
+            Positioned(
+              top: DesignSystem.spacingMd,
+              left: DesignSystem.spacingMd,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.94),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: DesignSystem.border),
+                ),
+                padding: const EdgeInsets.all(7),
+                child: const Icon(
+                  Icons.favorite_rounded,
+                  color: DesignSystem.error,
+                  size: 14,
+                ),
+              ),
+            ),
+        ],
+      ),
     ),
   );
 

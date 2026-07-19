@@ -76,6 +76,11 @@ flutter:
     - assets/images/stylestack_logo.png
     - assets/animations/
 
+  fonts:
+    - family: Manrope
+      fonts:
+        - asset: assets/fonts/Manrope-VariableFont_wght.ttf
+
 
   # To add assets to your application, add an assets section, like this:
   # assets:
