@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -892,10 +893,20 @@ class _VibeMoodboardScreen extends StatelessWidget {
               borderRadius: BorderRadius.circular(DesignSystem.radiusLg),
               child: AspectRatio(
                 aspectRatio: 3 / 4,
-                child: Image.network(
-                  url,
+                child: CachedNetworkImage(
+                  imageUrl: url,
+                  cacheKey: 'style-vibe-${image['id'] ?? url}',
                   fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => const ColoredBox(
+                  placeholder: (_, _) => const ColoredBox(
+                    color: DesignSystem.surfaceAlt,
+                    child: Center(
+                      child: SizedBox.square(
+                        dimension: 22,
+                        child: CircularProgressIndicator(strokeWidth: 1.5),
+                      ),
+                    ),
+                  ),
+                  errorWidget: (_, _, _) => const ColoredBox(
                     color: DesignSystem.surfaceAlt,
                     child: Center(
                       child: Icon(Icons.image_not_supported_outlined),

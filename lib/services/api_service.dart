@@ -529,25 +529,25 @@ class ApiService {
     return _decode(response) as Map<String, dynamic>;
   }
 
-  Future<Map<String, int>> importGmailOrders(String accessToken) async {
-    final payload = <String, Object>{
-      'access_token': accessToken,
-      'max_messages': 50,
-    };
+  Future<Map<String, dynamic>> startGmailImportJob(String accessToken) async {
+    final payload = <String, Object>{'access_token': accessToken};
     final response = await _client.post(
-      Uri.parse('${RuntimeConfig.apiBaseUrl}/imports/gmail'),
+      Uri.parse('${RuntimeConfig.apiBaseUrl}/imports/gmail/jobs'),
       headers: {
         'Authorization': 'Bearer ${await _token()}',
         'Content-Type': 'application/json',
       },
       body: jsonEncode(payload),
     );
-    final result = _decode(response) as Map<String, dynamic>;
-    return {
-      'scanned_messages': result['scanned_messages'] as int? ?? 0,
-      'imported_items': result['imported_items'] as int? ?? 0,
-      'skipped_items': result['skipped_items'] as int? ?? 0,
-    };
+    return _decode(response) as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> fetchGmailImportJob(String jobId) async {
+    final response = await _client.get(
+      Uri.parse('${RuntimeConfig.apiBaseUrl}/imports/gmail/jobs/$jobId'),
+      headers: {'Authorization': 'Bearer ${await _token()}'},
+    );
+    return _decode(response) as Map<String, dynamic>;
   }
 
   Future<List<StyleCalendarEvent>> fetchCalendarEvents({

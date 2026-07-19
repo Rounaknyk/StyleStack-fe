@@ -163,8 +163,25 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Connect Gmail?'),
-        content: const Text(
-          'Connect the Gmail account you use for Amazon, Myntra or Flipkart. StyleStack reads only supported delivered-purchase emails needed for Closet Sync and never stores your Gmail token. During this pilot, automatic extraction is available for confirmed Amazon deliveries and imports up to 10 new delivery emails per sync. Run it again to continue older purchases.',
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Connect the Gmail account used for your shopping receipts.',
+              style: TextStyle(fontWeight: FontWeight.w700, height: 1.35),
+            ),
+            SizedBox(height: 12),
+            Text(
+              'StyleStack checks all eligible confirmed Amazon deliveries in one background sync and skips purchases already imported.',
+              style: TextStyle(height: 1.4),
+            ),
+            SizedBox(height: 10),
+            Text(
+              'The Gmail token is never saved and is cleared after the job. Myntra and Flipkart extraction are planned, but not enabled yet.',
+              style: TextStyle(height: 1.4),
+            ),
+          ],
         ),
         actions: [
           TextButton(
@@ -510,11 +527,11 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
                   GmailSyncPhase.connecting =>
                     'Choose your Google account to begin securely',
                   GmailSyncPhase.syncing =>
-                    'Checking supported confirmed delivery emails',
+                    'Checking all eligible confirmed deliveries in the background',
                   GmailSyncPhase.refreshing =>
                     'Applying the latest items and AI details',
                   GmailSyncPhase.idle =>
-                    'Use the Gmail linked to your shopping accounts. Amazon imports are available now.',
+                    'Connect the Gmail used for Amazon. One sync checks all eligible delivered purchases.',
                 },
                 trailing: gmailSync.isRunning
                     ? const SizedBox.square(
@@ -670,6 +687,8 @@ class _SettingsTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ListTile(
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    minVerticalPadding: 10,
     leading: Icon(
       icon,
       color: destructive ? DesignSystem.error : DesignSystem.primary,
@@ -678,7 +697,12 @@ class _SettingsTile extends StatelessWidget {
       title,
       style: destructive ? const TextStyle(color: DesignSystem.error) : null,
     ),
-    subtitle: subtitle == null ? null : Text(subtitle!),
+    subtitle: subtitle == null
+        ? null
+        : Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text(subtitle!, style: const TextStyle(height: 1.35)),
+          ),
     trailing:
         trailing ?? (onTap == null ? null : const Icon(Icons.chevron_right)),
     onTap: onTap,

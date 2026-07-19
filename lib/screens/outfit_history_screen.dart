@@ -98,10 +98,13 @@ class _OutfitHistoryViewState extends State<OutfitHistoryView> {
         padding: const EdgeInsets.fromLTRB(18, 16, 18, 110),
         children: [
           if (widget.showHeading) ...[
-            Text('Your looks', style: Theme.of(context).textTheme.displaySmall),
+            Text(
+              'Plan & remember',
+              style: Theme.of(context).textTheme.displaySmall,
+            ),
             const SizedBox(height: 5),
             Text(
-              'A visual memory of what you actually wore.',
+              'Prepare for upcoming events, then revisit what you actually wore.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: DesignSystem.textSecondary,
               ),

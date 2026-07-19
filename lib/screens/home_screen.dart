@@ -68,20 +68,38 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 12),
               ListTile(
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 6,
+                ),
                 leading: const Icon(Icons.camera_alt_outlined),
                 title: const Text('Take a photo'),
-                subtitle: const Text('Open the camera'),
+                subtitle: const Padding(
+                  padding: EdgeInsets.only(top: 5),
+                  child: Text('Open the camera'),
+                ),
                 onTap: () => Navigator.pop(context, _AddItemSource.camera),
               ),
               ListTile(
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 6,
+                ),
                 leading: const Icon(Icons.photo_library_outlined),
                 title: const Text('Choose from gallery'),
-                subtitle: const Text(
-                  'Select up to $maxBatchImages photos for batch adding',
+                subtitle: const Padding(
+                  padding: EdgeInsets.only(top: 5),
+                  child: Text(
+                    'Select up to $maxBatchImages photos for batch adding',
+                  ),
                 ),
                 onTap: () => Navigator.pop(context, _AddItemSource.gallery),
               ),
               ListTile(
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 8,
+                ),
                 enabled: !gmailSync.isRunning,
                 leading: const Icon(Icons.mark_email_read_outlined),
                 title: Text(
@@ -89,12 +107,16 @@ class _HomeScreenState extends State<HomeScreen> {
                       ? 'Closet Sync is running'
                       : 'Fetch purchases from Gmail',
                 ),
-                subtitle: Text(
-                  gmailSync.isRunning
-                      ? 'You can keep using StyleStack'
-                      : gmailSync.result == null
-                      ? 'Connect the Gmail used for your shopping receipts'
-                      : '${gmailSync.result?['imported_items'] ?? 0} items added or refreshed in the last sync',
+                subtitle: Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Text(
+                    gmailSync.isRunning
+                        ? 'All eligible deliveries are being checked in the background. You can keep using StyleStack.'
+                        : gmailSync.result == null
+                        ? 'Connect the Gmail used for Amazon purchases. All eligible delivered items are checked in one sync.'
+                        : '${gmailSync.result?['imported_items'] ?? 0} items added or refreshed in the last sync',
+                    style: const TextStyle(height: 1.35),
+                  ),
                 ),
                 onTap: gmailSync.isRunning
                     ? null
@@ -120,8 +142,25 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Bring purchases into your wardrobe'),
-        content: const Text(
-          'Connect the Gmail account you use for Amazon, Myntra or Flipkart. StyleStack reads only supported delivered-purchase emails needed for Closet Sync; it never stores your Gmail access token. During this pilot, automatic extraction is available for confirmed Amazon deliveries and imports up to 10 new delivery emails per sync. Run it again to continue older purchases.',
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Connect the Gmail account used for your shopping receipts.',
+              style: TextStyle(fontWeight: FontWeight.w700, height: 1.35),
+            ),
+            SizedBox(height: 12),
+            Text(
+              'StyleStack checks every eligible confirmed Amazon delivery, skips orders already imported, and continues the work in the background.',
+              style: TextStyle(height: 1.4),
+            ),
+            SizedBox(height: 10),
+            Text(
+              'Your Gmail access token is used only for this sync and is cleared when the job finishes. Myntra and Flipkart extraction are not yet enabled.',
+              style: TextStyle(height: 1.4),
+            ),
+          ],
         ),
         actions: [
           TextButton(
@@ -257,7 +296,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final titles = ['Today', 'My Wardrobe', 'Outfit History', 'Profile'];
+    final titles = ['Today', 'My Wardrobe', 'Style Planner', 'Profile'];
     final wardrobeBusy = context.watch<WardrobeProvider>().items.any(
       (item) =>
           item.isUploading ||
@@ -334,8 +373,8 @@ class _HomeScreenState extends State<HomeScreen> {
             label: const Text('Wardrobe'),
           ),
           const FBottomNavigationBarItem(
-            icon: Icon(Icons.photo_library_outlined),
-            label: Text('Outfits'),
+            icon: Icon(Icons.calendar_month_outlined),
+            label: Text('Planner'),
           ),
           const FBottomNavigationBarItem(
             icon: Icon(Icons.person_outline),
@@ -792,7 +831,7 @@ class _WardrobeViewState extends State<WardrobeView> {
                   crossAxisCount: 2,
                   crossAxisSpacing: 12,
                   mainAxisSpacing: 12,
-                  childAspectRatio: .73,
+                  childAspectRatio: .68,
                 ),
                 itemCount: visibleItems.length,
                 itemBuilder: (_, index) {
@@ -1142,131 +1181,22 @@ class _ItemCard extends StatelessWidget {
                         ],
                       ],
                     ),
+                    if (item.isUploading ||
+                        item.aiTagStatus == 'pending' ||
+                        item.aiTagStatus == 'processing' ||
+                        item.aiTagStatus == 'failed') ...[
+                      const SizedBox(height: 10),
+                      _ItemProcessingFooter(
+                        item: item,
+                        onRetry: onRetry,
+                        onEnterManually: onTap,
+                      ),
+                    ],
                   ],
                 ),
               ),
             ],
           ),
-
-          if (item.isUploading)
-            Positioned(
-              left: 12,
-              right: 12,
-              bottom: 12,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: DesignSystem.primary.withValues(alpha: .92),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SizedBox.square(
-                        dimension: 12,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 1.5,
-                          color: Colors.white,
-                        ),
-                      ),
-                      SizedBox(width: 7),
-                      Text(
-                        'Syncing',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          if (!item.isUploading &&
-              (item.aiTagStatus == 'pending' ||
-                  item.aiTagStatus == 'processing'))
-            Positioned(
-              left: 12,
-              right: 12,
-              bottom: 12,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: DesignSystem.primary.withValues(alpha: .92),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const SizedBox.square(
-                        dimension: 12,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 1.5,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(width: 7),
-                      Text(
-                        item.aiTagStatus == 'processing'
-                            ? 'AI analyzing'
-                            : 'In queue',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          if (!item.isUploading && item.aiTagStatus == 'failed')
-            Positioned(
-              left: 8,
-              right: 8,
-              bottom: 8,
-              child: Row(
-                children: [
-                  Expanded(
-                    child: FilledButton(
-                      onPressed: onRetry,
-                      style: FilledButton.styleFrom(
-                        minimumSize: const Size(0, 34),
-                        padding: const EdgeInsets.symmetric(horizontal: 6),
-                        textStyle: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      child: const Text('Retry'),
-                    ),
-                  ),
-                  const SizedBox(width: 5),
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: onTap,
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: const Size(0, 34),
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        backgroundColor: Colors.white,
-                        textStyle: const TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      child: const Text('Enter manually'),
-                    ),
-                  ),
-                ],
-              ),
-            ),
 
           // Selection indicator
           if (selected)
@@ -1324,6 +1254,100 @@ class _ItemCard extends StatelessWidget {
       'beige' => const Color(0xFFD4A574),
       _ => DesignSystem.secondary,
     };
+  }
+}
+
+class _ItemProcessingFooter extends StatelessWidget {
+  const _ItemProcessingFooter({
+    required this.item,
+    this.onRetry,
+    this.onEnterManually,
+  });
+
+  final WardrobeItem item;
+  final VoidCallback? onRetry;
+  final VoidCallback? onEnterManually;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!item.isUploading && item.aiTagStatus == 'failed') {
+      return Row(
+        children: [
+          Expanded(
+            child: FilledButton(
+              onPressed: onRetry,
+              style: FilledButton.styleFrom(
+                minimumSize: const Size(0, 34),
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                textStyle: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              child: const Text('Retry'),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: OutlinedButton(
+              onPressed: onEnterManually,
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size(0, 34),
+                padding: const EdgeInsets.symmetric(horizontal: 5),
+                backgroundColor: DesignSystem.surface,
+                textStyle: const TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              child: const Text(
+                'Enter manually',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    final label = item.isUploading
+        ? 'Uploading'
+        : item.aiTagStatus == 'processing'
+        ? 'AI analyzing'
+        : 'In queue';
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: DesignSystem.primary.withValues(alpha: .08),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          const SizedBox.square(
+            dimension: 12,
+            child: CircularProgressIndicator(
+              strokeWidth: 1.5,
+              color: DesignSystem.primary,
+            ),
+          ),
+          const SizedBox(width: 7),
+          Expanded(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: DesignSystem.primary,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
