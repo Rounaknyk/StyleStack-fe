@@ -242,18 +242,48 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(18, 20, 18, 120),
         children: [
-          Text(
-            '${_greeting()}, $name',
-            style: Theme.of(context).textTheme.displaySmall,
-          ),
-          const SizedBox(height: 5),
-          Text(
-            priorityEvent == null
-                ? 'Here is your strongest look today.'
-                : 'You have ${priorityEvent.title} today. Let’s dress for it first.',
-            style: Theme.of(
-              context,
-            ).textTheme.bodyLarge?.copyWith(color: DesignSystem.textSecondary),
+          Container(
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 20),
+            decoration: BoxDecoration(
+              color: DesignSystem.primary,
+              borderRadius: BorderRadius.circular(DesignSystem.radiusXl),
+              gradient: const LinearGradient(
+                colors: [DesignSystem.primaryDark, DesignSystem.primary],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  priorityEvent == null ? 'STYLE EDIT  /  TODAY' : 'PRIORITY EDIT',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: DesignSystem.secondaryLight,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  '${_greeting()}, $name',
+                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  priorityEvent == null
+                      ? 'Your strongest look, edited from your own closet.'
+                      : 'You have ${priorityEvent.title} today. Let’s dress for it first.',
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.82),
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 14),
           OutlinedButton.icon(

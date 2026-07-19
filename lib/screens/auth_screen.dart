@@ -504,7 +504,62 @@ class _BrandHeader extends StatelessWidget {
             letterSpacing: -0.6,
           ),
         ),
+        if (!compact) ...[
+          const SizedBox(height: DesignSystem.spacingSm),
+          Text(
+            'Your closet, styled with intention.',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: DesignSystem.textSecondary,
+              letterSpacing: 0.2,
+            ),
+          ),
+          const SizedBox(height: DesignSystem.spacingLg),
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: DesignSystem.spacingSm,
+            runSpacing: DesignSystem.spacingSm,
+            children: const [
+              _BrandPill(icon: Icons.checkroom_rounded, label: 'Your closet'),
+              _BrandPill(icon: Icons.auto_awesome_rounded, label: 'Your edit'),
+            ],
+          ),
+        ],
       ],
+    );
+  }
+}
+
+class _BrandPill extends StatelessWidget {
+  const _BrandPill({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: DesignSystem.secondaryLight.withValues(alpha: 0.42),
+        borderRadius: BorderRadius.circular(100),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 15, color: DesignSystem.primary),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                color: DesignSystem.primaryDark,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

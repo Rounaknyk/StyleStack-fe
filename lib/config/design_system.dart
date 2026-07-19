@@ -3,17 +3,17 @@ import 'package:flutter/material.dart';
 /// StyleStack Design System - Centralized design tokens and styling
 class DesignSystem {
   // === COLORS ===
-  static const Color primary = Color(0xFF006B6B);
-  static const Color primaryLight = Color(0xFF3A8E8E);
-  static const Color primaryDark = Color(0xFF004D4D);
-  static const Color cta = Color(0xFFE85D3A);
-  static const Color secondary = Color(0xFFD4A373);
-  static const Color secondaryLight = Color(0xFFE8C9A7);
-  static const Color accent = Color(0xFFC9A050);
+  static const Color primary = Color(0xFF17433D);
+  static const Color primaryLight = Color(0xFF3E756B);
+  static const Color primaryDark = Color(0xFF0D2C28);
+  static const Color cta = Color(0xFFC85F43);
+  static const Color secondary = Color(0xFFD3A77A);
+  static const Color secondaryLight = Color(0xFFEBD3BA);
+  static const Color accent = Color(0xFFC49A4A);
 
-  static const Color background = Color(0xFFFAF8F5);
+  static const Color background = Color(0xFFF8F6F2);
   static const Color surface = Color(0xFFFFFFFF);
-  static const Color surfaceAlt = Color(0xFFF3EFEA);
+  static const Color surfaceAlt = Color(0xFFF0ECE6);
 
   static const Color success = Color(0xFF2E7D32);
   static const Color warning = Color(0xFFC98324);
@@ -114,13 +114,13 @@ class DesignSystem {
 
       // App Bar
       appBarTheme: AppBarTheme(
-        backgroundColor: surface,
+        backgroundColor: background,
         foregroundColor: textPrimary,
         elevation: 0,
         centerTitle: false,
         titleTextStyle: const TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
+          fontSize: 19,
+          fontWeight: FontWeight.w700,
           color: textPrimary,
           letterSpacing: 0.15,
         ),
@@ -224,23 +224,23 @@ class DesignSystem {
           vertical: spacingMd,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(radiusMd),
+          borderRadius: BorderRadius.circular(radiusLg),
           borderSide: const BorderSide(color: border),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(radiusMd),
+          borderRadius: BorderRadius.circular(radiusLg),
           borderSide: const BorderSide(color: border),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(radiusMd),
+          borderRadius: BorderRadius.circular(radiusLg),
           borderSide: const BorderSide(color: primary, width: 2),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(radiusMd),
+          borderRadius: BorderRadius.circular(radiusLg),
           borderSide: const BorderSide(color: error),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(radiusMd),
+          borderRadius: BorderRadius.circular(radiusLg),
           borderSide: const BorderSide(color: error, width: 2),
         ),
         labelStyle: const TextStyle(color: textSecondary),
@@ -252,14 +252,14 @@ class DesignSystem {
       // Buttons
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: primary,
+          backgroundColor: cta,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(
             horizontal: spacingXl,
             vertical: spacingMd,
           ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(radiusMd),
+            borderRadius: BorderRadius.circular(radiusLg),
           ),
           textStyle: const TextStyle(
             fontSize: 14,
@@ -276,8 +276,8 @@ class DesignSystem {
             vertical: spacingMd,
           ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(radiusMd),
-            side: const BorderSide(color: primary),
+            borderRadius: BorderRadius.circular(radiusLg),
+            side: const BorderSide(color: border),
           ),
           textStyle: const TextStyle(
             fontSize: 14,
@@ -304,10 +304,11 @@ class DesignSystem {
       // Card
       cardTheme: CardThemeData(
         color: surface,
-        elevation: elevationLow,
-        shadowColor: Colors.black12,
+        elevation: 0,
+        shadowColor: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(radiusLg),
+          side: const BorderSide(color: border),
         ),
         margin: EdgeInsets.zero,
       ),
@@ -333,7 +334,7 @@ class DesignSystem {
 
       // FAB
       floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: primary,
+        backgroundColor: cta,
         foregroundColor: Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(radiusLg),
@@ -344,8 +345,9 @@ class DesignSystem {
       // Bottom navigation
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: surface,
-        elevation: elevationMedium,
-        indicatorColor: primaryLight.withValues(alpha: 0.14),
+        elevation: 0,
+        height: 76,
+        indicatorColor: secondaryLight.withValues(alpha: 0.72),
         iconTheme: WidgetStateProperty.resolveWith(
           (states) => IconThemeData(
             color: states.contains(WidgetState.selected)
@@ -362,6 +364,32 @@ class DesignSystem {
                 ? primary
                 : textSecondary,
           ),
+        ),
+      ),
+
+      dividerTheme: const DividerThemeData(
+        color: border,
+        thickness: 1,
+        space: 1,
+      ),
+
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: surface,
+        modalBackgroundColor: surface,
+        showDragHandle: true,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(radiusXxl),
+          ),
+        ),
+      ),
+
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: primaryDark,
+        contentTextStyle: const TextStyle(color: Colors.white),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(radiusMd),
         ),
       ),
 
