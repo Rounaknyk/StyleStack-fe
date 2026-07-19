@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../config/design_system.dart';
 import '../config/custom_widgets.dart';
 import '../models/clothing_analysis.dart';
+import '../models/ai_analysis_job.dart';
 import '../providers/wardrobe_provider.dart';
 
 String _titleCase(String value) => value
@@ -38,6 +39,7 @@ class _CameraPreviewScreenState extends State<CameraPreviewScreen> {
   String? _season;
   String? _formality;
   ClothingAnalysis? _analysis;
+  AiAnalysisJob? _analysisJob;
   bool _analyzingImage = true;
 
   @override
@@ -51,6 +53,10 @@ class _CameraPreviewScreenState extends State<CameraPreviewScreen> {
   Future<void> _analyzeImage() async {
     final result = await context.read<WardrobeProvider>().analyzeImage(
       widget.image,
+      onStatus: (job) {
+        if (!mounted) return;
+        setState(() => _analysisJob = job);
+      },
     );
     if (!mounted) return;
     if (result != null) {
@@ -102,6 +108,26 @@ class _CameraPreviewScreenState extends State<CameraPreviewScreen> {
     Navigator.pop(context, true);
   }
 
+  Future<void> _cancelAnalysis() async {
+    final jobId = _analysisJob?.id;
+    if (jobId != null) {
+      await context.read<WardrobeProvider>().cancelAnalysis(jobId);
+    }
+    if (!mounted) return;
+    setState(() {
+      _analyzingImage = false;
+      _analysisJob = null;
+    });
+  }
+
+  Future<void> _retryAnalysis() async {
+    setState(() {
+      _analyzingImage = true;
+      _analysisJob = null;
+    });
+    await _analyzeImage();
+  }
+
   @override
   Widget build(BuildContext context) {
     final wardrobe = context.watch<WardrobeProvider>();
@@ -143,7 +169,9 @@ class _CameraPreviewScreenState extends State<CameraPreviewScreen> {
                   Expanded(
                     child: Text(
                       _analyzingImage
-                          ? 'AI is identifying the item and auto-filling every detail.'
+                          ? _analysisJob?.status == 'processing'
+                                ? 'AI is analyzing this item now. You can save and continue using the app.'
+                                : 'In queue: ${_analysisJob?.itemsAhead ?? 0} ahead · about ${_analysisJob?.estimatedWaitSeconds ?? 0}s. You can save and continue.'
                           : _analysis != null
                           ? 'Details were auto-filled by AI. Review or edit anything before saving.'
                           : 'AI could not auto-fill this photo. You can still enter the details manually.',
@@ -157,6 +185,26 @@ class _CameraPreviewScreenState extends State<CameraPreviewScreen> {
                 ],
               ),
             ),
+            if (_analyzingImage)
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: _analysisJob?.status == 'processing'
+                      ? null
+                      : _cancelAnalysis,
+                  icon: const Icon(Icons.close_rounded, size: 18),
+                  label: const Text('Remove from queue'),
+                ),
+              )
+            else if (_analysis == null)
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: _retryAnalysis,
+                  icon: const Icon(Icons.refresh_rounded, size: 18),
+                  label: const Text('Retry AI'),
+                ),
+              ),
             const SizedBox(height: DesignSystem.spacingXl),
 
             // Form section header
@@ -284,7 +332,7 @@ class _CameraPreviewScreenState extends State<CameraPreviewScreen> {
                 const SizedBox(width: DesignSystem.spacingMd),
                 Expanded(
                   child: FilledButton.icon(
-                    onPressed: uploading || _analyzingImage ? null : _save,
+                    onPressed: uploading ? null : _save,
                     icon: uploading
                         ? const SizedBox.square(
                             dimension: 18,
@@ -298,7 +346,7 @@ class _CameraPreviewScreenState extends State<CameraPreviewScreen> {
                         : const Icon(Icons.cloud_upload_outlined),
                     label: Text(
                       _analyzingImage
-                          ? 'Auto-filling…'
+                          ? 'Save & continue'
                           : uploading
                           ? 'Saving…'
                           : 'Save item',

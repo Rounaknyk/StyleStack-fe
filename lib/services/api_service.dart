@@ -8,6 +8,7 @@ import 'package:http_parser/http_parser.dart';
 import '../config/runtime_config.dart';
 import '../models/wardrobe_item.dart';
 import '../models/clothing_analysis.dart';
+import '../models/ai_analysis_job.dart';
 import '../models/outfit.dart';
 import '../models/calendar_models.dart';
 import '../models/outfit_selfie.dart';
@@ -159,6 +160,58 @@ class ApiService {
     final streamed = await request.send();
     final response = await http.Response.fromStream(streamed);
     return ClothingAnalysis.fromJson(_decode(response) as Map<String, dynamic>);
+  }
+
+  Future<AiAnalysisJob> enqueueImageAnalysis(
+    File image, {
+    bool multiple = false,
+  }) async {
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('${RuntimeConfig.apiBaseUrl}/wardrobe/analysis-jobs'),
+    )..headers['Authorization'] = 'Bearer ${await _token()}';
+    request.fields['kind'] = multiple ? 'multiple' : 'single';
+    final extension = image.path.split('.').last.toLowerCase();
+    final subtype = extension == 'png'
+        ? 'png'
+        : extension == 'webp'
+        ? 'webp'
+        : 'jpeg';
+    request.files.add(
+      await http.MultipartFile.fromPath(
+        'image',
+        image.path,
+        contentType: MediaType('image', subtype),
+      ),
+    );
+    final response = await http.Response.fromStream(await request.send());
+    return AiAnalysisJob.fromJson(_decode(response) as Map<String, dynamic>);
+  }
+
+  Future<AiAnalysisJob> fetchImageAnalysisJob(String jobId) async {
+    final response = await http.get(
+      Uri.parse('${RuntimeConfig.apiBaseUrl}/wardrobe/analysis-jobs/$jobId'),
+      headers: {'Authorization': 'Bearer ${await _token()}'},
+    );
+    return AiAnalysisJob.fromJson(_decode(response) as Map<String, dynamic>);
+  }
+
+  Future<AiAnalysisJob> cancelImageAnalysisJob(String jobId) async {
+    final response = await http.delete(
+      Uri.parse('${RuntimeConfig.apiBaseUrl}/wardrobe/analysis-jobs/$jobId'),
+      headers: {'Authorization': 'Bearer ${await _token()}'},
+    );
+    return AiAnalysisJob.fromJson(_decode(response) as Map<String, dynamic>);
+  }
+
+  Future<AiAnalysisJob> retryImageAnalysisJob(String jobId) async {
+    final response = await http.post(
+      Uri.parse(
+        '${RuntimeConfig.apiBaseUrl}/wardrobe/analysis-jobs/$jobId/retry',
+      ),
+      headers: {'Authorization': 'Bearer ${await _token()}'},
+    );
+    return AiAnalysisJob.fromJson(_decode(response) as Map<String, dynamic>);
   }
 
   Future<List<ClothingAnalysis>> detectItems(File image) async {
@@ -381,7 +434,10 @@ class ApiService {
     return Outfit.fromJson(_decode(response) as Map<String, dynamic>);
   }
 
-  Future<Outfit> askStylist({required String message, required String city}) async {
+  Future<Outfit> askStylist({
+    required String message,
+    required String city,
+  }) async {
     final response = await _client.post(
       Uri.parse('${RuntimeConfig.apiBaseUrl}/outfits/chat'),
       headers: {

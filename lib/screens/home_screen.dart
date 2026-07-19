@@ -199,6 +199,12 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final titles = ['Today', 'My Wardrobe', 'Outfit History', 'Profile'];
+    final wardrobeBusy = context.watch<WardrobeProvider>().items.any(
+      (item) =>
+          item.isUploading ||
+          item.aiTagStatus == 'pending' ||
+          item.aiTagStatus == 'processing',
+    );
     return Scaffold(
       appBar: _tab == 0
           ? null
@@ -248,20 +254,37 @@ class _HomeScreenState extends State<HomeScreen> {
         safeAreaBottom: true,
         index: _tab,
         onChange: _selectTab,
-        children: const [
-          FBottomNavigationBarItem(
+        children: [
+          const FBottomNavigationBarItem(
             icon: Icon(Icons.wb_sunny_outlined),
             label: Text('Today'),
           ),
           FBottomNavigationBarItem(
-            icon: Icon(Icons.checkroom_outlined),
-            label: Text('Wardrobe'),
+            icon: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                const Icon(Icons.checkroom_outlined),
+                if (wardrobeBusy)
+                  const Positioned(
+                    right: -3,
+                    top: -3,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: DesignSystem.secondary,
+                        shape: BoxShape.circle,
+                      ),
+                      child: SizedBox.square(dimension: 8),
+                    ),
+                  ),
+              ],
+            ),
+            label: const Text('Wardrobe'),
           ),
-          FBottomNavigationBarItem(
+          const FBottomNavigationBarItem(
             icon: Icon(Icons.photo_library_outlined),
             label: Text('Outfits'),
           ),
-          FBottomNavigationBarItem(
+          const FBottomNavigationBarItem(
             icon: Icon(Icons.person_outline),
             label: Text('Profile'),
           ),
@@ -505,6 +528,14 @@ class _WardrobeViewState extends State<WardrobeView> {
       );
     }
     final visibleItems = _visibleItems(wardrobe.items);
+    final processingItems = wardrobe.items
+        .where(
+          (item) =>
+              item.isUploading ||
+              item.aiTagStatus == 'pending' ||
+              item.aiTagStatus == 'processing',
+        )
+        .toList();
     final content = RefreshIndicator(
       onRefresh: () => wardrobe.loadItems(force: true),
       child: CustomScrollView(
@@ -515,6 +546,37 @@ class _WardrobeViewState extends State<WardrobeView> {
               child: LinearProgressIndicator(
                 minHeight: 2,
                 semanticsLabel: 'Refreshing wardrobe',
+              ),
+            ),
+          if (processingItems.isNotEmpty)
+            SliverToBoxAdapter(
+              child: Container(
+                margin: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: DesignSystem.primary.withValues(alpha: .07),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: DesignSystem.primary.withValues(alpha: .16),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Preparing ${processingItems.length} ${processingItems.length == 1 ? 'item' : 'items'} in the background. You can keep using StyleStack.',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           SliverToBoxAdapter(
@@ -1039,6 +1101,49 @@ class _ItemCard extends StatelessWidget {
                       Text(
                         'Syncing',
                         style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          if (!item.isUploading &&
+              (item.aiTagStatus == 'pending' ||
+                  item.aiTagStatus == 'processing'))
+            Positioned(
+              left: 12,
+              right: 12,
+              bottom: 12,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: DesignSystem.primary.withValues(alpha: .92),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const SizedBox.square(
+                        dimension: 12,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 1.5,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(width: 7),
+                      Text(
+                        item.aiTagStatus == 'processing'
+                            ? 'AI analyzing'
+                            : 'In queue',
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 11,
                           fontWeight: FontWeight.w700,

@@ -5,9 +5,10 @@ import 'package:provider/provider.dart';
 
 import '../config/design_system.dart';
 import '../models/clothing_analysis.dart';
+import '../models/ai_analysis_job.dart';
 import '../providers/wardrobe_provider.dart';
 
-const int maxBatchImages = 3;
+const int maxBatchImages = 10;
 
 class BatchAddScreen extends StatefulWidget {
   const BatchAddScreen({super.key, required this.images});
@@ -38,28 +39,35 @@ class _BatchAddScreenState extends State<BatchAddScreen> {
   }
 
   Future<void> _analyzeDrafts() async {
-    for (final draft in _drafts) {
-      if (!mounted) return;
-      setState(() => draft.analyzing = true);
-      final analysis = await context.read<WardrobeProvider>().analyzeImage(
-        draft.image,
-      );
-      if (!mounted) return;
-      if (analysis != null) {
-        draft.analysis = analysis;
-        final brand = analysis.brand == null ? '' : '${analysis.brand} ';
-        draft.name.text = _titleCase(
-          '$brand${analysis.color} ${analysis.category}'.trim(),
+    final wardrobe = context.read<WardrobeProvider>();
+    await Future.wait(
+      _drafts.map((draft) async {
+        if (!mounted) return;
+        setState(() => draft.analyzing = true);
+        final analysis = await wardrobe.analyzeImage(
+          draft.image,
+          onStatus: (job) {
+            if (!mounted) return;
+            setState(() => draft.job = job);
+          },
         );
-        draft.brand.text = analysis.brand ?? '';
-        draft.category.text = analysis.category;
-        draft.color.text = analysis.color;
-        draft.season = analysis.season;
-        draft.formality = analysis.formality;
-        draft.description.text = analysis.description;
-      }
-      setState(() => draft.analyzing = false);
-    }
+        if (!mounted) return;
+        if (analysis != null) {
+          draft.analysis = analysis;
+          final brand = analysis.brand == null ? '' : '${analysis.brand} ';
+          draft.name.text = _titleCase(
+            '$brand${analysis.color} ${analysis.category}'.trim(),
+          );
+          draft.brand.text = analysis.brand ?? '';
+          draft.category.text = analysis.category;
+          draft.color.text = analysis.color;
+          draft.season = analysis.season;
+          draft.formality = analysis.formality;
+          draft.description.text = analysis.description;
+        }
+        setState(() => draft.analyzing = false);
+      }),
+    );
   }
 
   @override
@@ -83,7 +91,8 @@ class _BatchAddScreenState extends State<BatchAddScreen> {
   }
 
   Future<void> _saveAll() async {
-    if (_uploading || _analyzing) return;
+    if (_uploading) return;
+    final wardrobe = context.read<WardrobeProvider>();
     final selected = _drafts.where((draft) => draft.selected).toList();
 
     var uploaded = 0;
@@ -95,7 +104,7 @@ class _BatchAddScreenState extends State<BatchAddScreen> {
         _uploadingIndex = index;
         draft.error = null;
       });
-      await context.read<WardrobeProvider>().uploadOptimistically(
+      await wardrobe.uploadOptimistically(
         image: draft.image,
         name: draft.name.text.trim().isEmpty
             ? 'New wardrobe item ${index + 1}'
@@ -233,8 +242,8 @@ class _BatchAddScreenState extends State<BatchAddScreen> {
               child: SizedBox(
                 width: double.infinity,
                 child: FilledButton.icon(
-                  onPressed: _uploading || _analyzing ? null : _saveAll,
-                  icon: _uploading || _analyzing
+                  onPressed: _uploading ? null : _saveAll,
+                  icon: _uploading
                       ? const SizedBox.square(
                           dimension: 18,
                           child: CircularProgressIndicator(strokeWidth: 2),
@@ -242,7 +251,7 @@ class _BatchAddScreenState extends State<BatchAddScreen> {
                       : const Icon(Icons.cloud_upload_outlined),
                   label: Text(
                     _analyzing
-                        ? 'Auto-filling item details…'
+                        ? 'Add now · ${_drafts.where((draft) => draft.analysis != null).length}/${_drafts.length} analyzed'
                         : _uploading
                         ? 'Uploading photo ${(_uploadingIndex ?? 0) + 1} of ${_drafts.length}'
                         : 'Add $selectedCount ${selectedCount == 1 ? 'item' : 'items'}',
@@ -318,7 +327,9 @@ class _BatchDraftPage extends StatelessWidget {
         const SizedBox(height: 6),
         Text(
           draft.analyzing
-              ? 'AI is identifying this item and filling every field…'
+              ? draft.job?.status == 'processing'
+                    ? 'AI is analyzing this item now. You can add everything and leave this screen.'
+                    : 'In queue: ${draft.job?.itemsAhead ?? 0} ahead · about ${draft.job?.estimatedWaitSeconds ?? 0}s. You can add now and keep using StyleStack.'
               : 'Saving locally and syncing in the background…',
           style: Theme.of(context).textTheme.bodySmall,
         ),
@@ -458,6 +469,7 @@ class _BatchItemDraft {
   bool selected = true;
   bool uploaded = false;
   bool analyzing = false;
+  AiAnalysisJob? job;
   ClothingAnalysis? analysis;
 
   void dispose() {

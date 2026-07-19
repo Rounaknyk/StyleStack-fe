@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 
 import '../models/wardrobe_item.dart';
 import '../models/clothing_analysis.dart';
+import '../models/ai_analysis_job.dart';
 import '../services/api_service.dart';
 import '../services/wardrobe_cache.dart';
 
@@ -24,7 +25,7 @@ class WardrobeProvider extends ChangeNotifier {
   bool _syncing = false;
   bool _uploading = false;
   bool _deleting = false;
-  bool _analyzing = false;
+  int _analysesInFlight = 0;
   String? _error;
   bool _loaded = false;
   int _uploadsInFlight = 0;
@@ -35,7 +36,7 @@ class WardrobeProvider extends ChangeNotifier {
   bool get syncing => _syncing;
   bool get uploading => _uploading;
   bool get deleting => _deleting;
-  bool get analyzing => _analyzing;
+  bool get analyzing => _analysesInFlight > 0;
   String? get error => _error;
   bool get loaded => _loaded;
   String? get _ownerUid {
@@ -315,13 +316,26 @@ class WardrobeProvider extends ChangeNotifier {
     }
   }
 
-  Future<ClothingAnalysis?> analyzeImage(File image) async {
-    if (_analyzing) return null;
-    _analyzing = true;
+  Future<ClothingAnalysis?> analyzeImage(
+    File image, {
+    void Function(AiAnalysisJob status)? onStatus,
+  }) async {
+    _analysesInFlight++;
     _error = null;
     notifyListeners();
     try {
-      return await _api.analyzeImage(image);
+      var job = await _api.enqueueImageAnalysis(image);
+      onStatus?.call(job);
+      while (!job.isTerminal) {
+        await Future<void>.delayed(const Duration(milliseconds: 750));
+        job = await _api.fetchImageAnalysisJob(job.id);
+        onStatus?.call(job);
+      }
+      if (job.status == 'completed') return job.analysis;
+      if (job.status == 'failed') {
+        _error = job.error ?? 'AI could not analyze this image.';
+      }
+      return null;
     } on ApiException catch (error) {
       _error = error.message;
       return null;
@@ -329,8 +343,20 @@ class WardrobeProvider extends ChangeNotifier {
       _error = 'AI could not analyze this image. Enter the details manually.';
       return null;
     } finally {
-      _analyzing = false;
+      _analysesInFlight--;
+      if (_analysesInFlight < 0) _analysesInFlight = 0;
       notifyListeners();
+    }
+  }
+
+  Future<void> cancelAnalysis(String jobId) async {
+    try {
+      await _api.cancelImageAnalysisJob(jobId);
+    } on ApiException catch (error) {
+      if (error.statusCode != 409 && error.statusCode != 404) {
+        _error = error.message;
+        notifyListeners();
+      }
     }
   }
 
@@ -347,13 +373,14 @@ class WardrobeProvider extends ChangeNotifier {
   }
 
   void beginAnalysis() {
-    _analyzing = true;
+    _analysesInFlight++;
     _error = null;
     notifyListeners();
   }
 
   void endAnalysis() {
-    _analyzing = false;
+    _analysesInFlight--;
+    if (_analysesInFlight < 0) _analysesInFlight = 0;
     notifyListeners();
   }
 
