@@ -19,12 +19,14 @@ class DailyOutfitView extends StatefulWidget {
     required this.onOpenHistory,
     required this.onOpenProfile,
     required this.onCreateStyle,
+    required this.onAddItem,
   });
 
   final Future<void> Function() onOutfitSelfie;
   final VoidCallback onOpenHistory;
   final VoidCallback onOpenProfile;
   final Future<void> Function() onCreateStyle;
+  final Future<void> Function() onAddItem;
 
   @override
   State<DailyOutfitView> createState() => _DailyOutfitViewState();
@@ -390,21 +392,25 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
           if ((mvp.preferences?.city?.trim() ?? '').isEmpty)
             _WardrobeGate(
               icon: Icons.location_on_outlined,
-              title: 'One quick setup step',
+              title: 'Start with your wardrobe',
               body:
-                  'Enable location once so your look is comfortable for today without making weather the main event.',
-              action: 'Set up location',
-              onPressed: widget.onOpenProfile,
+                  'Add your first pieces to unlock styling. Location is optional and only improves weather-aware suggestions.',
+              action: 'Add your first item',
+              onPressed: widget.onAddItem,
+              secondaryAction: 'Enable location',
+              onSecondaryPressed: widget.onOpenProfile,
             )
           else if (mvp.loadingOutfit && mvp.outfit == null)
             const _OutfitSkeleton()
           else if (mvp.outfit == null)
             _WardrobeGate(
-              icon: Icons.refresh,
-              title: 'Your look needs another try',
-              body: mvp.error ?? 'We could not style a look right now.',
-              action: 'Try again',
-              onPressed: _newLook,
+              icon: Icons.checkroom_outlined,
+              title: 'Build your style library',
+              body: 'Add pieces from your closet and your stylist will create looks from what you actually own.',
+              action: 'Add items',
+              onPressed: widget.onAddItem,
+              secondaryAction: 'Try again',
+              onSecondaryPressed: _newLook,
             )
           else ...[
             _WeatherStrip(outfit: mvp.outfit!),
@@ -882,12 +888,16 @@ class _WardrobeGate extends StatelessWidget {
     required this.body,
     required this.action,
     required this.onPressed,
+    this.secondaryAction,
+    this.onSecondaryPressed,
   });
   final IconData icon;
   final String title;
   final String body;
   final String action;
   final VoidCallback onPressed;
+  final String? secondaryAction;
+  final VoidCallback? onSecondaryPressed;
 
   @override
   Widget build(BuildContext context) => StyleStackCard(
@@ -922,6 +932,13 @@ class _WardrobeGate extends StatelessWidget {
             icon: const Icon(Icons.add),
             label: Text(action),
           ),
+          if (secondaryAction != null && onSecondaryPressed != null) ...[
+            const SizedBox(height: 6),
+            TextButton(
+              onPressed: onSecondaryPressed,
+              child: Text(secondaryAction!),
+            ),
+          ],
         ],
       ),
     ),

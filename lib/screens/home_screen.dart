@@ -208,6 +208,7 @@ class _HomeScreenState extends State<HomeScreen> {
               onOpenHistory: () => _selectTab(2),
               onOpenProfile: () => _selectTab(3),
               onCreateStyle: _openCreateStyle,
+              onAddItem: _chooseImageSource,
             ),
             WardrobeView(onAddItem: _chooseImageSource),
             const OutfitHistoryView(),

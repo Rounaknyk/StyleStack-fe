@@ -87,7 +87,17 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
         _city.text = location.city;
         if (location.timezone.contains('/')) _timezone.text = location.timezone;
       });
-      _message('Location set to ${location.city}.');
+      // Persist immediately so Today reflects the detected city without
+      // requiring a second tap on Save (especially after account switching).
+      final saved = await context.read<MvpProvider>().savePreferences({
+        'city': location.city,
+        'timezone': location.timezone,
+      });
+      _message(
+        saved
+            ? 'Location set to ${location.city}.'
+            : 'Location detected, but could not save it yet.',
+      );
     } catch (error) {
       _message(error.toString().replaceFirst('Exception: ', ''));
     } finally {
