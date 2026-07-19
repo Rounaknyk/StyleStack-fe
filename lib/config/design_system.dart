@@ -130,30 +130,35 @@ class DesignSystem {
       // Text themes
       textTheme: TextTheme(
         displayLarge: const TextStyle(
+          fontFamily: 'Georgia',
           fontSize: 32,
           fontWeight: FontWeight.w700,
           color: textPrimary,
           letterSpacing: 0,
         ),
         displayMedium: const TextStyle(
+          fontFamily: 'Georgia',
           fontSize: 28,
           fontWeight: FontWeight.w700,
           color: textPrimary,
           letterSpacing: 0,
         ),
         displaySmall: const TextStyle(
+          fontFamily: 'Georgia',
           fontSize: 24,
           fontWeight: FontWeight.w700,
           color: textPrimary,
           letterSpacing: 0.15,
         ),
         headlineMedium: const TextStyle(
+          fontFamily: 'Georgia',
           fontSize: 20,
           fontWeight: FontWeight.w600,
           color: textPrimary,
           letterSpacing: 0.15,
         ),
         headlineSmall: const TextStyle(
+          fontFamily: 'Georgia',
           fontSize: 18,
           fontWeight: FontWeight.w600,
           color: textPrimary,
@@ -218,7 +223,7 @@ class DesignSystem {
       // Input decoration
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: surfaceAlt,
+        fillColor: surface,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: spacingLg,
           vertical: spacingMd,
@@ -252,7 +257,7 @@ class DesignSystem {
       // Buttons
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: cta,
+          backgroundColor: primary,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(
             horizontal: spacingXl,
@@ -334,7 +339,7 @@ class DesignSystem {
 
       // FAB
       floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: cta,
+        backgroundColor: primary,
         foregroundColor: Colors.white,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(radiusLg),

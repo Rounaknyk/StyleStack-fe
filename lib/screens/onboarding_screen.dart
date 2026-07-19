@@ -589,6 +589,11 @@ class _QuestionCard extends StatelessWidget {
         child: Material(
           color: DesignSystem.surface,
           borderRadius: BorderRadius.circular(DesignSystem.radiusXxl),
+          clipBehavior: Clip.antiAlias,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(DesignSystem.radiusXxl),
+            side: const BorderSide(color: DesignSystem.border),
+          ),
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Column(
