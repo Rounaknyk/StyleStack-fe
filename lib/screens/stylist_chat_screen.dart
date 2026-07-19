@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../config/design_system.dart';
+import '../config/custom_widgets.dart';
 import '../models/outfit.dart';
 import '../models/wardrobe_item.dart';
 import '../services/api_service.dart';
@@ -80,14 +81,16 @@ class _StylistChatScreenState extends State<StylistChatScreen> {
             const SizedBox(height: 12),
             FilledButton.icon(
               onPressed: _loading ? null : _ask,
-              icon: _loading
-                  ? const SizedBox.square(
-                      dimension: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.auto_awesome),
+              icon: const Icon(Icons.auto_awesome),
               label: Text(_loading ? 'Styling your look…' : 'Suggest my outfit'),
             ),
+            if (_loading)
+              const StyleStackLoadingIndicator(
+                message: 'Your stylist is curating options…',
+                animationAsset: StyleStackMotionAssets.outfitDesigner,
+                animationSize: 220,
+                padding: EdgeInsets.symmetric(vertical: 12),
+              ),
             if (_error != null) ...[
               const SizedBox(height: 16),
               Text(_error!, style: TextStyle(color: DesignSystem.error)),

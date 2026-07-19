@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../config/design_system.dart';
+import '../config/custom_widgets.dart';
 import '../models/outfit.dart';
 import '../services/api_service.dart';
 
@@ -39,7 +40,9 @@ class _ReminderOutfitScreenState extends State<ReminderOutfitScreen> {
     body: _error != null
         ? Center(child: Text(_error!))
         : _outfit == null
-        ? const Center(child: CircularProgressIndicator())
+        ? const StyleStackLoadingIndicator(
+            message: 'Preparing your planned outfit…',
+          )
         : Padding(
             padding: const EdgeInsets.all(16),
             child: Column(

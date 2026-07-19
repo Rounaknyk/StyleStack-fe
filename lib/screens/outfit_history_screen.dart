@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../config/design_system.dart';
+import '../config/custom_widgets.dart';
 import '../models/outfit.dart';
 import '../models/outfit_selfie.dart';
 import '../providers/mvp_provider.dart';
@@ -138,7 +139,11 @@ class _OutfitHistoryViewState extends State<OutfitHistoryView> {
           ),
           const SizedBox(height: 12),
           if (_loading)
-            ...List.generate(3, (_) => const _HistorySkeleton())
+            const StyleStackLoadingIndicator(
+              message: 'Loading your outfit history…',
+              animationSize: 170,
+              padding: EdgeInsets.symmetric(vertical: 12),
+            )
           else if (_error != null)
             _ErrorCard(message: _error!, onRetry: _load)
           else if (_entries.isEmpty)
@@ -367,19 +372,6 @@ class _TimelineEntry extends StatelessWidget {
           ),
         ),
       ],
-    ),
-  );
-}
-
-class _HistorySkeleton extends StatelessWidget {
-  const _HistorySkeleton();
-  @override
-  Widget build(BuildContext context) => Container(
-    height: 138,
-    margin: const EdgeInsets.only(bottom: 14),
-    decoration: BoxDecoration(
-      color: DesignSystem.surfaceAlt,
-      borderRadius: BorderRadius.circular(DesignSystem.radiusLg),
     ),
   );
 }

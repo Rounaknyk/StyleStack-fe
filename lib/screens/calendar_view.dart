@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../config/design_system.dart';
+import '../config/custom_widgets.dart';
 import '../models/calendar_models.dart';
 import '../services/api_service.dart';
 import '../services/calendar_sync_service.dart';
@@ -370,7 +371,11 @@ class _StyleCalendarViewState extends State<StyleCalendarView> {
           ),
           const SizedBox(height: 12),
           if (_loading)
-            const Center(child: CircularProgressIndicator())
+            const StyleStackLoadingIndicator(
+              message: 'Loading your style calendar…',
+              animationSize: 150,
+              padding: EdgeInsets.symmetric(vertical: 12),
+            )
           else if (_error != null && _events.isEmpty)
             _CalendarMessage(icon: Icons.cloud_off_outlined, text: _error!)
           else if (_selectedEvents.isEmpty)

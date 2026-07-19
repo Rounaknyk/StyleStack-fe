@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../config/design_system.dart';
+import '../config/custom_widgets.dart';
 import '../models/calendar_models.dart';
 import '../services/api_service.dart';
 import 'reminder_outfit_screen.dart';
@@ -39,7 +40,9 @@ class _NotificationInboxScreenState extends State<NotificationInboxScreen> {
     body: RefreshIndicator(
       onRefresh: _load,
       child: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const StyleStackLoadingIndicator(
+              message: 'Checking your style reminders…',
+            )
           : _items.isEmpty
           ? ListView(
               children: const [

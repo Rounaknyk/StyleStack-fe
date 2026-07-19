@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../config/design_system.dart';
+import '../config/custom_widgets.dart';
 import '../models/canvas_style.dart';
 import '../services/api_service.dart';
 import 'canvas_style_builder_screen.dart';
@@ -30,8 +31,11 @@ class _SavedStylesScreenState extends State<SavedStylesScreen> {
     body: FutureBuilder<List<CanvasStyle>>(
       future: _styles,
       builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done)
-          return const Center(child: CircularProgressIndicator());
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const StyleStackLoadingIndicator(
+            message: 'Opening your saved styles…',
+          );
+        }
         if (snapshot.hasError)
           return Center(
             child: FilledButton.icon(

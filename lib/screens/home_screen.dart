@@ -468,7 +468,9 @@ class _WardrobeViewState extends State<WardrobeView> {
   Widget build(BuildContext context) {
     final wardrobe = context.watch<WardrobeProvider>();
     if (wardrobe.loading && wardrobe.items.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return const StyleStackLoadingIndicator(
+        message: 'Opening your wardrobe…',
+      );
     }
     if (wardrobe.error != null && wardrobe.items.isEmpty) {
       return _Message(
@@ -480,6 +482,7 @@ class _WardrobeViewState extends State<WardrobeView> {
     if (wardrobe.items.isEmpty) {
       return _Message(
         icon: Icons.checkroom_outlined,
+        animationAsset: StyleStackMotionAssets.emptyCloset,
         title: 'Build your wardrobe',
         subtitle:
             'Add your first piece and your personal stylist will start learning your style.',
@@ -1075,12 +1078,14 @@ class _Message extends StatelessWidget {
     this.subtitle,
     this.action,
     this.actionLabel = 'Try again',
+    this.animationAsset,
   });
   final IconData icon;
   final String title;
   final String? subtitle;
   final VoidCallback? action;
   final String actionLabel;
+  final String? animationAsset;
 
   @override
   Widget build(BuildContext context) => StyleStackEmptyState(
@@ -1089,5 +1094,6 @@ class _Message extends StatelessWidget {
     subtitle: subtitle,
     actionLabel: action != null ? actionLabel : null,
     onAction: action,
+    animationAsset: animationAsset,
   );
 }

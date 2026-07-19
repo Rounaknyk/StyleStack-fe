@@ -359,14 +359,20 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
                 onPressed: mvp.loadingEventOutfit
                     ? null
                     : () => _newEventLook(priorityEvent),
-                icon: mvp.loadingEventOutfit
-                    ? const SizedBox.square(
-                        dimension: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.auto_awesome),
-                label: const Text('Try another event look'),
+                icon: const Icon(Icons.auto_awesome),
+                label: Text(
+                  mvp.loadingEventOutfit
+                      ? 'Curating another event look…'
+                      : 'Try another event look',
+                ),
               ),
+              if (mvp.loadingEventOutfit)
+                const StyleStackLoadingIndicator(
+                  message: 'Refining your event look…',
+                  animationAsset: StyleStackMotionAssets.outfitDesigner,
+                  animationSize: 150,
+                  padding: EdgeInsets.only(top: 8),
+                ),
             ] else if (canStyle && mvp.eventError != null)
               _InlineRetry(
                 message: mvp.eventError!,
@@ -430,14 +436,20 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
             const SizedBox(height: 9),
             OutlinedButton.icon(
               onPressed: mvp.loadingOutfit ? null : _newLook,
-              icon: mvp.loadingOutfit
-                  ? const SizedBox.square(
-                      dimension: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.auto_awesome),
-              label: const Text('Show me a new look'),
+              icon: const Icon(Icons.auto_awesome),
+              label: Text(
+                mvp.loadingOutfit
+                    ? 'Curating a new look…'
+                    : 'Show me a new look',
+              ),
             ),
+            if (mvp.loadingOutfit)
+              const StyleStackLoadingIndicator(
+                message: 'Your stylist is reworking the edit…',
+                animationAsset: StyleStackMotionAssets.outfitDesigner,
+                animationSize: 150,
+                padding: EdgeInsets.only(top: 8),
+              ),
           ],
         ],
       ),
@@ -570,20 +582,16 @@ class _EventOutfitSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    height: 245,
+    height: 300,
     decoration: BoxDecoration(
       color: DesignSystem.surfaceAlt,
       borderRadius: BorderRadius.circular(DesignSystem.radiusXl),
     ),
-    child: const Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          CircularProgressIndicator(),
-          SizedBox(height: 14),
-          Text('Styling your event look…'),
-        ],
-      ),
+    child: const StyleStackLoadingIndicator(
+      message: 'Curating your event look…',
+      animationAsset: StyleStackMotionAssets.outfitDesigner,
+      animationSize: 220,
+      padding: EdgeInsets.all(12),
     ),
   );
 }
@@ -951,30 +959,11 @@ class _TodaySkeleton extends StatelessWidget {
   Widget build(BuildContext context) => ListView(
     physics: const AlwaysScrollableScrollPhysics(),
     padding: const EdgeInsets.fromLTRB(18, 28, 18, 120),
-    children: [
-      Text('Today', style: Theme.of(context).textTheme.displaySmall),
-      const SizedBox(height: 8),
-      Text(
-        'Curating a look from your style profile…',
-        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-          color: DesignSystem.textSecondary,
-        ),
-      ),
-      const SizedBox(height: 24),
-      const LinearProgressIndicator(minHeight: 3),
-      const SizedBox(height: 20),
-      ...List.generate(
-        3,
-        (index) => Container(
-          height: index == 1 ? 240 : 58,
-          margin: const EdgeInsets.only(bottom: 14),
-          decoration: BoxDecoration(
-            color: DesignSystem.surfaceAlt,
-            borderRadius: BorderRadius.all(
-              Radius.circular(DesignSystem.radiusLg),
-            ),
-          ),
-        ),
+    children: const [
+      SizedBox(height: 90),
+      StyleStackLoadingIndicator(
+        message: 'Preparing today’s edit…',
+        animationSize: 210,
       ),
     ],
   );
@@ -983,27 +972,18 @@ class _TodaySkeleton extends StatelessWidget {
 class _OutfitSkeleton extends StatelessWidget {
   const _OutfitSkeleton();
   @override
-  Widget build(BuildContext context) => const _SkeletonList(compact: true);
-}
-
-class _SkeletonList extends StatelessWidget {
-  const _SkeletonList({this.compact = false});
-  final bool compact;
-
-  @override
-  Widget build(BuildContext context) => ListView(
-    physics: const AlwaysScrollableScrollPhysics(),
-    padding: const EdgeInsets.all(18),
-    children: List.generate(
-      compact ? 3 : 5,
-      (index) => Container(
-        height: index == 1 ? 260 : 56,
-        margin: const EdgeInsets.only(bottom: 14),
-        decoration: BoxDecoration(
-          color: DesignSystem.surfaceAlt,
-          borderRadius: BorderRadius.circular(DesignSystem.radiusLg),
-        ),
-      ),
+  Widget build(BuildContext context) => Container(
+    height: 340,
+    decoration: BoxDecoration(
+      color: DesignSystem.surface,
+      borderRadius: BorderRadius.circular(DesignSystem.radiusXl),
+      border: Border.all(color: DesignSystem.border),
+    ),
+    child: const StyleStackLoadingIndicator(
+      message: 'Your stylist is curating a look…',
+      animationAsset: StyleStackMotionAssets.outfitDesigner,
+      animationSize: 250,
+      padding: EdgeInsets.all(12),
     ),
   );
 }

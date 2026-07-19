@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:forui/forui.dart';
+import 'package:lottie/lottie.dart';
 import 'design_system.dart';
 
 /// Custom reusable widgets following StyleStack design system
@@ -132,29 +133,67 @@ enum _ButtonVariant { filled, outlined, text }
 
 enum _ButtonSize { small, medium, large }
 
+abstract final class StyleStackMotionAssets {
+  static const universalLoader =
+      'assets/animations/capsule_wardrobe_carousel.json';
+  static const outfitDesigner = 'assets/animations/digital_designer.json';
+  static const emptyCloset = 'assets/animations/closet.json';
+}
+
 class StyleStackLoadingIndicator extends StatelessWidget {
-  const StyleStackLoadingIndicator({super.key, this.message = 'Loading...'});
+  const StyleStackLoadingIndicator({
+    super.key,
+    this.message = 'Loading…',
+    this.animationAsset = StyleStackMotionAssets.universalLoader,
+    this.animationSize = 180,
+    this.padding = const EdgeInsets.all(DesignSystem.spacingXl),
+  });
 
   final String message;
+  final String animationAsset;
+  final double animationSize;
+  final EdgeInsets padding;
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const CircularProgressIndicator(
-            color: DesignSystem.primary,
-            strokeWidth: 3,
+    return Semantics(
+      label: message,
+      liveRegion: true,
+      child: Center(
+        child: Padding(
+          padding: padding,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              RepaintBoundary(
+                child: SizedBox.square(
+                  dimension: animationSize,
+                  child: Lottie.asset(
+                    animationAsset,
+                    repeat: true,
+                    fit: BoxFit.contain,
+                    frameRate: FrameRate.max,
+                    errorBuilder: (context, error, stackTrace) => const Center(
+                      child: FCircularProgress.loader(size: .md),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: DesignSystem.spacingMd),
+              ExcludeSemantics(
+                child: Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: DesignSystem.textSecondary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: DesignSystem.spacingLg),
-          Text(
-            message,
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: DesignSystem.textSecondary),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -168,6 +207,7 @@ class StyleStackEmptyState extends StatelessWidget {
     this.subtitle,
     this.actionLabel,
     this.onAction,
+    this.animationAsset,
   });
 
   final IconData icon;
@@ -175,6 +215,7 @@ class StyleStackEmptyState extends StatelessWidget {
   final String? subtitle;
   final String? actionLabel;
   final VoidCallback? onAction;
+  final String? animationAsset;
 
   @override
   Widget build(BuildContext context) {
@@ -184,14 +225,28 @@ class StyleStackEmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              padding: const EdgeInsets.all(DesignSystem.spacingXl),
-              decoration: BoxDecoration(
-                color: DesignSystem.secondary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(DesignSystem.radiusXl),
+            if (animationAsset != null)
+              RepaintBoundary(
+                child: SizedBox.square(
+                  dimension: 210,
+                  child: Lottie.asset(
+                    animationAsset!,
+                    repeat: true,
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) =>
+                        Icon(icon, size: 56, color: DesignSystem.primary),
+                  ),
+                ),
+              )
+            else
+              Container(
+                padding: const EdgeInsets.all(DesignSystem.spacingXl),
+                decoration: BoxDecoration(
+                  color: DesignSystem.secondary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(DesignSystem.radiusXl),
+                ),
+                child: Icon(icon, size: 56, color: DesignSystem.primary),
               ),
-              child: Icon(icon, size: 56, color: DesignSystem.primary),
-            ),
             const SizedBox(height: DesignSystem.spacingXl),
             Text(
               title,
