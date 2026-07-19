@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:forui/forui.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
@@ -229,29 +230,26 @@ class _HomeScreenState extends State<HomeScreen> {
               label: const Text('Add item'),
             )
           : null,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _tab,
-        onDestinationSelected: _selectTab,
-        destinations: const [
-          NavigationDestination(
+      bottomNavigationBar: FBottomNavigationBar(
+        safeAreaBottom: true,
+        index: _tab,
+        onChange: _selectTab,
+        children: const [
+          FBottomNavigationBarItem(
             icon: Icon(Icons.wb_sunny_outlined),
-            selectedIcon: Icon(Icons.wb_sunny),
-            label: 'Today',
+            label: Text('Today'),
           ),
-          NavigationDestination(
+          FBottomNavigationBarItem(
             icon: Icon(Icons.checkroom_outlined),
-            selectedIcon: Icon(Icons.checkroom),
-            label: 'Wardrobe',
+            label: Text('Wardrobe'),
           ),
-          NavigationDestination(
+          FBottomNavigationBarItem(
             icon: Icon(Icons.photo_library_outlined),
-            selectedIcon: Icon(Icons.photo_library),
-            label: 'Outfits',
+            label: Text('Outfits'),
           ),
-          NavigationDestination(
+          FBottomNavigationBarItem(
             icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
-            label: 'Profile',
+            label: Text('Profile'),
           ),
         ],
       ),

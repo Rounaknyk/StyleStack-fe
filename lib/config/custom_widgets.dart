@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:forui/forui.dart';
 import 'design_system.dart';
 
 /// Custom reusable widgets following StyleStack design system
@@ -27,20 +28,32 @@ class StyleStackCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final base = context.theme.cardStyle;
     return Container(
       margin: margin,
       decoration: BoxDecoration(
-        color: backgroundColor,
         borderRadius: BorderRadius.circular(borderRadius),
         boxShadow: hasShadow ? DesignSystem.shadowSoft : null,
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          onLongPress: onLongPress,
-          borderRadius: BorderRadius.circular(borderRadius),
-          child: Padding(padding: padding, child: child),
+      child: GestureDetector(
+        onTap: onTap,
+        onLongPress: onLongPress,
+        behavior: HitTestBehavior.opaque,
+        child: FCard(
+          clipBehavior: Clip.antiAlias,
+          style: FCardStyle(
+            decoration: BoxDecoration(
+              color: backgroundColor,
+              borderRadius: BorderRadius.circular(borderRadius),
+              border: Border.all(color: DesignSystem.border),
+            ),
+            titleTextStyle: base.titleTextStyle,
+            subtitleTextStyle: base.subtitleTextStyle,
+            padding: padding,
+          ),
+          builder: (context, style, child) =>
+              Padding(padding: style.padding, child: child),
+          child: child,
         ),
       ),
     );
@@ -68,61 +81,50 @@ class StyleStackButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDisabled = isLoading;
-
-    final padding = switch (size) {
-      _ButtonSize.small => const EdgeInsets.symmetric(
-        horizontal: DesignSystem.spacingMd,
-        vertical: DesignSystem.spacingSm,
-      ),
-      _ButtonSize.medium => const EdgeInsets.symmetric(
-        horizontal: DesignSystem.spacingXl,
-        vertical: DesignSystem.spacingMd,
-      ),
-      _ButtonSize.large => const EdgeInsets.symmetric(
-        horizontal: DesignSystem.spacingXl,
-        vertical: DesignSystem.spacingLg,
-      ),
+    final foruiVariant = switch (variant) {
+      _ButtonVariant.filled => FButtonVariant.primary,
+      _ButtonVariant.outlined => FButtonVariant.outline,
+      _ButtonVariant.text => FButtonVariant.ghost,
+    };
+    final foruiSize = switch (size) {
+      _ButtonSize.small => FButtonSizeVariant.sm,
+      _ButtonSize.medium => FButtonSizeVariant.md,
+      _ButtonSize.large => FButtonSizeVariant.lg,
     };
 
-    switch (variant) {
-      case _ButtonVariant.filled:
-        return FilledButton.icon(
-          onPressed: isDisabled ? null : onPressed,
-          icon: isLoading
-              ? const SizedBox.square(
-                  dimension: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : (icon != null ? Icon(icon) : const SizedBox.shrink()),
-          label: Text(label),
-          style: FilledButton.styleFrom(padding: padding),
-        );
+    final height = switch (size) {
+      _ButtonSize.small => 40.0,
+      _ButtonSize.medium => 44.0,
+      _ButtonSize.large => 48.0,
+    };
 
-      case _ButtonVariant.outlined:
-        return OutlinedButton.icon(
-          onPressed: isDisabled ? null : onPressed,
-          icon: isLoading
-              ? const SizedBox.square(
-                  dimension: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : (icon != null ? Icon(icon) : const SizedBox.shrink()),
-          label: Text(label),
-          style: OutlinedButton.styleFrom(padding: padding),
-        );
-
-      case _ButtonVariant.text:
-        return TextButton.icon(
-          onPressed: isDisabled ? null : onPressed,
-          icon: isLoading
-              ? const SizedBox.square(
-                  dimension: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : (icon != null ? Icon(icon) : const SizedBox.shrink()),
-          label: Text(label),
-        );
-    }
+    return SizedBox(
+      height: height,
+      child: FButton.raw(
+        onPress: isDisabled ? null : onPressed,
+        variant: foruiVariant,
+        size: foruiSize,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: DesignSystem.spacingMd,
+          ),
+          child: Center(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (isLoading)
+                  const FCircularProgress.loader(size: .sm)
+                else if (icon != null)
+                  Icon(icon),
+                if (isLoading || icon != null)
+                  const SizedBox(width: DesignSystem.spacingSm),
+                Flexible(child: Text(label, overflow: TextOverflow.ellipsis)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 

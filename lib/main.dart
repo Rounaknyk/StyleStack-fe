@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:forui/forui.dart';
 import 'package:provider/provider.dart';
 
 import 'config/design_system.dart';
@@ -44,6 +45,7 @@ class StyleStackApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final foruiTheme = DesignSystem.buildForuiTheme();
     return MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: settingsProvider),
@@ -60,29 +62,52 @@ class StyleStackApp extends StatelessWidget {
       child: MaterialApp(
         title: 'StyleStack',
         debugShowCheckedModeBanner: false,
-        theme: DesignSystem.buildTheme(),
+        supportedLocales: FLocalizations.supportedLocales,
+        localizationsDelegates: const [
+          ...FLocalizations.localizationsDelegates,
+        ],
+        theme: foruiTheme.toApproximateMaterialTheme().copyWith(
+          scaffoldBackgroundColor: DesignSystem.background,
+          appBarTheme: DesignSystem.buildTheme().appBarTheme,
+          textTheme: DesignSystem.buildTheme().textTheme,
+          inputDecorationTheme: DesignSystem.buildTheme().inputDecorationTheme,
+          filledButtonTheme: DesignSystem.buildTheme().filledButtonTheme,
+          outlinedButtonTheme: DesignSystem.buildTheme().outlinedButtonTheme,
+          textButtonTheme: DesignSystem.buildTheme().textButtonTheme,
+          floatingActionButtonTheme:
+              DesignSystem.buildTheme().floatingActionButtonTheme,
+          snackBarTheme: DesignSystem.buildTheme().snackBarTheme,
+          bottomSheetTheme: DesignSystem.buildTheme().bottomSheetTheme,
+        ),
         home: const AuthGate(),
-        builder: (context, child) => Stack(
-          children: [
-            child ?? const SizedBox.shrink(),
-            Consumer<GmailSyncProvider>(
-              builder: (context, sync, child) {
-                if (!sync.isRunning) return const SizedBox.shrink();
-                return Positioned(
-                  top: MediaQuery.paddingOf(context).top,
-                  left: 0,
-                  right: 0,
-                  child: const IgnorePointer(
-                    child: LinearProgressIndicator(
-                      minHeight: 3,
-                      backgroundColor: Colors.transparent,
-                      color: DesignSystem.primary,
-                    ),
+        builder: (context, child) => FTheme(
+          data: foruiTheme,
+          child: FToaster(
+            child: FTooltipGroup(
+              child: Stack(
+                children: [
+                  child ?? const SizedBox.shrink(),
+                  Consumer<GmailSyncProvider>(
+                    builder: (context, sync, child) {
+                      if (!sync.isRunning) return const SizedBox.shrink();
+                      return Positioned(
+                        top: MediaQuery.paddingOf(context).top,
+                        left: 0,
+                        right: 0,
+                        child: const IgnorePointer(
+                          child: LinearProgressIndicator(
+                            minHeight: 3,
+                            backgroundColor: Colors.transparent,
+                            color: DesignSystem.primary,
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
+                ],
+              ),
             ),
-          ],
+          ),
         ),
       ),
     );

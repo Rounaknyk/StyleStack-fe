@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:forui/forui.dart';
 
 /// StyleStack Design System - Centralized design tokens and styling
 class DesignSystem {
@@ -77,6 +78,36 @@ class DesignSystem {
   static const Duration transitionSlow = Duration(milliseconds: 500);
 
   static const Curve curveEasing = Curves.easeInOut;
+
+  /// Native ForUI theme used by the application shell and all migrated
+  /// components. Material widgets receive the same palette through ForUI's
+  /// compatibility theme, keeping legacy flows visually consistent while
+  /// they are replaced incrementally.
+  static FThemeData buildForuiTheme() {
+    final base = FTheme.neutral.light.touch;
+    return FThemeData(
+      debugLabel: 'StyleStack ForUI',
+      touch: true,
+      colors: base.colors.copyWith(
+        background: background,
+        foreground: textPrimary,
+        primary: primary,
+        primaryForeground: Colors.white,
+        secondary: surfaceAlt,
+        secondaryForeground: primaryDark,
+        muted: surfaceAlt,
+        mutedForeground: textSecondary,
+        destructive: error,
+        destructiveForeground: Colors.white,
+        error: error,
+        errorForeground: Colors.white,
+        card: surface,
+        border: border,
+      ),
+      typography: base.typography,
+      style: base.style,
+    );
+  }
 
   // === ICON SIZES ===
   static const double iconSizeSmall = 16.0;
@@ -383,9 +414,7 @@ class DesignSystem {
         modalBackgroundColor: surface,
         showDragHandle: true,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(
-            top: Radius.circular(radiusXxl),
-          ),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(radiusXxl)),
         ),
       ),
 

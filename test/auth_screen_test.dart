@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:forui/forui.dart';
 import 'package:provider/provider.dart';
 import 'package:stylestack_fe/config/design_system.dart';
 import 'package:stylestack_fe/providers/auth_provider.dart';
@@ -20,7 +21,10 @@ void main() {
         value: provider,
         child: MaterialApp(
           theme: DesignSystem.buildTheme(),
-          home: const AuthScreen(),
+          home: FTheme(
+            data: DesignSystem.buildForuiTheme(),
+            child: const AuthScreen(),
+          ),
         ),
       ),
     );
@@ -50,7 +54,10 @@ void main() {
         value: provider,
         child: MaterialApp(
           theme: DesignSystem.buildTheme(),
-          home: const AuthScreen(),
+          home: FTheme(
+            data: DesignSystem.buildForuiTheme(),
+            child: const AuthScreen(),
+          ),
         ),
       ),
     );

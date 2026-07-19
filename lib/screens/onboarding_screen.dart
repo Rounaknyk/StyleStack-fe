@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:forui/forui.dart';
 import 'package:provider/provider.dart';
 
 import '../config/design_system.dart';
@@ -512,20 +513,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
           ],
           const SizedBox(height: 20),
-          FilledButton.icon(
+          FButton(
             key: const Key('onboarding_finish'),
-            style: FilledButton.styleFrom(backgroundColor: DesignSystem.cta),
-            onPressed: provider.saving ? null : _finish,
-            icon: provider.saving
-                ? const SizedBox.square(
-                    dimension: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
+            onPress: provider.saving ? null : _finish,
+            prefix: provider.saving
+                ? const FCircularProgress.loader(size: .sm)
                 : const Icon(Icons.arrow_forward_rounded),
-            label: Text(
+            child: Text(
               provider.saving
                   ? 'Building your profile…'
                   : 'Show my first outfit',
@@ -588,7 +582,6 @@ class _QuestionCard extends StatelessWidget {
         constraints: const BoxConstraints(maxWidth: 560),
         child: Material(
           color: DesignSystem.surface,
-          borderRadius: BorderRadius.circular(DesignSystem.radiusXxl),
           clipBehavior: Clip.antiAlias,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(DesignSystem.radiusXxl),
@@ -673,20 +666,21 @@ class _Footer extends StatelessWidget {
         child: Row(
           children: [
             if (optional) ...[
-              TextButton(
+              FButton(
                 key: const Key('onboarding_skip'),
-                onPressed: onSkip,
+                variant: .ghost,
+                mainAxisSize: MainAxisSize.min,
+                onPress: onSkip,
                 child: const Text('Skip'),
               ),
               const SizedBox(width: 10),
             ],
             Expanded(
-              child: FilledButton.icon(
+              child: FButton(
                 key: const Key('onboarding_continue'),
-                onPressed: canContinue ? onContinue : null,
-                iconAlignment: IconAlignment.end,
-                icon: const Icon(Icons.arrow_forward_rounded),
-                label: const Text('Continue'),
+                onPress: canContinue ? onContinue : null,
+                suffix: const Icon(Icons.arrow_forward_rounded),
+                child: const Text('Continue'),
               ),
             ),
           ],

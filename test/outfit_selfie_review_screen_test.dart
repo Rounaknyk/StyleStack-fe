@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:forui/forui.dart';
 import 'package:provider/provider.dart';
 import 'package:stylestack_fe/config/design_system.dart';
 import 'package:stylestack_fe/models/outfit_selfie.dart';
@@ -82,10 +83,13 @@ void main() {
         value: wardrobeProvider,
         child: MaterialApp(
           theme: DesignSystem.buildTheme(),
-          home: OutfitSelfieReviewScreen(
-            image: image,
-            api: api,
-            onRetake: () async {},
+          home: FTheme(
+            data: DesignSystem.buildForuiTheme(),
+            child: OutfitSelfieReviewScreen(
+              image: image,
+              api: api,
+              onRetake: () async {},
+            ),
           ),
         ),
       ),

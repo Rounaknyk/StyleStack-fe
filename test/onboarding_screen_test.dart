@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:forui/forui.dart';
 import 'package:provider/provider.dart';
 import 'package:stylestack_fe/config/design_system.dart';
 import 'package:stylestack_fe/models/onboarding_profile.dart';
@@ -20,26 +21,28 @@ void main() {
         value: provider,
         child: MaterialApp(
           theme: DesignSystem.buildTheme(),
-          home: OnboardingScreen(
-            updateDisplayName: (name) async => firebaseName = name,
-            onCompleted: () => finished = true,
+          home: FTheme(
+            data: DesignSystem.buildForuiTheme(),
+            child: OnboardingScreen(
+              updateDisplayName: (name) async => firebaseName = name,
+              onCompleted: () => finished = true,
+            ),
           ),
         ),
       ),
     );
 
-    FilledButton continueButton() => tester.widget<FilledButton>(
-      find.byKey(const Key('onboarding_continue')),
-    );
+    FButton continueButton() =>
+        tester.widget<FButton>(find.byKey(const Key('onboarding_continue')));
 
-    expect(continueButton().onPressed, isNull);
+    expect(continueButton().onPress, isNull);
     await tester.enterText(find.byKey(const Key('onboarding_name')), 'Rounak');
     await tester.pump();
-    expect(continueButton().onPressed, isNotNull);
+    expect(continueButton().onPress, isNotNull);
     await tester.tap(find.byKey(const Key('onboarding_continue')));
     await tester.pumpAndSettle();
 
-    expect(continueButton().onPressed, isNull);
+    expect(continueButton().onPress, isNull);
     await tester.tap(find.byKey(const Key('onboarding_choice_man')));
     await tester.pump();
     await tester.tap(find.byKey(const Key('onboarding_continue')));
