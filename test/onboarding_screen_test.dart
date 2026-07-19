@@ -9,6 +9,51 @@ import 'package:stylestack_fe/screens/onboarding_screen.dart';
 import 'package:stylestack_fe/services/onboarding_service.dart';
 
 void main() {
+  testWidgets('height slider is safe after the date picker route closes', (
+    tester,
+  ) async {
+    final provider = OnboardingProvider(_ScreenRepository());
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(
+        value: provider,
+        child: MaterialApp(
+          theme: DesignSystem.buildTheme(),
+          home: FTheme(
+            data: DesignSystem.buildForuiTheme(),
+            child: OnboardingScreen(updateDisplayName: (_) async {}),
+          ),
+        ),
+      ),
+    );
+
+    await tester.enterText(find.byKey(const Key('onboarding_name')), 'Rounak');
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('onboarding_continue')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('onboarding_choice_man')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('onboarding_continue')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('onboarding_dob')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('OK'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('onboarding_continue')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('onboarding_skip')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('How tall are you?'), findsOneWidget);
+    await tester.drag(
+      find.byKey(const Key('onboarding_height')),
+      const Offset(60, 0),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.textContaining('cm'), findsWidgets);
+  });
+
   testWidgets('mandatory questions gate progress and optional cards can skip', (
     tester,
   ) async {
