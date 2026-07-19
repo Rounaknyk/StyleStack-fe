@@ -53,6 +53,14 @@ class ApiService {
     }
   }
 
+  Future<void> deleteAccount() async {
+    final response = await _client.delete(
+      Uri.parse('${RuntimeConfig.apiBaseUrl}/users/me'),
+      headers: {'Authorization': 'Bearer ${await _token()}'},
+    );
+    _decode(response);
+  }
+
   Future<List<WardrobeItem>> fetchItems() async {
     final response = await _client.get(
       Uri.parse('${RuntimeConfig.apiBaseUrl}/wardrobe/items'),

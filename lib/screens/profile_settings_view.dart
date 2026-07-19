@@ -11,6 +11,7 @@ import '../providers/mvp_provider.dart';
 import '../providers/wardrobe_provider.dart';
 import '../services/location_service.dart';
 import '../services/notification_service.dart';
+import '../services/api_service.dart';
 import 'outfit_history_screen.dart';
 
 class ProfileSettingsView extends StatefulWidget {
@@ -30,6 +31,7 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
   bool _locationRequested = false;
   bool _runningNotificationSimulation = false;
   bool _schedulingNotificationSimulation = false;
+  bool _deletingAccount = false;
 
   @override
   void initState() {
@@ -159,16 +161,15 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
   }
 
   Future<String?> _registerPushDevice() async {
+    final provider = context.read<MvpProvider>();
     final token = await NotificationService.requestToken();
     if (token == null) return null;
-    await context.read<MvpProvider>().registerDevice(
-      token,
-      Platform.operatingSystem,
-    );
+    await provider.registerDevice(token, Platform.operatingSystem);
     return token;
   }
 
   Future<void> _runMorningSimulation() async {
+    final provider = context.read<MvpProvider>();
     if (mounted) setState(() => _runningNotificationSimulation = true);
     try {
       final token = await _registerPushDevice();
@@ -176,10 +177,10 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
         _message('Allow notifications on this physical device first.');
         return;
       }
-      final result = await context.read<MvpProvider>().runNotificationSimulation(
-        'daily-outfit',
-      );
-      if (mounted) _message(result['detail']?.toString() ?? 'Morning flow ran.');
+      final result = await provider.runNotificationSimulation('daily-outfit');
+      if (mounted) {
+        _message(result['detail']?.toString() ?? 'Morning flow ran.');
+      }
     } catch (error) {
       _message('Morning flow failed: ${error.toString()}');
     } finally {
@@ -188,6 +189,7 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
   }
 
   Future<void> _scheduleDelayedSimulation() async {
+    final provider = context.read<MvpProvider>();
     if (mounted) setState(() => _schedulingNotificationSimulation = true);
     try {
       final token = await _registerPushDevice();
@@ -195,7 +197,7 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
         _message('Allow notifications on this physical device first.');
         return;
       }
-      final result = await context.read<MvpProvider>().runNotificationSimulation(
+      final result = await provider.runNotificationSimulation(
         'daily-outfit-delay',
       );
       if (mounted) {
@@ -240,12 +242,84 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
     final ok = await wardrobe.deleteItems(
       wardrobe.items.map((item) => item.id).toSet(),
     );
-    if (mounted)
+    if (mounted) {
       _message(
         ok
             ? 'Wardrobe cleared.'
             : wardrobe.error ?? 'Could not clear wardrobe.',
       );
+    }
+  }
+
+  Future<void> _deleteAccount() async {
+    if (_deletingAccount) return;
+    final confirmation = TextEditingController();
+    var canDelete = false;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Delete your account?'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'This permanently deletes your wardrobe photos, outfits, '
+                'style history, calendar data, preferences, notifications, '
+                'and StyleStack sign-in account. This cannot be undone.',
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: confirmation,
+                autocorrect: false,
+                textCapitalization: TextCapitalization.characters,
+                decoration: const InputDecoration(
+                  labelText: 'Type DELETE to confirm',
+                ),
+                onChanged: (value) => setDialogState(
+                  () => canDelete = value.trim().toUpperCase() == 'DELETE',
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Keep account'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: DesignSystem.error,
+              ),
+              onPressed: canDelete
+                  ? () => Navigator.pop(dialogContext, true)
+                  : null,
+              child: const Text('Delete permanently'),
+            ),
+          ],
+        ),
+      ),
+    );
+    confirmation.dispose();
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _deletingAccount = true);
+    try {
+      await ApiService().deleteAccount();
+      if (!mounted) return;
+      context.read<GmailSyncProvider>().reset();
+      context.read<WardrobeProvider>().reset();
+      context.read<MvpProvider>().reset();
+      await context.read<AuthProvider>().signOut();
+    } on ApiException catch (error) {
+      _message(error.message);
+    } catch (_) {
+      _message('Could not delete your account. Please try again.');
+    } finally {
+      if (mounted) setState(() => _deletingAccount = false);
+    }
   }
 
   void _message(String text) {
@@ -465,6 +539,22 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
                 title: 'Clear wardrobe',
                 subtitle: 'Permanently delete wardrobe items',
                 onTap: _clearWardrobe,
+                destructive: true,
+              ),
+              const Divider(height: 1),
+              _SettingsTile(
+                icon: Icons.person_remove_outlined,
+                title: _deletingAccount
+                    ? 'Deleting account…'
+                    : 'Delete account',
+                subtitle: 'Permanently erase all StyleStack data',
+                trailing: _deletingAccount
+                    ? const SizedBox.square(
+                        dimension: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : null,
+                onTap: _deletingAccount ? null : _deleteAccount,
                 destructive: true,
               ),
               const Divider(height: 1),
