@@ -485,16 +485,14 @@ class _BrandHeader extends StatelessWidget {
           width: compact ? 58 : 76,
           height: compact ? 58 : 76,
           decoration: BoxDecoration(
-            color: DesignSystem.primary,
+            color: DesignSystem.surface,
             borderRadius: BorderRadius.circular(
               compact ? DesignSystem.radiusLg : DesignSystem.radiusXl,
             ),
+            border: Border.all(color: DesignSystem.border),
             boxShadow: DesignSystem.shadowSoft,
           ),
-          child: StyleStackLogo(
-            size: compact ? 34 : 48,
-            color: Colors.white,
-          ),
+          child: StyleStackLogo(size: compact ? 48 : 62),
         ),
         const SizedBox(height: DesignSystem.spacingLg),
         Text(
