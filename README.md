@@ -79,3 +79,48 @@ The Outfits tab uses the saved city or a city entered on screen. The Profile tab
 flutter analyze
 flutter test
 ```
+
+## Shorebird over-the-air updates
+
+StyleStack is registered with Shorebird so Dart-only fixes can be delivered
+without waiting for another Play Store review. The first store build for a
+version must always be created with Shorebird:
+
+```bash
+shorebird release android \
+  --dart-define=API_BASE_URL=https://stylestack-be.onrender.com/api/v1
+```
+
+Upload the generated
+`build/app/outputs/bundle/release/app-release.aab` to Google Play. Only users
+who install a Shorebird-built release can receive its patches; older standard
+Flutter builds cannot be patched retroactively.
+
+After changing Dart code, publish a patch for the latest Android release with:
+
+```bash
+shorebird patch android \
+  --release-version=latest \
+  --dart-define=API_BASE_URL=https://stylestack-be.onrender.com/api/v1
+```
+
+Use the same `--dart-define` values for the release and every patch. Shorebird
+downloads a stable patch in the background and applies it on a later app
+launch.
+
+Create a new Play Store release instead of a patch when a change includes:
+
+- native Android/iOS code or configuration
+- a new or updated Flutter plugin
+- assets, fonts, icons, or animations
+- a Flutter/engine version change
+
+Before publishing, run the normal analysis/tests and use `--dry-run` when a
+patch needs validation without uploading:
+
+```bash
+shorebird patch android \
+  --release-version=latest \
+  --dry-run \
+  --dart-define=API_BASE_URL=https://stylestack-be.onrender.com/api/v1
+```
