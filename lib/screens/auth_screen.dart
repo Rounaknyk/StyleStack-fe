@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 
 import '../config/design_system.dart';
@@ -160,13 +161,11 @@ class _AuthScreenState extends State<AuthScreen> {
                           color: Colors.white,
                           shape: BoxShape.circle,
                         ),
-                        child: const Text(
-                          'G',
-                          style: TextStyle(
-                            color: Color(0xFF4285F4),
-                            fontWeight: FontWeight.w800,
-                            fontSize: 15,
-                          ),
+                        child: SvgPicture.asset(
+                          'assets/images/google_icon_logo.svg',
+                          width: 18,
+                          height: 18,
+                          semanticsLabel: 'Google',
                         ),
                       ),
                       const SizedBox(width: DesignSystem.spacingMd),
