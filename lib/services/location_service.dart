@@ -8,12 +8,24 @@ class DetectedLocation {
 }
 
 class LocationService {
-  static Future<DetectedLocation> detectCity() async {
+  static Future<LocationPermission> permission() =>
+      Geolocator.checkPermission();
+
+  static Future<LocationPermission> requestPermission() =>
+      Geolocator.requestPermission();
+
+  static bool isGranted(LocationPermission permission) =>
+      permission == LocationPermission.always ||
+      permission == LocationPermission.whileInUse;
+
+  static Future<DetectedLocation> detectCity({
+    bool requestIfNeeded = true,
+  }) async {
     if (!await Geolocator.isLocationServiceEnabled()) {
       throw Exception('Turn on Location Services and try again.');
     }
     var permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
+    if (permission == LocationPermission.denied && requestIfNeeded) {
       permission = await Geolocator.requestPermission();
     }
     if (permission == LocationPermission.denied) {

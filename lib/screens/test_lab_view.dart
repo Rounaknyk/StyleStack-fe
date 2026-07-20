@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 import '../config/design_system.dart';
 import '../config/app_config.dart';
 import '../services/api_service.dart';
-import '../services/notification_service.dart';
+import '../services/permission_prompt_service.dart';
 import 'notification_inbox_screen.dart';
 
 class TestLabView extends StatefulWidget {
@@ -41,7 +41,9 @@ class _TestLabViewState extends State<TestLabView> {
 
   Future<bool> _prepareDevice() async {
     try {
-      final token = await NotificationService.requestToken();
+      final token = await PermissionPromptService.requestNotificationToken(
+        context,
+      );
       if (token == null) {
         _showResult(
           false,

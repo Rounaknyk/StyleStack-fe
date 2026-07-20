@@ -11,7 +11,7 @@ import '../providers/gmail_sync_provider.dart';
 import '../providers/mvp_provider.dart';
 import '../providers/wardrobe_provider.dart';
 import '../services/location_service.dart';
-import '../services/notification_service.dart';
+import '../services/permission_prompt_service.dart';
 import '../services/api_service.dart';
 import 'outfit_history_screen.dart';
 
@@ -105,7 +105,9 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
     final provider = context.read<MvpProvider>();
     if (_notifications) {
       try {
-        final token = await NotificationService.requestToken();
+        final token = await PermissionPromptService.requestNotificationToken(
+          context,
+        );
         if (token == null) {
           if (mounted) setState(() => _notifications = false);
           _message('Notification permission was not granted.');
@@ -135,7 +137,9 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
   Future<void> _detectLocation() async {
     setState(() => _detectingLocation = true);
     try {
-      final location = await LocationService.detectCity();
+      final permitted = await PermissionPromptService.requestLocation(context);
+      if (!permitted || !mounted) return;
+      final location = await LocationService.detectCity(requestIfNeeded: false);
       if (!mounted) return;
       setState(() {
         _city.text = location.city;
@@ -209,7 +213,9 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
   Future<void> _sendTestNotification() async {
     final provider = context.read<MvpProvider>();
     try {
-      final token = await NotificationService.requestToken();
+      final token = await PermissionPromptService.requestNotificationToken(
+        context,
+      );
       if (token == null) {
         _message('Allow notifications in device Settings first.');
         return;
@@ -231,10 +237,32 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
 
   Future<String?> _registerPushDevice() async {
     final provider = context.read<MvpProvider>();
-    final token = await NotificationService.requestToken();
+    final token = await PermissionPromptService.requestNotificationToken(
+      context,
+    );
     if (token == null) return null;
     await provider.registerDevice(token, Platform.operatingSystem);
     return token;
+  }
+
+  Future<void> _setNotifications(bool value) async {
+    if (!value) {
+      setState(() => _notifications = false);
+      return;
+    }
+    try {
+      final token = await PermissionPromptService.requestNotificationToken(
+        context,
+      );
+      if (token == null || !mounted) return;
+      await context.read<MvpProvider>().registerDevice(
+        token,
+        Platform.operatingSystem,
+      );
+      if (mounted) setState(() => _notifications = true);
+    } catch (_) {
+      _message('Push notifications require a configured physical device.');
+    }
   }
 
   Future<void> _runMorningSimulation() async {
@@ -411,7 +439,7 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
                 value: _notifications,
                 title: const Text('Morning outfit alert'),
                 subtitle: Text('Daily at ${_time.format(context)}'),
-                onChanged: (value) => setState(() => _notifications = value),
+                onChanged: _setNotifications,
               ),
               const Divider(height: 1),
               _SettingsTile(

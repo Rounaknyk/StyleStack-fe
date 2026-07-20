@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:forui/forui.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -14,6 +15,7 @@ import '../models/wardrobe_item.dart';
 import '../providers/auth_provider.dart';
 import '../providers/gmail_sync_provider.dart';
 import '../providers/wardrobe_provider.dart';
+import '../services/permission_prompt_service.dart';
 import 'camera_preview_screen.dart';
 import 'batch_add_screen.dart';
 import 'canvas_style_builder_screen.dart';
@@ -130,8 +132,10 @@ class _HomeScreenState extends State<HomeScreen> {
     if (source == _AddItemSource.gmail) {
       await _startGmailSync();
     } else if (source == _AddItemSource.gallery) {
+      if (!await PermissionPromptService.explainPhotos(context)) return;
       await _pickGalleryBatch();
     } else {
+      if (!await PermissionPromptService.explainCamera(context)) return;
       await _pickImage(ImageSource.camera);
     }
   }
@@ -189,11 +193,22 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _pickGalleryBatch() async {
-    final picked = await _picker.pickMultiImage(
-      imageQuality: 82,
-      maxWidth: 1600,
-      limit: maxBatchImages,
-    );
+    List<XFile> picked;
+    try {
+      picked = await _picker.pickMultiImage(
+        imageQuality: 82,
+        maxWidth: 1600,
+        limit: maxBatchImages,
+      );
+    } on PlatformException {
+      if (mounted) {
+        await PermissionPromptService.showMediaSettingsRecovery(
+          context,
+          mediaName: 'Photo library',
+        );
+      }
+      return;
+    }
     if (picked.isEmpty || !mounted) return;
     if (picked.length == 1) {
       await _showPreview(File(picked.first.path), ImageSource.gallery);
@@ -221,11 +236,22 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _pickImage(ImageSource source) async {
-    final picked = await _picker.pickImage(
-      source: source,
-      imageQuality: 82,
-      maxWidth: 1600,
-    );
+    XFile? picked;
+    try {
+      picked = await _picker.pickImage(
+        source: source,
+        imageQuality: 82,
+        maxWidth: 1600,
+      );
+    } on PlatformException {
+      if (mounted) {
+        await PermissionPromptService.showMediaSettingsRecovery(
+          context,
+          mediaName: source == ImageSource.camera ? 'Camera' : 'Photo library',
+        );
+      }
+      return;
+    }
     if (picked == null || !mounted) return;
     await _showPreview(File(picked.path), source);
   }
@@ -238,11 +264,24 @@ class _HomeScreenState extends State<HomeScreen> {
           image: image,
           retakeLabel: source == ImageSource.camera ? 'Retake' : 'Choose again',
           onRetake: () async {
-            final replacement = await _picker.pickImage(
-              source: source,
-              imageQuality: 82,
-              maxWidth: 1600,
-            );
+            XFile? replacement;
+            try {
+              replacement = await _picker.pickImage(
+                source: source,
+                imageQuality: 82,
+                maxWidth: 1600,
+              );
+            } on PlatformException {
+              if (mounted) {
+                await PermissionPromptService.showMediaSettingsRecovery(
+                  context,
+                  mediaName: source == ImageSource.camera
+                      ? 'Camera'
+                      : 'Photo library',
+                );
+              }
+              return;
+            }
             if (replacement == null || !mounted) return;
             Navigator.pop(context);
             await _showPreview(File(replacement.path), source);
