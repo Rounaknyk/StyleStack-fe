@@ -215,27 +215,22 @@ class _HomeScreenState extends State<HomeScreen> {
     await Future<void>.delayed(const Duration(milliseconds: 120));
 
     List<XFile> picked = const [];
-    var mediaAccessFailed = false;
+    PlatformException? pickerError;
     try {
       picked = await _picker.pickMultiImage(
         imageQuality: 82,
         maxWidth: 1600,
         limit: maxBatchImages,
       );
-    } on PlatformException {
-      mediaAccessFailed = true;
+    } on PlatformException catch (error) {
+      pickerError = error;
     } finally {
       if (rootNavigator.mounted && rootNavigator.canPop()) {
         rootNavigator.pop();
       }
     }
-    if (mediaAccessFailed) {
-      if (mounted) {
-        await PermissionPromptService.showMediaSettingsRecovery(
-          context,
-          mediaName: 'Photo library',
-        );
-      }
+    if (pickerError != null) {
+      await _handleMediaPickerError(pickerError, mediaName: 'Photo library');
       return;
     }
     if (picked.isEmpty || !mounted) return;
@@ -272,13 +267,11 @@ class _HomeScreenState extends State<HomeScreen> {
         imageQuality: 82,
         maxWidth: 1600,
       );
-    } on PlatformException {
-      if (mounted) {
-        await PermissionPromptService.showMediaSettingsRecovery(
-          context,
-          mediaName: source == ImageSource.camera ? 'Camera' : 'Photo library',
-        );
-      }
+    } on PlatformException catch (error) {
+      await _handleMediaPickerError(
+        error,
+        mediaName: source == ImageSource.camera ? 'Camera' : 'Photo library',
+      );
       return;
     }
     if (picked == null || !mounted) return;
@@ -300,15 +293,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 imageQuality: 82,
                 maxWidth: 1600,
               );
-            } on PlatformException {
-              if (mounted) {
-                await PermissionPromptService.showMediaSettingsRecovery(
-                  context,
-                  mediaName: source == ImageSource.camera
-                      ? 'Camera'
-                      : 'Photo library',
-                );
-              }
+            } on PlatformException catch (error) {
+              await _handleMediaPickerError(
+                error,
+                mediaName: source == ImageSource.camera
+                    ? 'Camera'
+                    : 'Photo library',
+              );
               return;
             }
             if (replacement == null || !mounted) return;
@@ -319,6 +310,38 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
     if (queued == true && mounted) _selectTab(1);
+  }
+
+  Future<void> _handleMediaPickerError(
+    PlatformException error, {
+    required String mediaName,
+  }) async {
+    debugPrint(
+      'media_picker_failed media=$mediaName code=${error.code} '
+      'message=${error.message}',
+    );
+    if (!mounted) return;
+
+    final code = error.code.toLowerCase();
+    final permissionWasDenied =
+        code.contains('access_denied') ||
+        code.contains('access_restricted') ||
+        code.contains('permission');
+    if (permissionWasDenied) {
+      await PermissionPromptService.showMediaSettingsRecovery(
+        context,
+        mediaName: mediaName,
+      );
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          '$mediaName could not be opened just now. Please try again.',
+        ),
+      ),
+    );
   }
 
   @override

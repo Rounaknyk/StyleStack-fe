@@ -21,6 +21,7 @@ class MvpProvider extends ChangeNotifier {
   bool saving = false;
   bool testingNotification = false;
   bool preferencesAttempted = false;
+  int wearHistoryRevision = 0;
   String? error;
   String? eventError;
 
@@ -210,6 +211,8 @@ class MvpProvider extends ChangeNotifier {
   Future<bool> markOutfitWorn(Outfit target) async {
     try {
       await _api.wearOutfit(target.id);
+      wearHistoryRevision++;
+      notifyListeners();
       return true;
     } on ApiException catch (e) {
       error = e.message;

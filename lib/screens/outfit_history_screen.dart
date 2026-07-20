@@ -32,6 +32,8 @@ class _OutfitHistoryViewState extends State<OutfitHistoryView> {
   List<WearHistoryEntry> _entries = const [];
   bool _loading = true;
   String? _error;
+  int? _observedHistoryRevision;
+  int _loadGeneration = 0;
 
   @override
   void initState() {
@@ -39,7 +41,21 @@ class _OutfitHistoryViewState extends State<OutfitHistoryView> {
     _load();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final revision = context.watch<MvpProvider>().wearHistoryRevision;
+    final previous = _observedHistoryRevision;
+    _observedHistoryRevision = revision;
+    if (previous != null && previous != revision) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _load();
+      });
+    }
+  }
+
   Future<void> _load() async {
+    final generation = ++_loadGeneration;
     if (mounted) {
       setState(() {
         _loading = true;
@@ -48,13 +64,21 @@ class _OutfitHistoryViewState extends State<OutfitHistoryView> {
     }
     try {
       final entries = await _api.fetchWearHistory();
-      if (mounted) setState(() => _entries = entries);
+      if (mounted && generation == _loadGeneration) {
+        setState(() => _entries = entries);
+      }
     } on ApiException catch (error) {
-      if (mounted) setState(() => _error = error.message);
+      if (mounted && generation == _loadGeneration) {
+        setState(() => _error = error.message);
+      }
     } catch (_) {
-      if (mounted) setState(() => _error = 'Could not load outfit history.');
+      if (mounted && generation == _loadGeneration) {
+        setState(() => _error = 'Could not load outfit history.');
+      }
     } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted && generation == _loadGeneration) {
+        setState(() => _loading = false);
+      }
     }
   }
 
