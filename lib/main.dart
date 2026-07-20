@@ -79,7 +79,29 @@ class StyleStackApp extends StatelessWidget {
           snackBarTheme: DesignSystem.buildTheme().snackBarTheme,
           bottomSheetTheme: DesignSystem.buildTheme().bottomSheetTheme,
         ),
-        home: const AuthGate(),
+        // Firebase phone authentication can reopen Android with a
+        // `/link?deep_link_id=...` reCAPTCHA callback. Firebase Auth consumes
+        // that callback natively; it is not a Flutter screen route. Always
+        // create the normal app root so WidgetsApp does not try to navigate to
+        // the callback URL and show a red "route not found" screen.
+        onGenerateInitialRoutes: (_) => [
+          MaterialPageRoute<void>(
+            settings: const RouteSettings(name: Navigator.defaultRouteName),
+            builder: (_) => const AuthGate(),
+          ),
+        ],
+        onGenerateRoute: (settings) {
+          final routeName = settings.name;
+          if (routeName != null &&
+              routeName.startsWith('/link?') &&
+              routeName.contains('firebaseapp.com/__/auth/callback')) {
+            return MaterialPageRoute<void>(
+              settings: settings,
+              builder: (_) => const AuthGate(),
+            );
+          }
+          return null;
+        },
         builder: (context, child) => FTheme(
           data: foruiTheme,
           child: FToaster(
