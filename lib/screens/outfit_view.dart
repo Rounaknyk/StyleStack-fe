@@ -36,6 +36,8 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
   bool _bootstrapped = false;
   bool _bootstrapping = true;
   bool _autoRequestScheduled = false;
+  final Set<String> _loggingOutfitIds = {};
+  final Set<String> _loggedOutfitIds = {};
 
   @override
   void initState() {
@@ -107,10 +109,19 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
   }
 
   Future<void> _logOutfit(Outfit target, {required String label}) async {
+    if (_loggingOutfitIds.contains(target.id) ||
+        _loggedOutfitIds.contains(target.id)) {
+      return;
+    }
     HapticFeedback.mediumImpact();
+    setState(() => _loggingOutfitIds.add(target.id));
     final provider = context.read<MvpProvider>();
     final ok = await provider.markOutfitWorn(target);
     if (!mounted) return;
+    setState(() {
+      _loggingOutfitIds.remove(target.id);
+      if (ok) _loggedOutfitIds.add(target.id);
+    });
     if (ok) {
       HapticFeedback.heavyImpact();
       await _showLoggedSuccess(target, label: label);
@@ -263,8 +274,15 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
               ),
               const SizedBox(height: 18),
               StyleStackButton(
-                label: 'Log This Event Outfit',
-                icon: Icons.check_circle_outline,
+                label: _loggedOutfitIds.contains(mvp.eventOutfit!.id)
+                    ? 'Logged'
+                    : _loggingOutfitIds.contains(mvp.eventOutfit!.id)
+                    ? 'Logging…'
+                    : 'Log This Event Outfit',
+                icon: _loggedOutfitIds.contains(mvp.eventOutfit!.id)
+                    ? Icons.check_circle_rounded
+                    : Icons.check_circle_outline,
+                isLoading: _loggingOutfitIds.contains(mvp.eventOutfit!.id),
                 onPressed: () => _logOutfit(
                   mvp.eventOutfit!,
                   label: 'Your ${priorityEvent.title} look',
@@ -366,12 +384,32 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
                           borderRadius: BorderRadius.circular(17),
                         ),
                       ),
-                      onPressed: () =>
-                          _logOutfit(mvp.outfit!, label: 'Today\'s look'),
-                      icon: const Icon(Icons.check_circle_outline_rounded),
-                      label: const Text(
-                        'Log this outfit',
-                        style: TextStyle(fontWeight: FontWeight.w800),
+                      onPressed:
+                          _loggingOutfitIds.contains(mvp.outfit!.id) ||
+                              _loggedOutfitIds.contains(mvp.outfit!.id)
+                          ? null
+                          : () =>
+                                _logOutfit(mvp.outfit!, label: 'Today\'s look'),
+                      icon: _loggingOutfitIds.contains(mvp.outfit!.id)
+                          ? const SizedBox.square(
+                              dimension: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : Icon(
+                              _loggedOutfitIds.contains(mvp.outfit!.id)
+                                  ? Icons.check_circle_rounded
+                                  : Icons.check_circle_outline_rounded,
+                            ),
+                      label: Text(
+                        _loggingOutfitIds.contains(mvp.outfit!.id)
+                            ? 'Logging…'
+                            : _loggedOutfitIds.contains(mvp.outfit!.id)
+                            ? 'Logged'
+                            : 'Log this outfit',
+                        style: const TextStyle(fontWeight: FontWeight.w800),
                       ),
                     ),
                   ),

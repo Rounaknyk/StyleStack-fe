@@ -81,27 +81,14 @@ class StyleStackApp extends StatelessWidget {
         ),
         // Firebase phone authentication can reopen Android with a
         // `/link?deep_link_id=...` reCAPTCHA callback. Firebase Auth consumes
-        // that callback natively; it is not a Flutter screen route. Always
-        // create the normal app root so WidgetsApp does not try to navigate to
-        // the callback URL and show a red "route not found" screen.
+        // that callback natively; it is not a Flutter screen route.
         onGenerateInitialRoutes: (_) => [
           MaterialPageRoute<void>(
             settings: const RouteSettings(name: Navigator.defaultRouteName),
             builder: (_) => const AuthGate(),
           ),
         ],
-        onGenerateRoute: (settings) {
-          final routeName = settings.name;
-          if (routeName != null &&
-              routeName.startsWith('/link?') &&
-              routeName.contains('firebaseapp.com/__/auth/callback')) {
-            return MaterialPageRoute<void>(
-              settings: settings,
-              builder: (_) => const AuthGate(),
-            );
-          }
-          return null;
-        },
+        onGenerateRoute: generateStyleStackRoute,
         builder: (context, child) => FTheme(
           data: foruiTheme,
           child: FToaster(
@@ -134,6 +121,51 @@ class StyleStackApp extends StatelessWidget {
       ),
     );
   }
+}
+
+@visibleForTesting
+Route<void>? generateStyleStackRoute(RouteSettings settings) {
+  final routeName = settings.name;
+  if (routeName == null ||
+      !routeName.startsWith('/link?') ||
+      !routeName.contains('firebaseapp.com/__/auth/callback')) {
+    return null;
+  }
+
+  // Android can deliver the callback after the app has already started. Use a
+  // transparent, self-dismissing route so the existing AuthScreen (including
+  // its phone and OTP state) stays mounted while Firebase completes
+  // verification.
+  return PageRouteBuilder<void>(
+    settings: settings,
+    opaque: false,
+    barrierColor: Colors.transparent,
+    transitionDuration: Duration.zero,
+    reverseTransitionDuration: Duration.zero,
+    pageBuilder: (_, _, _) => const _FirebaseAuthCallbackRoute(),
+  );
+}
+
+class _FirebaseAuthCallbackRoute extends StatefulWidget {
+  const _FirebaseAuthCallbackRoute();
+
+  @override
+  State<_FirebaseAuthCallbackRoute> createState() =>
+      _FirebaseAuthCallbackRouteState();
+}
+
+class _FirebaseAuthCallbackRouteState
+    extends State<_FirebaseAuthCallbackRoute> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) Navigator.of(context).pop();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => const SizedBox.shrink();
 }
 
 class AuthGate extends StatefulWidget {

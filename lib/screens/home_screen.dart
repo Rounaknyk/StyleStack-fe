@@ -94,7 +94,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     'Select up to $maxBatchImages photos for batch adding',
                   ),
                 ),
-                onTap: () => Navigator.pop(context, _AddItemSource.gallery),
+                onTap: () async {
+                  final approved = await PermissionPromptService.explainPhotos(
+                    context,
+                  );
+                  if (!context.mounted || !approved) return;
+                  Navigator.pop(context, _AddItemSource.gallery);
+                },
               ),
               ListTile(
                 contentPadding: const EdgeInsets.symmetric(
@@ -132,7 +138,6 @@ class _HomeScreenState extends State<HomeScreen> {
     if (source == _AddItemSource.gmail) {
       await _startGmailSync();
     } else if (source == _AddItemSource.gallery) {
-      if (!await PermissionPromptService.explainPhotos(context)) return;
       await _pickGalleryBatch();
     } else {
       if (!await PermissionPromptService.explainCamera(context)) return;
@@ -193,7 +198,24 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _pickGalleryBatch() async {
-    List<XFile> picked;
+    final rootNavigator = Navigator.of(context, rootNavigator: true);
+    unawaited(
+      showDialog<void>(
+        context: context,
+        useRootNavigator: true,
+        barrierDismissible: false,
+        builder: (_) => const _PreparingGalleryPhotosDialog(),
+      ),
+    );
+
+    // Give Flutter one frame to paint the preparation state before the native
+    // gallery opens. The dialog remains underneath the picker and is visible
+    // immediately when Android/iOS returns while image_picker resizes and
+    // compresses the selected photos.
+    await Future<void>.delayed(const Duration(milliseconds: 120));
+
+    List<XFile> picked = const [];
+    var mediaAccessFailed = false;
     try {
       picked = await _picker.pickMultiImage(
         imageQuality: 82,
@@ -201,6 +223,13 @@ class _HomeScreenState extends State<HomeScreen> {
         limit: maxBatchImages,
       );
     } on PlatformException {
+      mediaAccessFailed = true;
+    } finally {
+      if (rootNavigator.mounted && rootNavigator.canPop()) {
+        rootNavigator.pop();
+      }
+    }
+    if (mediaAccessFailed) {
       if (mounted) {
         await PermissionPromptService.showMediaSettingsRecovery(
           context,
@@ -381,6 +410,29 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
   }
+}
+
+class _PreparingGalleryPhotosDialog extends StatelessWidget {
+  const _PreparingGalleryPhotosDialog();
+
+  @override
+  Widget build(BuildContext context) => const PopScope(
+    canPop: false,
+    child: Dialog(
+      backgroundColor: Colors.white,
+      surfaceTintColor: Colors.transparent,
+      insetPadding: EdgeInsets.symmetric(horizontal: 32),
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(24, 22, 24, 24),
+        child: StyleStackLoadingIndicator(
+          message:
+              'Preparing your selected photos…\nThis can take a few seconds.',
+          animationSize: 124,
+          padding: EdgeInsets.zero,
+        ),
+      ),
+    ),
+  );
 }
 
 enum _AddItemSource { camera, gallery, gmail }
