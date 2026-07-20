@@ -40,7 +40,6 @@ void main() {
           theme: DesignSystem.buildTheme(),
           home: const Scaffold(
             body: DailyOutfitView(
-              onOutfitSelfie: _noOpAsync,
               onOpenHistory: _noOp,
               onOpenProfile: _noOp,
               onCreateStyle: _noOpAsync,

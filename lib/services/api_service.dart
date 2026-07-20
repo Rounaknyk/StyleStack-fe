@@ -13,6 +13,7 @@ import '../models/outfit.dart';
 import '../models/calendar_models.dart';
 import '../models/outfit_selfie.dart';
 import '../models/canvas_style.dart';
+import '../models/wear_history_entry.dart';
 
 class ApiException implements Exception {
   const ApiException(this.message, [this.statusCode]);
@@ -311,6 +312,18 @@ class ApiService {
           (item) =>
               OutfitSelfieHistoryEntry.fromJson(item as Map<String, dynamic>),
         )
+        .toList();
+  }
+
+  Future<List<WearHistoryEntry>> fetchWearHistory({int limit = 20}) async {
+    final response = await _client.get(
+      Uri.parse(
+        '${RuntimeConfig.apiBaseUrl}/wardrobe/wear-history?limit=$limit',
+      ),
+      headers: {'Authorization': 'Bearer ${await _token()}'},
+    );
+    return (_decode(response) as List<dynamic>)
+        .map((item) => WearHistoryEntry.fromJson(item as Map<String, dynamic>))
         .toList();
   }
 

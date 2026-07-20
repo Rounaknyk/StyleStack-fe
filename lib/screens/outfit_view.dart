@@ -17,14 +17,12 @@ import 'stylist_chat_screen.dart';
 class DailyOutfitView extends StatefulWidget {
   const DailyOutfitView({
     super.key,
-    required this.onOutfitSelfie,
     required this.onOpenHistory,
     required this.onOpenProfile,
     required this.onCreateStyle,
     required this.onAddItem,
   });
 
-  final Future<void> Function() onOutfitSelfie;
   final VoidCallback onOpenHistory;
   final VoidCallback onOpenProfile;
   final Future<void> Function() onCreateStyle;
@@ -108,64 +106,19 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
     );
   }
 
-  Future<void> _showLogSheet(Outfit target, {required String label}) async {
+  Future<void> _logOutfit(Outfit target, {required String label}) async {
     HapticFeedback.mediumImpact();
-    await showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (sheetContext) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'How would you like to log it?',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'A selfie creates your visual outfit history too.',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 18),
-              FilledButton.icon(
-                onPressed: () {
-                  Navigator.pop(sheetContext);
-                  widget.onOutfitSelfie();
-                },
-                icon: const Icon(Icons.camera_alt_outlined),
-                label: const Text('Take an outfit selfie'),
-              ),
-              const SizedBox(height: 8),
-              OutlinedButton.icon(
-                onPressed: () async {
-                  Navigator.pop(sheetContext);
-                  final provider = context.read<MvpProvider>();
-                  final ok = await provider.markOutfitWorn(target);
-                  if (!mounted) return;
-                  if (ok) {
-                    HapticFeedback.heavyImpact();
-                    await _showLoggedSuccess(target, label: label);
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          provider.error ?? 'Could not log this outfit.',
-                        ),
-                      ),
-                    );
-                  }
-                },
-                icon: const Icon(Icons.check_circle_outline),
-                label: const Text('Yes, I wore this'),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+    final provider = context.read<MvpProvider>();
+    final ok = await provider.markOutfitWorn(target);
+    if (!mounted) return;
+    if (ok) {
+      HapticFeedback.heavyImpact();
+      await _showLoggedSuccess(target, label: label);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(provider.error ?? 'Could not log this outfit.')),
+      );
+    }
   }
 
   Future<void> _showLoggedSuccess(
@@ -304,7 +257,7 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
               StyleStackButton(
                 label: 'Log This Event Outfit',
                 icon: Icons.check_circle_outline,
-                onPressed: () => _showLogSheet(
+                onPressed: () => _logOutfit(
                   mvp.eventOutfit!,
                   label: 'Your ${priorityEvent.title} look',
                 ),
@@ -404,7 +357,7 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
                         ),
                       ),
                       onPressed: () =>
-                          _showLogSheet(mvp.outfit!, label: 'Today\'s look'),
+                          _logOutfit(mvp.outfit!, label: 'Today\'s look'),
                       icon: const Icon(Icons.check_circle_outline_rounded),
                       label: const Text(
                         'Log this outfit',
@@ -425,8 +378,6 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
                 padding: EdgeInsets.only(top: 8),
               ),
           ],
-          const SizedBox(height: 30),
-          _OutfitSelfieExplainer(onPressed: widget.onOutfitSelfie),
         ],
       ),
     );
@@ -1323,90 +1274,6 @@ class _VibeMoodboardScreen extends StatelessWidget {
             ),
           );
         }),
-      ],
-    ),
-  );
-}
-
-class _OutfitSelfieExplainer extends StatelessWidget {
-  const _OutfitSelfieExplainer({required this.onPressed});
-  final Future<void> Function() onPressed;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(20),
-    decoration: BoxDecoration(
-      color: DesignSystem.primaryDark,
-      borderRadius: BorderRadius.circular(26),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              width: 46,
-              height: 46,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: .1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.camera_alt_outlined, color: Colors.white),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'STYLE MEMORY',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: DesignSystem.secondary,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 1.1,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    'Teach your stylist what you wear',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Text(
-          'One private outfit selfie confirms what you wore, updates your visual history, and helps your stylist avoid repetitive suggestions.',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            color: Colors.white.withValues(alpha: .76),
-            height: 1.45,
-          ),
-        ),
-        const SizedBox(height: 16),
-        SizedBox(
-          width: double.infinity,
-          height: 48,
-          child: FilledButton.icon(
-            style: FilledButton.styleFrom(
-              backgroundColor: DesignSystem.cta,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15),
-              ),
-            ),
-            onPressed: onPressed,
-            icon: const Icon(Icons.camera_alt_outlined),
-            label: const Text(
-              'Take an outfit selfie',
-              style: TextStyle(fontWeight: FontWeight.w800),
-            ),
-          ),
-        ),
       ],
     ),
   );

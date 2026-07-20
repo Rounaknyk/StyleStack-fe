@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import '../config/design_system.dart';
 import '../config/custom_widgets.dart';
 import '../models/outfit.dart';
-import '../models/outfit_selfie.dart';
+import '../models/wear_history_entry.dart';
 import '../providers/mvp_provider.dart';
 import '../services/api_service.dart';
 import 'calendar_view.dart';
@@ -29,7 +29,7 @@ class OutfitHistoryView extends StatefulWidget {
 
 class _OutfitHistoryViewState extends State<OutfitHistoryView> {
   final _api = ApiService();
-  List<OutfitSelfieHistoryEntry> _entries = const [];
+  List<WearHistoryEntry> _entries = const [];
   bool _loading = true;
   String? _error;
 
@@ -40,13 +40,14 @@ class _OutfitHistoryViewState extends State<OutfitHistoryView> {
   }
 
   Future<void> _load() async {
-    if (mounted)
+    if (mounted) {
       setState(() {
         _loading = true;
         _error = null;
       });
+    }
     try {
-      final entries = await _api.fetchOutfitSelfieHistory();
+      final entries = await _api.fetchWearHistory();
       if (mounted) setState(() => _entries = entries);
     } on ApiException catch (error) {
       if (mounted) setState(() => _error = error.message);
@@ -151,8 +152,8 @@ class _OutfitHistoryViewState extends State<OutfitHistoryView> {
             ..._entries.asMap().entries.map(
               (entry) => _TimelineEntry(
                 entry: entry.value,
-                date: _date(entry.value.capturedAt),
-                time: _time(entry.value.capturedAt),
+                date: _date(entry.value.wornAt),
+                time: _time(entry.value.wornAt),
                 last: entry.key == _entries.length - 1,
               ),
             ),
@@ -263,7 +264,7 @@ class _TimelineEntry extends StatelessWidget {
     required this.time,
     required this.last,
   });
-  final OutfitSelfieHistoryEntry entry;
+  final WearHistoryEntry entry;
   final String date;
   final String time;
   final bool last;
@@ -301,67 +302,76 @@ class _TimelineEntry extends StatelessWidget {
               borderRadius: BorderRadius.circular(DesignSystem.radiusLg),
               border: Border.all(color: DesignSystem.border),
             ),
-            child: Row(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: SizedBox(
-                    width: 92,
-                    height: 116,
-                    child: entry.imageUrl == null
-                        ? const ColoredBox(
-                            color: DesignSystem.surfaceAlt,
-                            child: Icon(Icons.photo_camera_back_outlined),
-                          )
-                        : Image.network(
-                            entry.imageUrl!,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, _, _) =>
-                                const Icon(Icons.broken_image_outlined),
-                          ),
-                  ),
-                ),
-                const SizedBox(width: 13),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
                         date,
                         style: Theme.of(context).textTheme.titleMedium
                             ?.copyWith(fontWeight: FontWeight.w700),
                       ),
-                      Text(
-                        'Logged at $time',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                      const SizedBox(height: 10),
-                      ...entry.items
-                          .take(4)
-                          .map(
-                            (item) => Padding(
-                              padding: const EdgeInsets.only(bottom: 4),
-                              child: Row(
-                                children: [
-                                  const Icon(
-                                    Icons.check,
-                                    size: 15,
-                                    color: DesignSystem.primary,
-                                  ),
-                                  const SizedBox(width: 5),
-                                  Expanded(
-                                    child: Text(
-                                      item.name,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(time, style: Theme.of(context).textTheme.bodySmall),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                ...entry.items.map(
+                  (item) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(10),
+                          child: SizedBox(
+                            width: 52,
+                            height: 52,
+                            child: item.gridImageUrl == null
+                                ? const ColoredBox(
+                                    color: DesignSystem.surfaceAlt,
+                                    child: Icon(Icons.checkroom_outlined),
+                                  )
+                                : Image.network(
+                                    item.gridImageUrl!,
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (_, _, _) => const ColoredBox(
+                                      color: DesignSystem.surfaceAlt,
+                                      child: Icon(Icons.checkroom_outlined),
                                     ),
                                   ),
-                                ],
-                              ),
-                            ),
                           ),
-                    ],
+                        ),
+                        const SizedBox(width: 11),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                item.name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              Text(
+                                item.displayCategory,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(
+                          Icons.check_circle_rounded,
+                          size: 19,
+                          color: DesignSystem.success,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -395,13 +405,13 @@ class _EmptyHistory extends StatelessWidget {
     child: Column(
       children: [
         Icon(
-          Icons.photo_camera_back_outlined,
+          Icons.checkroom_outlined,
           size: 54,
           color: DesignSystem.primaryLight,
         ),
         SizedBox(height: 14),
         Text(
-          'Your first outfit selfie will start this timeline.',
+          'Log an outfit from Today to start your wear timeline.',
           textAlign: TextAlign.center,
         ),
       ],

@@ -19,7 +19,6 @@ import 'batch_add_screen.dart';
 import 'canvas_style_builder_screen.dart';
 import 'item_detail_screen.dart';
 import 'outfit_view.dart';
-import 'outfit_selfie_review_screen.dart';
 import 'outfit_history_screen.dart';
 import 'profile_settings_view.dart';
 
@@ -254,46 +253,6 @@ class _HomeScreenState extends State<HomeScreen> {
     if (queued == true && mounted) _selectTab(1);
   }
 
-  Future<void> _startOutfitSelfie() async {
-    // Outfit Selfie review needs local wardrobe matches, so load it only for
-    // this flow rather than during Today startup.
-    await context.read<WardrobeProvider>().loadItems();
-    final picked = await _picker.pickImage(
-      source: ImageSource.camera,
-      preferredCameraDevice: CameraDevice.front,
-      imageQuality: 82,
-      maxWidth: 1600,
-    );
-    if (picked == null || !mounted) return;
-    await _showOutfitSelfie(File(picked.path));
-  }
-
-  Future<void> _showOutfitSelfie(File image) async {
-    final addMissing = await Navigator.push<bool>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => OutfitSelfieReviewScreen(
-          image: image,
-          onRetake: () async {
-            final replacement = await _picker.pickImage(
-              source: ImageSource.camera,
-              preferredCameraDevice: CameraDevice.front,
-              imageQuality: 82,
-              maxWidth: 1600,
-            );
-            if (replacement == null || !mounted) return;
-            Navigator.pop(context);
-            await _showOutfitSelfie(File(replacement.path));
-          },
-        ),
-      ),
-    );
-    if (addMissing == true && mounted) {
-      _selectTab(1);
-      await _chooseImageSource();
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final titles = ['Today', 'My Wardrobe', 'Style Planner', 'Profile'];
@@ -323,7 +282,6 @@ class _HomeScreenState extends State<HomeScreen> {
           index: _tab,
           children: [
             DailyOutfitView(
-              onOutfitSelfie: _startOutfitSelfie,
               onOpenHistory: () => _selectTab(2),
               onOpenProfile: () => _selectTab(3),
               onCreateStyle: _openCreateStyle,
