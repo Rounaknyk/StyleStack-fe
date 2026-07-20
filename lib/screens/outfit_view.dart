@@ -691,44 +691,47 @@ class _StylingTools extends StatelessWidget {
   final VoidCallback onSavedStyles;
 
   @override
-  Widget build(BuildContext context) => Row(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Expanded(
-        child: _ToolCard(
-          title: 'Ask your\nstylist',
-          caption: 'Personal advice',
-          icon: Icons.chat_bubble_outline_rounded,
-          background: DesignSystem.primary,
-          foreground: Colors.white,
-          onTap: onAskStylist,
+  Widget build(BuildContext context) => SizedBox(
+    height: 142,
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          child: _ToolCard(
+            title: 'Ask your\nstylist',
+            caption: 'Personal advice',
+            icon: Icons.chat_bubble_outline_rounded,
+            background: DesignSystem.primary,
+            foreground: Colors.white,
+            onTap: onAskStylist,
+          ),
         ),
-      ),
-      const SizedBox(width: 10),
-      Expanded(
-        child: _ToolCard(
-          title: 'Build a\nlook',
-          caption: 'Outfit canvas',
-          icon: Icons.dashboard_customize_outlined,
-          background: const Color(0xFFE7DDD2),
-          foreground: DesignSystem.primaryDark,
-          onTap: onCreateStyle,
+        const SizedBox(width: 10),
+        Expanded(
+          child: _ToolCard(
+            title: 'Build a\nlook',
+            caption: 'Outfit canvas',
+            icon: Icons.dashboard_customize_outlined,
+            background: const Color(0xFFE7DDD2),
+            foreground: DesignSystem.primaryDark,
+            onTap: onCreateStyle,
+          ),
         ),
-      ),
-      const SizedBox(width: 10),
-      SizedBox(
-        width: 70,
-        child: _ToolCard(
-          title: 'Saved',
-          caption: '',
-          icon: Icons.bookmark_border_rounded,
-          background: const Color(0xFFDCE9E7),
-          foreground: DesignSystem.primaryDark,
-          compact: true,
-          onTap: onSavedStyles,
+        const SizedBox(width: 10),
+        SizedBox(
+          width: 70,
+          child: _ToolCard(
+            title: 'Saved',
+            caption: '',
+            icon: Icons.bookmark_border_rounded,
+            background: const Color(0xFFDCE9E7),
+            foreground: DesignSystem.primaryDark,
+            compact: true,
+            onTap: onSavedStyles,
+          ),
         ),
-      ),
-    ],
+      ],
+    ),
   );
 }
 
@@ -759,7 +762,6 @@ class _ToolCard extends StatelessWidget {
     child: InkWell(
       onTap: onTap,
       child: Container(
-        constraints: const BoxConstraints(minHeight: 142),
         padding: EdgeInsets.all(compact ? 12 : 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

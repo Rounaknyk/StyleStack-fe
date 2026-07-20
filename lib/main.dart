@@ -5,7 +5,6 @@ import 'package:forui/forui.dart';
 import 'package:provider/provider.dart';
 
 import 'config/design_system.dart';
-import 'config/brand_logo.dart';
 import 'config/custom_widgets.dart';
 import 'config/runtime_config.dart';
 import 'providers/auth_provider.dart';
@@ -233,8 +232,6 @@ class _StartupView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            StyleStackLogo(size: 58),
-            SizedBox(height: 12),
             StyleStackLoadingIndicator(
               message: 'Preparing your StyleStack…',
               animationSize: 150,
