@@ -25,12 +25,13 @@ void main() {
     final gateway = _SignedOutGateway();
     final auth = AuthProvider(gateway);
     final foruiTheme = DesignSystem.buildForuiTheme();
+    final api = _TodayApi();
 
     await tester.pumpWidget(
       MultiProvider(
         providers: [
           ChangeNotifierProvider<AuthProvider>.value(value: auth),
-          ChangeNotifierProvider(create: (_) => MvpProvider(_TodayApi())),
+          ChangeNotifierProvider(create: (_) => MvpProvider(api)),
         ],
         child: MaterialApp(
           supportedLocales: FLocalizations.supportedLocales,
@@ -64,6 +65,13 @@ void main() {
     expect(find.text('YOUR STYLING STUDIO'), findsOneWidget);
     expect(find.text('Ask your\nstylist'), findsOneWidget);
 
+    await tester.tap(find.byTooltip('Create another look'));
+    await tester.pump();
+    expect(find.text('Creating your next look'), findsOneWidget);
+
+    api.completePendingLook();
+    await tester.pumpAndSettle();
+
     auth.dispose();
     await gateway.dispose();
   });
@@ -74,6 +82,9 @@ void _noOp() {}
 Future<void> _noOpAsync() async {}
 
 class _TodayApi extends ApiService {
+  int _suggestionCalls = 0;
+  Completer<Outfit>? _pendingLook;
+
   List<WardrobeItem> get _items => List.generate(
     2,
     (index) => WardrobeItem(
@@ -99,13 +110,41 @@ class _TodayApi extends ApiService {
     required String city,
     required String occasion,
     String? calendarEventId,
-  }) async => Outfit(
-    id: 'outfit-1',
-    occasion: occasion,
-    reasoning: 'Balanced proportions and a clean tonal palette.',
-    weather: const {'description': 'clear', 'temperature_c': 27, 'city': 'Goa'},
-    items: _items,
-  );
+  }) {
+    final outfit = Outfit(
+      id: 'outfit-${_suggestionCalls + 1}',
+      occasion: occasion,
+      reasoning: 'Balanced proportions and a clean tonal palette.',
+      weather: const {
+        'description': 'clear',
+        'temperature_c': 27,
+        'city': 'Goa',
+      },
+      items: _items,
+    );
+    if (_suggestionCalls++ == 0) return Future.value(outfit);
+    _pendingLook = Completer<Outfit>();
+    return _pendingLook!.future;
+  }
+
+  void completePendingLook() {
+    final pending = _pendingLook;
+    if (pending != null && !pending.isCompleted) {
+      pending.complete(
+        Outfit(
+          id: 'outfit-complete',
+          occasion: 'daily alternative',
+          reasoning: 'A fresh combination with intentional proportions.',
+          weather: const {
+            'description': 'clear',
+            'temperature_c': 27,
+            'city': 'Goa',
+          },
+          items: _items,
+        ),
+      );
+    }
+  }
 }
 
 class _SignedOutGateway implements AuthGateway {

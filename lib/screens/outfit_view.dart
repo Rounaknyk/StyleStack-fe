@@ -244,6 +244,14 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
             if (canStyle && mvp.loadingEventOutfit && mvp.eventOutfit == null)
               const _EventOutfitSkeleton()
             else if (canStyle && mvp.eventOutfit != null) ...[
+              if (mvp.loadingEventOutfit) ...[
+                const _LookGenerationBanner(
+                  title: 'Creating another event look',
+                  subtitle:
+                      'Your stylist is rebuilding the outfit for this event.',
+                ),
+                const SizedBox(height: 12),
+              ],
               _OutfitBoard(
                 items: mvp.eventOutfit!.items,
                 title: 'For ${priorityEvent.title}',
@@ -274,13 +282,6 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
                       : 'Try another event look',
                 ),
               ),
-              if (mvp.loadingEventOutfit)
-                const StyleStackLoadingIndicator(
-                  message: 'Refining your event look…',
-                  animationAsset: StyleStackMotionAssets.outfitDesigner,
-                  animationSize: 150,
-                  padding: EdgeInsets.only(top: 8),
-                ),
             ] else if (canStyle && mvp.eventError != null)
               _InlineRetry(
                 message: mvp.eventError!,
@@ -333,10 +334,19 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
                 trailing: _RoundIconButton(
                   tooltip: 'Create another look',
                   icon: Icons.refresh_rounded,
+                  loading: mvp.loadingOutfit,
                   onPressed: mvp.loadingOutfit ? null : _newLook,
                 ),
               ),
               const SizedBox(height: 14),
+            ],
+            if (mvp.loadingOutfit) ...[
+              const _LookGenerationBanner(
+                title: 'Creating your next look',
+                subtitle:
+                    'Your stylist is choosing a fresh combination from your wardrobe.',
+              ),
+              const SizedBox(height: 12),
             ],
             _OutfitBoard(items: mvp.outfit!.items),
             const SizedBox(height: 14),
@@ -370,13 +380,6 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
                 _VibeButton(images: mvp.outfit!.inspirationImages),
               ],
             ),
-            if (mvp.loadingOutfit)
-              const StyleStackLoadingIndicator(
-                message: 'Your stylist is reworking the edit…',
-                animationAsset: StyleStackMotionAssets.outfitDesigner,
-                animationSize: 150,
-                padding: EdgeInsets.only(top: 8),
-              ),
           ],
         ],
       ),
@@ -540,12 +543,14 @@ class _RoundIconButton extends StatelessWidget {
     required this.icon,
     required this.onPressed,
     this.dark = false,
+    this.loading = false,
   });
 
   final String tooltip;
   final IconData icon;
   final VoidCallback? onPressed;
   final bool dark;
+  final bool loading;
 
   @override
   Widget build(BuildContext context) => Tooltip(
@@ -558,12 +563,75 @@ class _RoundIconButton extends StatelessWidget {
         onTap: onPressed,
         child: SizedBox.square(
           dimension: 44,
-          child: Icon(
-            icon,
-            size: 21,
-            color: dark ? Colors.white : DesignSystem.primary,
-          ),
+          child: loading
+              ? Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: dark ? Colors.white : DesignSystem.primary,
+                  ),
+                )
+              : Icon(
+                  icon,
+                  size: 21,
+                  color: dark ? Colors.white : DesignSystem.primary,
+                ),
         ),
+      ),
+    ),
+  );
+}
+
+class _LookGenerationBanner extends StatelessWidget {
+  const _LookGenerationBanner({required this.title, required this.subtitle});
+
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    liveRegion: true,
+    label: '$title. $subtitle',
+    child: Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: DesignSystem.primary.withValues(alpha: .07),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: DesignSystem.primary.withValues(alpha: .16)),
+      ),
+      child: Row(
+        children: [
+          const SizedBox.square(
+            dimension: 38,
+            child: CircularProgressIndicator(
+              strokeWidth: 2.5,
+              color: DesignSystem.primary,
+            ),
+          ),
+          const SizedBox(width: 13),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: DesignSystem.primaryDark,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: DesignSystem.textSecondary,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     ),
   );
