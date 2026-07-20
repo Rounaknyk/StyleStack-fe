@@ -1,9 +1,9 @@
 import 'dart:ui' as ui;
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
-import 'package:share_plus/share_plus.dart';
 
 import '../config/design_system.dart';
 import '../models/wardrobe_item.dart';
@@ -11,6 +11,7 @@ import '../models/canvas_style.dart';
 import '../providers/wardrobe_provider.dart';
 import '../services/api_service.dart';
 import 'saved_styles_screen.dart';
+import 'style_story_share_screen.dart';
 
 class CanvasStyleBuilderScreen extends StatefulWidget {
   const CanvasStyleBuilderScreen({super.key, this.initialStyle});
@@ -82,6 +83,7 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
   final List<_PlacedCanvasItem> _placed = [];
   String? _selectedId;
   bool _saving = false;
+  bool _exportingCanvas = false;
   _PlacedCanvasItem? _gestureTarget;
 
   _PlacedCanvasItem? get _selectedPlaced {
@@ -168,28 +170,20 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
     if (!mounted || name == null || name.trim().isEmpty) return;
     setState(() => _saving = true);
     try {
-      final boundary =
-          _canvasKey.currentContext?.findRenderObject()
-              as RenderRepaintBoundary?;
-      if (boundary == null)
-        throw const ApiException('Canvas is not ready yet.');
-      final image = await boundary.toImage(pixelRatio: 2);
-      final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
-      if (bytes == null)
-        throw const ApiException('Could not capture the canvas.');
+      final bytes = await _captureCleanCanvas();
       final styleId = widget.initialStyle?.id;
       if (styleId == null) {
         await _api.createCanvasStyle(
           name: name.trim(),
           items: _placed.map((item) => item.toJson()).toList(),
-          previewBytes: bytes.buffer.asUint8List(),
+          previewBytes: bytes,
         );
       } else {
         await _api.updateCanvasStyle(
           styleId: styleId,
           name: name.trim(),
           items: _placed.map((item) => item.toJson()).toList(),
-          previewBytes: bytes.buffer.asUint8List(),
+          previewBytes: bytes,
         );
       }
       if (!mounted) return;
@@ -209,25 +203,53 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
     }
   }
 
+  Future<Uint8List> _captureCleanCanvas() async {
+    final previousSelection = _selectedId;
+    setState(() {
+      _selectedId = null;
+      _exportingCanvas = true;
+    });
+    try {
+      await WidgetsBinding.instance.endOfFrame;
+      final boundary =
+          _canvasKey.currentContext?.findRenderObject()
+              as RenderRepaintBoundary?;
+      if (boundary == null) {
+        throw const ApiException('Canvas is not ready yet.');
+      }
+      final image = await boundary.toImage(pixelRatio: 2);
+      final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+      if (bytes == null) {
+        throw const ApiException('Could not capture the canvas.');
+      }
+      return bytes.buffer.asUint8List();
+    } finally {
+      if (mounted) {
+        setState(() {
+          _selectedId = previousSelection;
+          _exportingCanvas = false;
+        });
+      }
+    }
+  }
+
   Future<void> _shareCanvas() async {
-    final boundary =
-        _canvasKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
-    if (boundary == null || _placed.isEmpty) {
+    if (_placed.isEmpty) {
       _message('Add an item before sharing your style.');
       return;
     }
     try {
-      final image = await boundary.toImage(pixelRatio: 2);
-      final data = await image.toByteData(format: ui.ImageByteFormat.png);
-      if (data == null)
-        throw const ApiException('Could not capture the canvas.');
-      await Share.shareXFiles([
-        XFile.fromData(
-          data.buffer.asUint8List(),
-          name: 'stylestack-style.png',
-          mimeType: 'image/png',
+      final bytes = await _captureCleanCanvas();
+      if (!mounted) return;
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => StyleStoryShareScreen.fromBytes(
+            canvasBytes: bytes,
+            styleName: widget.initialStyle?.name ?? 'Styled by me',
+          ),
         ),
-      ], text: widget.initialStyle?.name ?? 'My Style on StyleStack');
+      );
     } catch (_) {
       _message('Could not share this style.');
     }
@@ -332,7 +354,9 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
                         onScaleUpdate: _updateCanvasGesture,
                         onScaleEnd: (_) => _endCanvasGesture(),
                         child: CustomPaint(
-                          painter: _CanvasGridPainter(),
+                          painter: _exportingCanvas
+                              ? null
+                              : _CanvasGridPainter(),
                           child: Stack(
                             fit: StackFit.expand,
                             children: [
@@ -366,7 +390,7 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
   }
 
   Widget _placedWidget(_PlacedCanvasItem placed) {
-    final selected = _selectedId == placed.item.id;
+    final selected = !_exportingCanvas && _selectedId == placed.item.id;
     void beginGesture() {
       // Once a piece is selected, a drag that starts over another overlapping
       // piece still manipulates the selected piece. A simple tap can still

@@ -5,6 +5,7 @@ import '../config/custom_widgets.dart';
 import '../models/canvas_style.dart';
 import '../services/api_service.dart';
 import 'canvas_style_builder_screen.dart';
+import 'style_story_share_screen.dart';
 
 class SavedStylesScreen extends StatefulWidget {
   const SavedStylesScreen({super.key});
@@ -36,7 +37,7 @@ class _SavedStylesScreenState extends State<SavedStylesScreen> {
             message: 'Opening your saved styles…',
           );
         }
-        if (snapshot.hasError)
+        if (snapshot.hasError) {
           return Center(
             child: FilledButton.icon(
               onPressed: _reload,
@@ -44,8 +45,9 @@ class _SavedStylesScreenState extends State<SavedStylesScreen> {
               label: const Text('Try again'),
             ),
           );
+        }
         final styles = snapshot.data ?? const <CanvasStyle>[];
-        if (styles.isEmpty)
+        if (styles.isEmpty) {
           return Center(
             child: Padding(
               padding: const EdgeInsets.all(28),
@@ -82,6 +84,7 @@ class _SavedStylesScreenState extends State<SavedStylesScreen> {
               ),
             ),
           );
+        }
         return RefreshIndicator(
           onRefresh: () async => _reload(),
           child: CustomScrollView(
@@ -154,6 +157,27 @@ class _SavedStylesScreenState extends State<SavedStylesScreen> {
                                         fontWeight: FontWeight.w700,
                                       ),
                                     ),
+                                  ),
+                                  IconButton(
+                                    onPressed: style.previewUrl == null
+                                        ? null
+                                        : () => Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) =>
+                                                  StyleStoryShareScreen(
+                                                    canvasImage: NetworkImage(
+                                                      style.previewUrl!,
+                                                    ),
+                                                    styleName: style.name,
+                                                  ),
+                                            ),
+                                          ),
+                                    icon: const Icon(
+                                      Icons.ios_share_outlined,
+                                      size: 20,
+                                    ),
+                                    tooltip: 'Share as Story',
                                   ),
                                   IconButton(
                                     onPressed: () async {
