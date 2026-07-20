@@ -836,11 +836,26 @@ class _WardrobeViewState extends State<WardrobeView> {
                 itemCount: visibleItems.length,
                 itemBuilder: (_, index) {
                   final item = visibleItems[index];
+                  void openItem() {
+                    Navigator.push(
+                      context,
+                      StyleStackAnimations.fadeSlideTransition(
+                        ItemDetailScreen(itemId: item.id),
+                      ),
+                    );
+                  }
+
                   return StaggeredListAnimation(
                     delay: Duration(milliseconds: index * 50),
                     child: _ItemCard(
                       item: item,
                       selected: _selectedIds.contains(item.id),
+                      onEdit:
+                          !item.isUploading &&
+                              item.aiTagStatus == 'completed' &&
+                              !_selectionMode
+                          ? openItem
+                          : null,
                       onRetry: item.aiTagStatus == 'failed'
                           ? () async {
                               final retried = await wardrobe
@@ -872,12 +887,7 @@ class _WardrobeViewState extends State<WardrobeView> {
                                 );
                                 return;
                               }
-                              Navigator.push(
-                                context,
-                                StyleStackAnimations.fadeSlideTransition(
-                                  ItemDetailScreen(itemId: item.id),
-                                ),
-                              );
+                              openItem();
                             },
                     ),
                   );
@@ -1033,12 +1043,14 @@ class _ItemCard extends StatelessWidget {
   const _ItemCard({
     required this.item,
     required this.selected,
+    this.onEdit,
     this.onRetry,
     this.onTap,
     this.onLongPress,
   });
   final WardrobeItem item;
   final bool selected;
+  final VoidCallback? onEdit;
   final VoidCallback? onRetry;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
@@ -1229,6 +1241,25 @@ class _ItemCard extends StatelessWidget {
                   Icons.favorite_rounded,
                   color: DesignSystem.error,
                   size: 14,
+                ),
+              ),
+            ),
+
+          if (onEdit != null && !selected)
+            Positioned(
+              top: DesignSystem.spacingSm,
+              right: DesignSystem.spacingSm,
+              child: Material(
+                color: Colors.white.withValues(alpha: .96),
+                shape: const CircleBorder(),
+                elevation: 1,
+                child: IconButton(
+                  onPressed: onEdit,
+                  tooltip: 'Edit item',
+                  visualDensity: VisualDensity.compact,
+                  iconSize: 18,
+                  color: DesignSystem.primary,
+                  icon: const Icon(Icons.edit_outlined),
                 ),
               ),
             ),

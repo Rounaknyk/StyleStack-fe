@@ -4,16 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../config/design_system.dart';
-import '../config/custom_widgets.dart';
-import '../models/clothing_analysis.dart';
-import '../models/ai_analysis_job.dart';
 import '../providers/wardrobe_provider.dart';
-
-String _titleCase(String value) => value
-    .split(RegExp(r'\s+'))
-    .where((word) => word.isNotEmpty)
-    .map((word) => '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}')
-    .join(' ');
 
 class CameraPreviewScreen extends StatefulWidget {
   const CameraPreviewScreen({
@@ -31,108 +22,18 @@ class CameraPreviewScreen extends StatefulWidget {
 }
 
 class _CameraPreviewScreenState extends State<CameraPreviewScreen> {
-  final _name = TextEditingController();
-  final _brand = TextEditingController();
-  final _category = TextEditingController();
-  final _description = TextEditingController();
-  String? _color;
-  String? _season;
-  String? _formality;
-  ClothingAnalysis? _analysis;
-  AiAnalysisJob? _analysisJob;
-  bool _analyzingImage = true;
-
-  @override
-  void initState() {
-    super.initState();
-    // Analyze immediately when the preview opens so the user can review and
-    // edit the detected details before saving the item.
-    WidgetsBinding.instance.addPostFrameCallback((_) => _analyzeImage());
-  }
-
-  Future<void> _analyzeImage() async {
-    final result = await context.read<WardrobeProvider>().analyzeImage(
-      widget.image,
-      onStatus: (job) {
-        if (!mounted) return;
-        setState(() => _analysisJob = job);
-      },
-    );
-    if (!mounted) return;
-    if (result != null) {
-      _analysis = result;
-      if (_name.text.trim().isEmpty) {
-        final brand = result.brand == null ? '' : '${result.brand} ';
-        _name.text = _titleCase(
-          '$brand${result.color} ${result.category}'.trim(),
-        );
-      }
-      if (_brand.text.trim().isEmpty && result.brand != null) {
-        _brand.text = result.brand!;
-      }
-      if (_category.text.trim().isEmpty) _category.text = result.category;
-      _color ??= result.color;
-      _season ??= result.season;
-      _formality ??= result.formality;
-      if (_description.text.trim().isEmpty) {
-        _description.text = result.description;
-      }
-    }
-    setState(() => _analyzingImage = false);
-  }
-
-  @override
-  void dispose() {
-    _name.dispose();
-    _brand.dispose();
-    _category.dispose();
-    _description.dispose();
-    super.dispose();
-  }
-
   Future<void> _save() async {
-    final wardrobe = context.read<WardrobeProvider>();
-    await wardrobe.uploadOptimistically(
+    await context.read<WardrobeProvider>().uploadOptimistically(
       image: widget.image,
-      name: _name.text.trim().isEmpty ? 'New wardrobe item' : _name.text,
-      category: _category.text.trim().isEmpty ? 'other' : _category.text,
-      brand: _brand.text,
-      color: _color ?? '',
-      season: _season,
-      formality: _formality,
-      description: _description.text,
-      tags: _analysis?.tags ?? const [],
-      aiAnalysis: _analysis,
+      name: 'New wardrobe item',
+      category: 'other',
     );
     if (!mounted) return;
     Navigator.pop(context, true);
   }
 
-  Future<void> _cancelAnalysis() async {
-    final jobId = _analysisJob?.id;
-    if (jobId != null) {
-      await context.read<WardrobeProvider>().cancelAnalysis(jobId);
-    }
-    if (!mounted) return;
-    setState(() {
-      _analyzingImage = false;
-      _analysisJob = null;
-    });
-  }
-
-  Future<void> _retryAnalysis() async {
-    setState(() {
-      _analyzingImage = true;
-      _analysisJob = null;
-    });
-    await _analyzeImage();
-  }
-
   @override
   Widget build(BuildContext context) {
-    final wardrobe = context.watch<WardrobeProvider>();
-    final uploading = wardrobe.uploading;
-
     return Scaffold(
       appBar: AppBar(title: const Text('Add to wardrobe'), elevation: 0),
       body: SafeArea(
@@ -154,172 +55,48 @@ class _CameraPreviewScreenState extends State<CameraPreviewScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: DesignSystem.spacingXxl),
-
+            const SizedBox(height: DesignSystem.spacingXl),
             Container(
-              padding: const EdgeInsets.all(DesignSystem.spacingMd),
+              padding: const EdgeInsets.all(DesignSystem.spacingLg),
               decoration: BoxDecoration(
-                color: DesignSystem.secondary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(DesignSystem.radiusMd),
+                color: DesignSystem.primary.withValues(alpha: .07),
+                borderRadius: BorderRadius.circular(DesignSystem.radiusLg),
+                border: Border.all(
+                  color: DesignSystem.primary.withValues(alpha: .14),
+                ),
               ),
-              child: Row(
+              child: const Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.auto_awesome, color: DesignSystem.primary),
+                  Icon(Icons.auto_awesome_rounded, color: DesignSystem.primary),
                   SizedBox(width: DesignSystem.spacingMd),
                   Expanded(
-                    child: Text(
-                      _analyzingImage
-                          ? _analysisJob?.status == 'processing'
-                                ? 'AI is analyzing this item now. You can save and continue using the app.'
-                                : 'In queue: ${_analysisJob?.itemsAhead ?? 0} ahead · about ${_analysisJob?.estimatedWaitSeconds ?? 0}s. You can save and continue.'
-                          : _analysis != null
-                          ? 'Details were auto-filled by AI. Review or edit anything before saving.'
-                          : 'AI could not auto-fill this photo. You can still enter the details manually.',
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'From here, we will take care of everything',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: DesignSystem.textPrimary,
+                          ),
+                        ),
+                        SizedBox(height: 6),
+                        Text(
+                          'StyleStack will remove the background and automatically fill the name, brand, category, colour, season, formality, description and tags. You can continue using the app while it processes.',
+                        ),
+                      ],
                     ),
                   ),
-                  if (_analyzingImage)
-                    SizedBox.square(
-                      dimension: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
                 ],
               ),
             ),
-            if (_analyzingImage)
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton.icon(
-                  onPressed: _analysisJob?.status == 'processing'
-                      ? null
-                      : _cancelAnalysis,
-                  icon: const Icon(Icons.close_rounded, size: 18),
-                  label: const Text('Remove from queue'),
-                ),
-              )
-            else if (_analysis == null)
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton.icon(
-                  onPressed: _retryAnalysis,
-                  icon: const Icon(Icons.refresh_rounded, size: 18),
-                  label: const Text('Retry AI'),
-                ),
-              ),
             const SizedBox(height: DesignSystem.spacingXl),
-
-            // Form section header
-            StyleStackSectionHeader(title: 'Item Details'),
-            const SizedBox(height: DesignSystem.spacingMd),
-
-            // Item name field
-            TextFormField(
-              controller: _name,
-              enabled: !uploading,
-              decoration: const InputDecoration(
-                labelText: 'Item name (optional)',
-                hintText: 'e.g., Blue Denim Jacket',
-                prefixIcon: Icon(Icons.label_outline),
-              ),
-            ),
-            const SizedBox(height: DesignSystem.spacingMd),
-
-            TextFormField(
-              controller: _brand,
-              enabled: !uploading,
-              decoration: const InputDecoration(
-                labelText: 'Brand (optional)',
-                hintText: 'e.g., Crocs',
-                prefixIcon: Icon(Icons.workspace_premium_outlined),
-              ),
-            ),
-            const SizedBox(height: DesignSystem.spacingMd),
-
-            // Two-column row for category and color
-            TextFormField(
-              controller: _category,
-              enabled: !uploading,
-              decoration: const InputDecoration(
-                labelText: 'Category',
-                prefixIcon: Icon(Icons.checkroom_outlined),
-              ),
-            ),
-            const SizedBox(height: DesignSystem.spacingXl),
-
-            // Color picker
-            StyleStackColorPicker(
-              selectedColor: _color,
-              onColorSelected: uploading
-                  ? (_) {}
-                  : (color) => setState(() => _color = color),
-              enabled: !uploading,
-            ),
-            const SizedBox(height: DesignSystem.spacingXl),
-
-            // Season dropdown
-            DropdownButtonFormField<String>(
-              key: ValueKey('season-$_season'),
-              initialValue: _season,
-              decoration: const InputDecoration(
-                labelText: 'Season',
-                prefixIcon: Icon(Icons.calendar_month),
-              ),
-              items: const ['Summer', 'Winter', 'Spring', 'Autumn', 'All']
-                  .map(
-                    (value) => DropdownMenuItem(
-                      value: value.toLowerCase(),
-                      child: Text(value),
-                    ),
-                  )
-                  .toList(),
-              onChanged: uploading
-                  ? null
-                  : (value) => setState(() => _season = value),
-            ),
-            const SizedBox(height: DesignSystem.spacingMd),
-
-            // Formality dropdown
-            DropdownButtonFormField<String>(
-              key: ValueKey('formality-$_formality'),
-              initialValue: _formality,
-              decoration: const InputDecoration(
-                labelText: 'Formality',
-                prefixIcon: Icon(Icons.event_outlined),
-              ),
-              items: const ['Formal', 'Semi-formal', 'Casual', 'Sporty']
-                  .map(
-                    (value) => DropdownMenuItem(
-                      value: value.toLowerCase(),
-                      child: Text(value),
-                    ),
-                  )
-                  .toList(),
-              onChanged: uploading
-                  ? null
-                  : (value) => setState(() => _formality = value),
-            ),
-            const SizedBox(height: DesignSystem.spacingMd),
-
-            // Description field
-            TextFormField(
-              controller: _description,
-              enabled: !uploading,
-              minLines: 2,
-              maxLines: 4,
-              decoration: const InputDecoration(
-                labelText: 'Description (Optional)',
-                hintText: 'Add any additional notes about this item',
-                prefixIcon: Icon(Icons.description_outlined),
-                alignLabelWithHint: true,
-              ),
-            ),
-            const SizedBox(height: DesignSystem.spacingXxl),
-
-            // Action buttons
             Row(
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: uploading ? null : widget.onRetake,
+                    onPressed: widget.onRetake,
                     icon: const Icon(Icons.refresh),
                     label: Text(widget.retakeLabel),
                     style: OutlinedButton.styleFrom(
@@ -332,25 +109,9 @@ class _CameraPreviewScreenState extends State<CameraPreviewScreen> {
                 const SizedBox(width: DesignSystem.spacingMd),
                 Expanded(
                   child: FilledButton.icon(
-                    onPressed: uploading ? null : _save,
-                    icon: uploading
-                        ? const SizedBox.square(
-                            dimension: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                Colors.white,
-                              ),
-                            ),
-                          )
-                        : const Icon(Icons.cloud_upload_outlined),
-                    label: Text(
-                      _analyzingImage
-                          ? 'Save & continue'
-                          : uploading
-                          ? 'Saving…'
-                          : 'Save item',
-                    ),
+                    onPressed: _save,
+                    icon: const Icon(Icons.add_photo_alternate_outlined),
+                    label: const Text('Add now'),
                     style: FilledButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
                         vertical: DesignSystem.spacingMd,

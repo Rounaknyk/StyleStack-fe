@@ -38,9 +38,6 @@ class _BatchAddScreenState extends State<BatchAddScreen> {
   @override
   void dispose() {
     _pageController.dispose();
-    for (final draft in _drafts) {
-      draft.dispose();
-    }
     super.dispose();
   }
 
@@ -66,18 +63,8 @@ class _BatchAddScreenState extends State<BatchAddScreen> {
       unawaited(
         wardrobe.uploadOptimistically(
           image: draft.image,
-          name: draft.name.text.trim().isEmpty
-              ? 'New wardrobe item ${index + 1}'
-              : draft.name.text,
-          category: draft.category.text.trim().isEmpty
-              ? 'other'
-              : draft.category.text,
-          brand: draft.brand.text,
-          color: draft.color.text,
-          season: draft.season,
-          formality: draft.formality,
-          description: draft.description.text,
-          tags: const [],
+          name: 'New wardrobe item ${index + 1}',
+          category: 'other',
         ),
       );
     }
@@ -167,7 +154,6 @@ class _BatchAddScreenState extends State<BatchAddScreen> {
                   total: _drafts.length,
                   disabled: _uploading,
                   onSelected: (value) => _toggleSelected(index, value),
-                  onChanged: () => setState(() {}),
                 ),
               ),
             ),
@@ -200,7 +186,6 @@ class _BatchDraftPage extends StatelessWidget {
     required this.total,
     required this.disabled,
     required this.onSelected,
-    required this.onChanged,
   });
 
   final _BatchItemDraft draft;
@@ -208,7 +193,6 @@ class _BatchDraftPage extends StatelessWidget {
   final int total;
   final bool disabled;
   final ValueChanged<bool> onSelected;
-  final VoidCallback onChanged;
 
   @override
   Widget build(BuildContext context) => ListView(
@@ -260,126 +244,36 @@ class _BatchDraftPage extends StatelessWidget {
         ),
       ],
       const SizedBox(height: 18),
-      TextField(
-        controller: draft.name,
-        enabled: !disabled && draft.selected,
-        decoration: const InputDecoration(
-          labelText: 'Item name (optional)',
-          prefixIcon: Icon(Icons.label_outline),
+      Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: DesignSystem.primary.withValues(alpha: .07),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: DesignSystem.primary.withValues(alpha: .14),
+          ),
         ),
-      ),
-      const SizedBox(height: 14),
-      TextField(
-        controller: draft.brand,
-        enabled: !disabled && draft.selected,
-        decoration: const InputDecoration(
-          labelText: 'Brand',
-          prefixIcon: Icon(Icons.workspace_premium_outlined),
-        ),
-      ),
-      const SizedBox(height: 14),
-      TextField(
-        controller: draft.category,
-        enabled: !disabled && draft.selected,
-        decoration: const InputDecoration(
-          labelText: 'Category',
-          prefixIcon: Icon(Icons.checkroom_outlined),
-        ),
-      ),
-      const SizedBox(height: 14),
-      TextField(
-        controller: draft.color,
-        enabled: !disabled && draft.selected,
-        decoration: const InputDecoration(
-          labelText: 'Color',
-          prefixIcon: Icon(Icons.palette_outlined),
-        ),
-      ),
-      const SizedBox(height: 14),
-      DropdownButtonFormField<String>(
-        key: ValueKey('season-${draft.season}'),
-        initialValue: draft.season,
-        decoration: const InputDecoration(
-          labelText: 'Season',
-          prefixIcon: Icon(Icons.calendar_month),
-        ),
-        items: const ['summer', 'winter', 'spring', 'autumn', 'all']
-            .map(
-              (value) =>
-                  DropdownMenuItem(value: value, child: Text(_title(value))),
-            )
-            .toList(),
-        onChanged: disabled || !draft.selected
-            ? null
-            : (value) {
-                draft.season = value;
-                onChanged();
-              },
-      ),
-      const SizedBox(height: 14),
-      DropdownButtonFormField<String>(
-        key: ValueKey('formality-${draft.formality}'),
-        initialValue: draft.formality,
-        decoration: const InputDecoration(
-          labelText: 'Formality',
-          prefixIcon: Icon(Icons.event_outlined),
-        ),
-        items: const ['formal', 'semi-formal', 'casual', 'sporty']
-            .map(
-              (value) =>
-                  DropdownMenuItem(value: value, child: Text(_title(value))),
-            )
-            .toList(),
-        onChanged: disabled || !draft.selected
-            ? null
-            : (value) {
-                draft.formality = value;
-                onChanged();
-              },
-      ),
-      const SizedBox(height: 14),
-      TextField(
-        controller: draft.description,
-        enabled: !disabled && draft.selected,
-        minLines: 2,
-        maxLines: 4,
-        decoration: const InputDecoration(
-          labelText: 'Description',
-          prefixIcon: Icon(Icons.description_outlined),
-          alignLabelWithHint: true,
+        child: const Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.auto_awesome_rounded, color: DesignSystem.primary),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'You are done. From here, StyleStack will remove the background and automatically fill the item name, brand, category, colour, season, formality, description and tags.',
+              ),
+            ),
+          ],
         ),
       ),
     ],
   );
-
-  static String _title(String value) => value
-      .split('-')
-      .map(
-        (word) => word.isEmpty
-            ? word
-            : '${word[0].toUpperCase()}${word.substring(1)}',
-      )
-      .join('-');
 }
 
 class _BatchItemDraft {
   _BatchItemDraft(this.image);
 
   final File image;
-  final name = TextEditingController();
-  final brand = TextEditingController();
-  final category = TextEditingController();
-  final color = TextEditingController();
-  final description = TextEditingController();
-  String? season;
-  String? formality;
   String? error;
   bool selected = true;
-  void dispose() {
-    name.dispose();
-    brand.dispose();
-    category.dispose();
-    color.dispose();
-    description.dispose();
-  }
 }
