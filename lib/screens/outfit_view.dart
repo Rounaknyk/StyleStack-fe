@@ -1035,8 +1035,9 @@ class _OutfitBoard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 18),
       decoration: BoxDecoration(
-        color: const Color(0xFFF0ECE6),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: DesignSystem.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1063,7 +1064,7 @@ class _OutfitBoard extends StatelessWidget {
                   vertical: 5,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: .8),
+                  color: DesignSystem.surfaceAlt,
                   borderRadius: BorderRadius.circular(99),
                 ),
                 child: Text(
@@ -1103,7 +1104,7 @@ class _OutfitBoard extends StatelessWidget {
                       childAspectRatio: aspectRatio,
                     ),
                     itemBuilder: (context, index) =>
-                        _OutfitPiece(item: visibleItems[index], index: index),
+                        _OutfitPiece(item: visibleItems[index]),
                   ),
                 );
               },
@@ -1115,19 +1116,15 @@ class _OutfitBoard extends StatelessWidget {
 }
 
 class _OutfitPiece extends StatelessWidget {
-  const _OutfitPiece({required this.item, required this.index});
+  const _OutfitPiece({required this.item});
   final WardrobeItem item;
-  final int index;
 
   @override
   Widget build(BuildContext context) {
     final imageUrl = item.canvasImageUrl;
-    final background = index.isEven
-        ? const Color(0xFFFFFDF9)
-        : const Color(0xFFE3ECEA);
     return Container(
       decoration: BoxDecoration(
-        color: background,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(20),
       ),
       padding: const EdgeInsets.fromLTRB(8, 9, 8, 10),

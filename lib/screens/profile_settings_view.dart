@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../config/custom_widgets.dart';
 import '../config/design_system.dart';
 import '../providers/auth_provider.dart';
 import '../providers/gmail_sync_provider.dart';
@@ -607,32 +608,50 @@ class _ProfileHeader extends StatelessWidget {
   final String email;
 
   @override
-  Widget build(BuildContext context) => Row(
-    children: [
-      CircleAvatar(
-        radius: 34,
-        backgroundColor: DesignSystem.primary,
-        child: Text(
-          title.isEmpty ? 'S' : title[0].toUpperCase(),
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 25,
-            fontWeight: FontWeight.w700,
+  Widget build(BuildContext context) => StyleStackFeaturePanel(
+    color: DesignSystem.editorialMint,
+    child: Row(
+      children: [
+        CircleAvatar(
+          radius: 34,
+          backgroundColor: DesignSystem.primary,
+          child: Text(
+            title.isEmpty ? 'S' : title[0].toUpperCase(),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 25,
+              fontWeight: FontWeight.w800,
+            ),
           ),
         ),
-      ),
-      const SizedBox(width: 15),
-      Expanded(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: Theme.of(context).textTheme.headlineSmall),
-            const SizedBox(height: 2),
-            Text(email, style: Theme.of(context).textTheme.bodySmall),
-          ],
+        const SizedBox(width: 15),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'YOUR STYLE PROFILE',
+                style: TextStyle(
+                  color: DesignSystem.primary,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.3,
+                ),
+              ),
+              const SizedBox(height: 5),
+              Text(
+                title,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(email, style: Theme.of(context).textTheme.bodySmall),
+            ],
+          ),
         ),
-      ),
-    ],
+      ],
+    ),
   );
 }
 
@@ -660,7 +679,7 @@ class _SettingsSection extends StatelessWidget {
         color: DesignSystem.surface,
         clipBehavior: Clip.antiAlias,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(DesignSystem.radiusLg),
+          borderRadius: BorderRadius.circular(DesignSystem.radiusXxl),
           side: const BorderSide(color: DesignSystem.border),
         ),
         child: Column(children: children),

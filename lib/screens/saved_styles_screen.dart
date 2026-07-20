@@ -84,76 +84,98 @@ class _SavedStylesScreenState extends State<SavedStylesScreen> {
           );
         return RefreshIndicator(
           onRefresh: () async => _reload(),
-          child: GridView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: styles.length,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 16,
-              childAspectRatio: .78,
-            ),
-            itemBuilder: (context, index) {
-              final style = styles[index];
-              return Card(
-                clipBehavior: Clip.antiAlias,
-                child: InkWell(
-                  onTap: () async {
-                    await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            CanvasStyleBuilderScreen(initialStyle: style),
-                      ),
-                    );
-                    if (context.mounted) _reload();
-                  },
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: style.previewUrl == null
-                            ? const Center(
-                                child: Icon(Icons.image_outlined, size: 42),
-                              )
-                            : Image.network(
-                                style.previewUrl!,
-                                fit: BoxFit.contain,
-                                width: double.infinity,
-                                errorBuilder: (_, _, _) => const Center(
-                                  child: Icon(Icons.broken_image_outlined),
-                                ),
-                              ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(10, 8, 4, 4),
-                        child: Row(
+          child: CustomScrollView(
+            slivers: [
+              const SliverToBoxAdapter(
+                child: StyleStackPageIntro(
+                  eyebrow: 'Your studio',
+                  title: 'Saved looks',
+                  subtitle:
+                      'Open any canvas to refine, save, or share the arrangement.',
+                ),
+              ),
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 110),
+                sliver: SliverGrid.builder(
+                  itemCount: styles.length,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 16,
+                    childAspectRatio: .78,
+                  ),
+                  itemBuilder: (context, index) {
+                    final style = styles[index];
+                    return Card(
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: () async {
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  CanvasStyleBuilderScreen(initialStyle: style),
+                            ),
+                          );
+                          if (context.mounted) _reload();
+                        },
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Expanded(
-                              child: Text(
-                                style.name,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
+                              child: style.previewUrl == null
+                                  ? const Center(
+                                      child: Icon(
+                                        Icons.image_outlined,
+                                        size: 42,
+                                      ),
+                                    )
+                                  : Image.network(
+                                      style.previewUrl!,
+                                      fit: BoxFit.contain,
+                                      width: double.infinity,
+                                      errorBuilder: (_, _, _) => const Center(
+                                        child: Icon(
+                                          Icons.broken_image_outlined,
+                                        ),
+                                      ),
+                                    ),
                             ),
-                            IconButton(
-                              onPressed: () async {
-                                await _api.deleteCanvasStyle(style.id);
-                                if (context.mounted) _reload();
-                              },
-                              icon: const Icon(Icons.delete_outline, size: 20),
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(10, 8, 4, 4),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      style.name,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                  IconButton(
+                                    onPressed: () async {
+                                      await _api.deleteCanvasStyle(style.id);
+                                      if (context.mounted) _reload();
+                                    },
+                                    icon: const Icon(
+                                      Icons.delete_outline,
+                                      size: 20,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ),
                       ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
-              );
-            },
+              ),
+            ],
           ),
         );
       },

@@ -5,6 +5,120 @@ import 'design_system.dart';
 
 /// Custom reusable widgets following StyleStack design system
 
+class StyleStackPageIntro extends StatelessWidget {
+  const StyleStackPageIntro({
+    super.key,
+    required this.title,
+    this.eyebrow,
+    this.subtitle,
+    this.trailing,
+    this.padding = const EdgeInsets.fromLTRB(20, 18, 20, 14),
+  });
+
+  final String title;
+  final String? eyebrow;
+  final String? subtitle;
+  final Widget? trailing;
+  final EdgeInsets padding;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: padding,
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (eyebrow != null) ...[
+                Text(
+                  eyebrow!.toUpperCase(),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: DesignSystem.primary,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.7,
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
+              Text(
+                title,
+                style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.8,
+                  height: 1.08,
+                ),
+              ),
+              if (subtitle != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  subtitle!,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: DesignSystem.textSecondary,
+                    height: 1.45,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        if (trailing != null) ...[const SizedBox(width: 14), trailing!],
+      ],
+    ),
+  );
+}
+
+class StyleStackFeaturePanel extends StatelessWidget {
+  const StyleStackFeaturePanel({
+    super.key,
+    required this.child,
+    this.color = DesignSystem.editorialBlue,
+    this.padding = const EdgeInsets.all(20),
+    this.onTap,
+  });
+
+  final Widget child;
+  final Color color;
+  final EdgeInsets padding;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) => Material(
+    color: color,
+    borderRadius: BorderRadius.circular(DesignSystem.radiusXxl),
+    clipBehavior: Clip.antiAlias,
+    child: InkWell(
+      onTap: onTap,
+      child: Padding(padding: padding, child: child),
+    ),
+  );
+}
+
+class StyleStackIconBadge extends StatelessWidget {
+  const StyleStackIconBadge({
+    super.key,
+    required this.icon,
+    this.backgroundColor = DesignSystem.primaryDark,
+    this.foregroundColor = Colors.white,
+    this.size = 48,
+  });
+
+  final IconData icon;
+  final Color backgroundColor;
+  final Color foregroundColor;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: size,
+    height: size,
+    decoration: BoxDecoration(color: backgroundColor, shape: BoxShape.circle),
+    alignment: Alignment.center,
+    child: Icon(icon, color: foregroundColor, size: size * .46),
+  );
+}
+
 class StyleStackCard extends StatelessWidget {
   const StyleStackCard({
     super.key,

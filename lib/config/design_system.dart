@@ -15,6 +15,9 @@ class DesignSystem {
   static const Color background = Color(0xFFF8F6F2);
   static const Color surface = Color(0xFFFFFFFF);
   static const Color surfaceAlt = Color(0xFFF0ECE6);
+  static const Color editorialBlue = Color(0xFFE5E9F8);
+  static const Color editorialMint = Color(0xFFE3EFEC);
+  static const Color editorialSand = Color(0xFFF3E5D5);
 
   static const Color success = Color(0xFF2E7D32);
   static const Color warning = Color(0xFFC98324);
@@ -150,13 +153,16 @@ class DesignSystem {
         backgroundColor: background,
         foregroundColor: textPrimary,
         elevation: 0,
+        scrolledUnderElevation: 0,
+        surfaceTintColor: Colors.transparent,
+        toolbarHeight: 76,
         centerTitle: false,
         titleTextStyle: const TextStyle(
           fontFamily: 'Manrope',
-          fontSize: 19,
-          fontWeight: FontWeight.w700,
+          fontSize: 21,
+          fontWeight: FontWeight.w800,
           color: textPrimary,
-          letterSpacing: 0.15,
+          letterSpacing: -0.35,
         ),
         iconTheme: const IconThemeData(color: textPrimary),
       ),
@@ -259,27 +265,27 @@ class DesignSystem {
         filled: true,
         fillColor: surface,
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: spacingLg,
-          vertical: spacingMd,
+          horizontal: spacingXl,
+          vertical: spacingLg,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(radiusLg),
+          borderRadius: BorderRadius.circular(radiusXl),
           borderSide: const BorderSide(color: border),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(radiusLg),
+          borderRadius: BorderRadius.circular(radiusXl),
           borderSide: const BorderSide(color: border),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(radiusLg),
+          borderRadius: BorderRadius.circular(radiusXl),
           borderSide: const BorderSide(color: primary, width: 2),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(radiusLg),
+          borderRadius: BorderRadius.circular(radiusXl),
           borderSide: const BorderSide(color: error),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(radiusLg),
+          borderRadius: BorderRadius.circular(radiusXl),
           borderSide: const BorderSide(color: error, width: 2),
         ),
         labelStyle: const TextStyle(color: textSecondary),
@@ -293,6 +299,7 @@ class DesignSystem {
         style: FilledButton.styleFrom(
           backgroundColor: primary,
           foregroundColor: Colors.white,
+          minimumSize: const Size(48, 50),
           padding: const EdgeInsets.symmetric(
             horizontal: spacingXl,
             vertical: spacingMd,
@@ -310,6 +317,7 @@ class DesignSystem {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: primary,
+          minimumSize: const Size(48, 50),
           padding: const EdgeInsets.symmetric(
             horizontal: spacingXl,
             vertical: spacingMd,
@@ -346,7 +354,7 @@ class DesignSystem {
         elevation: 0,
         shadowColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(radiusLg),
+          borderRadius: BorderRadius.circular(radiusXl),
           side: const BorderSide(color: border),
         ),
         margin: EdgeInsets.zero,
@@ -376,9 +384,9 @@ class DesignSystem {
         backgroundColor: primary,
         foregroundColor: Colors.white,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(radiusLg),
+          borderRadius: BorderRadius.circular(radiusXl),
         ),
-        elevation: elevationMedium,
+        elevation: elevationLow,
       ),
 
       // Bottom navigation
@@ -427,6 +435,43 @@ class DesignSystem {
         contentTextStyle: const TextStyle(color: Colors.white),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(radiusMd),
+        ),
+      ),
+
+      dialogTheme: DialogThemeData(
+        backgroundColor: surface,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(radiusXxl),
+        ),
+      ),
+
+      listTileTheme: const ListTileThemeData(
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: spacingLg,
+          vertical: spacingSm,
+        ),
+        iconColor: primary,
+        textColor: textPrimary,
+        titleTextStyle: TextStyle(
+          fontFamily: 'Manrope',
+          fontSize: 15,
+          fontWeight: FontWeight.w700,
+          color: textPrimary,
+        ),
+        subtitleTextStyle: TextStyle(
+          fontFamily: 'Manrope',
+          fontSize: 13,
+          height: 1.4,
+          color: textSecondary,
+        ),
+      ),
+
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(
+          foregroundColor: primaryDark,
+          backgroundColor: surface,
+          shape: const CircleBorder(side: BorderSide(color: border)),
         ),
       ),
 

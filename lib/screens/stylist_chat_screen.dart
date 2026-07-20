@@ -55,18 +55,14 @@ class _StylistChatScreenState extends State<StylistChatScreen> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(18, 16, 18, 30),
           children: [
-            Text(
-              'Tell me where you are going',
-              style: Theme.of(context).textTheme.headlineSmall,
+            const StyleStackPageIntro(
+              eyebrow: 'Personal styling',
+              title: 'Tell me where you are going',
+              subtitle:
+                  'Describe the event, dress code, mood, or how you want to feel. Your stylist will build the look from your wardrobe.',
+              padding: EdgeInsets.zero,
             ),
-            const SizedBox(height: 6),
-            Text(
-              'Describe the event, dress code, mood, or anything you want to feel like. I’ll style it from your wardrobe.',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: DesignSystem.textSecondary,
-                  ),
-            ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 22),
             TextField(
               controller: _message,
               minLines: 3,
@@ -82,7 +78,9 @@ class _StylistChatScreenState extends State<StylistChatScreen> {
             FilledButton.icon(
               onPressed: _loading ? null : _ask,
               icon: const Icon(Icons.auto_awesome),
-              label: Text(_loading ? 'Styling your look…' : 'Suggest my outfit'),
+              label: Text(
+                _loading ? 'Styling your look…' : 'Suggest my outfit',
+              ),
             ),
             if (_loading)
               const StyleStackLoadingIndicator(
@@ -104,20 +102,30 @@ class _StylistChatScreenState extends State<StylistChatScreen> {
               const SizedBox(height: 12),
               _ChatOutfitBoard(outfit: _outfit!),
               const SizedBox(height: 14),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const Text(
-                        'Why this works',
-                        style: TextStyle(fontWeight: FontWeight.w700),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(_outfit!.reasoning),
-                    ],
-                  ),
+              StyleStackFeaturePanel(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Row(
+                      children: [
+                        StyleStackIconBadge(
+                          icon: Icons.lightbulb_outline_rounded,
+                          size: 38,
+                          foregroundColor: DesignSystem.accent,
+                        ),
+                        SizedBox(width: 10),
+                        Text(
+                          'Why this works',
+                          style: TextStyle(fontWeight: FontWeight.w800),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _outfit!.reasoning,
+                      style: const TextStyle(height: 1.45),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -141,7 +149,6 @@ class _ChatOutfitBoard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(DesignSystem.radiusXl),
         border: Border.all(color: DesignSystem.border),
-        boxShadow: DesignSystem.shadowMedium,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -158,7 +165,10 @@ class _ChatOutfitBoard extends StatelessWidget {
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
               ),
-              Text('${items.length} pieces', style: Theme.of(context).textTheme.bodySmall),
+              Text(
+                '${items.length} pieces',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
             ],
           ),
           const SizedBox(height: 14),
@@ -215,9 +225,9 @@ class _ChatOutfitPiece extends StatelessWidget {
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
           textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
         ),
       ],
     );

@@ -98,16 +98,12 @@ class _OutfitHistoryViewState extends State<OutfitHistoryView> {
         padding: const EdgeInsets.fromLTRB(18, 16, 18, 110),
         children: [
           if (widget.showHeading) ...[
-            Text(
-              'Plan & remember',
-              style: Theme.of(context).textTheme.displaySmall,
-            ),
-            const SizedBox(height: 5),
-            Text(
-              'Prepare for upcoming events, then revisit what you actually wore.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: DesignSystem.textSecondary,
-              ),
+            const StyleStackPageIntro(
+              eyebrow: 'Your style diary',
+              title: 'Plan & remember',
+              subtitle:
+                  'Prepare for upcoming events, then revisit what you actually wore.',
+              padding: EdgeInsets.zero,
             ),
             const SizedBox(height: 20),
           ],
@@ -171,40 +167,38 @@ class _CalendarCard extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => Material(
+  Widget build(BuildContext context) => StyleStackFeaturePanel(
     color: DesignSystem.primary,
-    borderRadius: BorderRadius.circular(DesignSystem.radiusLg),
-    child: InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(DesignSystem.radiusLg),
-      child: const Padding(
-        padding: EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Icon(Icons.calendar_month_outlined, color: Colors.white),
-            SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Plan for what is next',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  Text(
-                    'See events and tomorrow’s outfit reminders',
-                    style: TextStyle(color: Colors.white70),
-                  ),
-                ],
-              ),
-            ),
-            Icon(Icons.chevron_right, color: Colors.white),
-          ],
+    onTap: onTap,
+    child: const Row(
+      children: [
+        StyleStackIconBadge(
+          icon: Icons.calendar_month_outlined,
+          backgroundColor: DesignSystem.primaryDark,
         ),
-      ),
+        SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Plan for what is next',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 16,
+                ),
+              ),
+              SizedBox(height: 3),
+              Text(
+                'See events and outfit reminders',
+                style: TextStyle(color: Colors.white70, height: 1.35),
+              ),
+            ],
+          ),
+        ),
+        Icon(Icons.arrow_forward_rounded, color: Colors.white),
+      ],
     ),
   );
 }
