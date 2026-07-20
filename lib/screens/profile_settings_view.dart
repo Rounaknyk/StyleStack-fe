@@ -14,6 +14,7 @@ import '../services/location_service.dart';
 import '../services/permission_prompt_service.dart';
 import '../services/api_service.dart';
 import 'outfit_history_screen.dart';
+import 'privacy_policy_screen.dart';
 
 Future<bool> showDeleteAccountConfirmation(BuildContext context) async {
   var canDelete = false;
@@ -569,6 +570,24 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
                       )
                     : const Icon(Icons.chevron_right),
                 onTap: gmailSync.isRunning ? null : _importFromGmail,
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          _SettingsSection(
+            title: 'Legal & privacy',
+            children: [
+              _SettingsTile(
+                icon: Icons.privacy_tip_outlined,
+                title: 'Privacy Policy',
+                subtitle: 'How StyleStack collects, uses, and protects data',
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const PrivacyPolicyScreen(),
+                  ),
+                ),
               ),
             ],
           ),

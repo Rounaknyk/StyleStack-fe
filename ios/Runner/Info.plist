@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>StyleStack uses your city to recommend weather-appropriate outfits.</string>
+	<string>StyleStack: Your Style AI uses your location while the app is open to determine your city for weather-aware outfit comfort. You can continue without location access.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
@@ -22,7 +22,7 @@
 		</dict>
 	</array>
 	<key>CFBundleDisplayName</key>
-	<string>Stylestack Fe</string>
+	<string>StyleStack: Your Style AI</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -30,7 +30,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>stylestack_fe</string>
+	<string>StyleStack</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -49,11 +49,11 @@
 		<true/>
 	</dict>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>StyleStack connects to your development backend on the local Wi-Fi network.</string>
+	<string>StyleStack: Your Style AI connects to a developer-hosted service on your local network only when using a development build.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>StyleStack uses the camera to photograph wardrobe items.</string>
+	<string>StyleStack: Your Style AI uses the camera only when you choose to photograph an item for your digital wardrobe.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>StyleStack accesses photos selected for wardrobe uploads.</string>
+	<string>StyleStack: Your Style AI accesses only the photos you select to add items to your digital wardrobe.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

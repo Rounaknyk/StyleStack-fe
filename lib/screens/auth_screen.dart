@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../config/design_system.dart';
 import '../config/brand_logo.dart';
 import '../providers/auth_provider.dart';
+import 'privacy_policy_screen.dart';
 
 enum _AuthPanel { chooser, phone, email }
 
@@ -215,12 +216,18 @@ class _AuthScreenState extends State<AuthScreen> {
           _AuthError(message: auth.error!),
         ],
         const SizedBox(height: DesignSystem.spacingXl),
-        Text(
-          'By continuing, you agree to StyleStack’s Terms and Privacy Policy.',
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: DesignSystem.textSecondary,
-            height: 1.4,
+        TextButton(
+          onPressed: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()),
+          ),
+          child: Text(
+            'Read how StyleStack handles your data in our Privacy Policy.',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: DesignSystem.textSecondary,
+              decoration: TextDecoration.underline,
+              height: 1.4,
+            ),
           ),
         ),
       ],

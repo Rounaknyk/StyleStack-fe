@@ -60,7 +60,7 @@ class StyleStackApp extends StatelessWidget {
         ),
       ],
       child: MaterialApp(
-        title: 'StyleStack',
+        title: 'StyleStack: Your Style AI',
         debugShowCheckedModeBanner: false,
         supportedLocales: FLocalizations.supportedLocales,
         localizationsDelegates: const [
