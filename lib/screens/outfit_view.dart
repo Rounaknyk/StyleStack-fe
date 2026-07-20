@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../config/brand_logo.dart';
 import '../config/custom_widgets.dart';
 import '../config/design_system.dart';
 import '../models/calendar_models.dart';
@@ -242,94 +243,46 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
       onRefresh: () => _bootstrap(refresh: true),
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(18, 20, 18, 120),
+        padding: const EdgeInsets.fromLTRB(18, 12, 18, 120),
         children: [
-          Container(
-            padding: const EdgeInsets.fromLTRB(18, 18, 18, 20),
-            decoration: BoxDecoration(
-              color: DesignSystem.primary,
-              borderRadius: BorderRadius.circular(DesignSystem.radiusXl),
-              gradient: const LinearGradient(
-                colors: [DesignSystem.primaryDark, DesignSystem.primary],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  priorityEvent == null
-                      ? 'STYLE EDIT  /  TODAY'
-                      : 'PRIORITY EDIT',
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: DesignSystem.secondaryLight,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.4,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  '${_greeting()}, $name',
-                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  priorityEvent == null
-                      ? 'Your strongest look, edited from your own closet.'
-                      : 'You have ${priorityEvent.title} today. Let’s dress for it first.',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.82),
-                    height: 1.35,
-                  ),
-                ),
-              ],
-            ),
+          _EditorialHeader(
+            greeting: _greeting(),
+            name: name,
+            priorityEvent: priorityEvent,
+            onHistory: widget.onOpenHistory,
+            onProfile: widget.onOpenProfile,
           ),
-          const SizedBox(height: 14),
-          OutlinedButton.icon(
-            onPressed: () {
-              final city = mvp.preferences?.city?.trim() ?? '';
-              if (city.isNotEmpty) {
+          const SizedBox(height: 22),
+          const _SectionLabel('YOUR STYLING STUDIO'),
+          const SizedBox(height: 10),
+          _StylingTools(
+            onAskStylist: () {
+              final currentCity = mvp.preferences?.city?.trim() ?? '';
+              if (currentCity.isNotEmpty) {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => StylistChatScreen(city: city),
+                    builder: (_) => StylistChatScreen(city: currentCity),
                   ),
                 );
               } else {
                 widget.onOpenProfile();
               }
             },
-            icon: const Icon(Icons.chat_bubble_outline),
-            label: const Text('Ask your stylist anything'),
+            onCreateStyle: widget.onCreateStyle,
+            onSavedStyles: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const SavedStylesScreen()),
+            ),
           ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: widget.onCreateStyle,
-                  icon: const Icon(Icons.dashboard_customize_outlined),
-                  label: const Text('Create Style'),
-                ),
-              ),
-              const SizedBox(width: 10),
-              IconButton(
-                tooltip: 'My Styles',
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const SavedStylesScreen()),
-                ),
-                icon: const Icon(Icons.collections_bookmark_outlined),
-              ),
-            ],
-          ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 26),
           if (priorityEvent != null) ...[
+            const _SectionHeading(
+              eyebrow: 'FIRST PRIORITY',
+              title: 'Dress for what matters',
+              subtitle: 'Your calendar leads today’s styling edit.',
+            ),
+            const SizedBox(height: 12),
             _EventHeader(
               event: priorityEvent,
               additionalEvents: mvp.todayEvents.length - 1,
@@ -381,17 +334,11 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
                 onRetry: () => _newEventLook(priorityEvent),
               ),
             if (canStyle) ...[
-              const SizedBox(height: 28),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Your everyday look',
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
-                  ),
-                  const Text('For the rest of today'),
-                ],
+              const SizedBox(height: 34),
+              const _SectionHeading(
+                eyebrow: 'DAILY EDIT',
+                title: 'For the rest of today',
+                subtitle: 'An easy look, composed from your own wardrobe.',
               ),
               const SizedBox(height: 12),
             ] else
@@ -423,28 +370,52 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
             )
           else ...[
             _WeatherStrip(outfit: mvp.outfit!),
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
+            if (priorityEvent == null) ...[
+              _SectionHeading(
+                eyebrow: 'CURATED FOR TODAY',
+                title: 'Your daily outfit',
+                subtitle:
+                    'A complete look using ${mvp.outfit!.items.length} pieces you own.',
+                trailing: _RoundIconButton(
+                  tooltip: 'Create another look',
+                  icon: Icons.refresh_rounded,
+                  onPressed: mvp.loadingOutfit ? null : _newLook,
+                ),
+              ),
+              const SizedBox(height: 14),
+            ],
             _OutfitBoard(items: mvp.outfit!.items),
             const SizedBox(height: 14),
             _WhyItWorks(reasoning: mvp.outfit!.reasoning),
-            const SizedBox(height: 18),
-            _InspirationStrip(images: mvp.outfit!.inspirationImages),
-            const SizedBox(height: 18),
-            StyleStackButton(
-              label: 'Log This Outfit',
-              icon: Icons.check_circle_outline,
-              onPressed: () =>
-                  _showLogSheet(mvp.outfit!, label: 'Today\'s look'),
-            ),
-            const SizedBox(height: 9),
-            OutlinedButton.icon(
-              onPressed: mvp.loadingOutfit ? null : _newLook,
-              icon: const Icon(Icons.auto_awesome),
-              label: Text(
-                mvp.loadingOutfit
-                    ? 'Curating a new look…'
-                    : 'Show me a new look',
-              ),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: SizedBox(
+                    height: 52,
+                    child: FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: DesignSystem.primary,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(17),
+                        ),
+                      ),
+                      onPressed: () =>
+                          _showLogSheet(mvp.outfit!, label: 'Today\'s look'),
+                      icon: const Icon(Icons.check_circle_outline_rounded),
+                      label: const Text(
+                        'Log this outfit',
+                        style: TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                _VibeButton(images: mvp.outfit!.inspirationImages),
+              ],
             ),
             if (mvp.loadingOutfit)
               const StyleStackLoadingIndicator(
@@ -454,12 +425,381 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
                 padding: EdgeInsets.only(top: 8),
               ),
           ],
-          const SizedBox(height: 24),
+          const SizedBox(height: 30),
           _OutfitSelfieExplainer(onPressed: widget.onOutfitSelfie),
         ],
       ),
     );
   }
+}
+
+class _EditorialHeader extends StatelessWidget {
+  const _EditorialHeader({
+    required this.greeting,
+    required this.name,
+    required this.priorityEvent,
+    required this.onHistory,
+    required this.onProfile,
+  });
+
+  final String greeting;
+  final String name;
+  final StyleCalendarEvent? priorityEvent;
+  final VoidCallback onHistory;
+  final VoidCallback onProfile;
+
+  String _dateLabel() {
+    const weekdays = [
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
+    ];
+    const months = [
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
+    ];
+    final now = DateTime.now();
+    return '${weekdays[now.weekday - 1]}, ${now.day} ${months[now.month - 1]}';
+  }
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Row(
+        children: [
+          const StyleStackLogo(size: 38),
+          const SizedBox(width: 10),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'STYLESTACK',
+                  style: TextStyle(
+                    color: DesignSystem.primary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 2,
+                  ),
+                ),
+                Text(
+                  'YOUR PERSONAL EDIT',
+                  style: TextStyle(
+                    color: DesignSystem.textTertiary,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.25,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          _RoundIconButton(
+            tooltip: 'Style planner',
+            icon: Icons.calendar_month_outlined,
+            onPressed: onHistory,
+          ),
+          const SizedBox(width: 8),
+          _RoundIconButton(
+            tooltip: 'Profile',
+            icon: Icons.person_outline_rounded,
+            onPressed: onProfile,
+            dark: true,
+          ),
+        ],
+      ),
+      const SizedBox(height: 28),
+      Text(
+        '$greeting,',
+        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+          color: DesignSystem.textSecondary,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+      Text(
+        name,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: Theme.of(context).textTheme.displayLarge?.copyWith(
+          color: DesignSystem.primaryDark,
+          fontSize: 38,
+          height: 1.08,
+          fontWeight: FontWeight.w800,
+          letterSpacing: -1.6,
+        ),
+      ),
+      const SizedBox(height: 9),
+      Row(
+        children: [
+          Text(
+            _dateLabel().toUpperCase(),
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: DesignSystem.textTertiary,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1.1,
+            ),
+          ),
+          if (priorityEvent != null) ...[
+            const SizedBox(width: 9),
+            Container(
+              width: 4,
+              height: 4,
+              decoration: const BoxDecoration(
+                color: DesignSystem.cta,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 9),
+            Expanded(
+              child: Text(
+                '${priorityEvent!.title} is your style priority',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: DesignSystem.cta,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    ],
+  );
+}
+
+class _RoundIconButton extends StatelessWidget {
+  const _RoundIconButton({
+    required this.tooltip,
+    required this.icon,
+    required this.onPressed,
+    this.dark = false,
+  });
+
+  final String tooltip;
+  final IconData icon;
+  final VoidCallback? onPressed;
+  final bool dark;
+
+  @override
+  Widget build(BuildContext context) => Tooltip(
+    message: tooltip,
+    child: Material(
+      color: dark ? DesignSystem.primaryDark : DesignSystem.surface,
+      shape: const CircleBorder(),
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onPressed,
+        child: SizedBox.square(
+          dimension: 44,
+          child: Icon(
+            icon,
+            size: 21,
+            color: dark ? Colors.white : DesignSystem.primary,
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel(this.label);
+  final String label;
+
+  @override
+  Widget build(BuildContext context) => Text(
+    label,
+    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+      color: DesignSystem.textTertiary,
+      fontWeight: FontWeight.w900,
+      letterSpacing: 1.35,
+    ),
+  );
+}
+
+class _SectionHeading extends StatelessWidget {
+  const _SectionHeading({
+    required this.eyebrow,
+    required this.title,
+    required this.subtitle,
+    this.trailing,
+  });
+
+  final String eyebrow;
+  final String title;
+  final String subtitle;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    crossAxisAlignment: CrossAxisAlignment.end,
+    children: [
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _SectionLabel(eyebrow),
+            const SizedBox(height: 5),
+            Text(
+              title,
+              style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                color: DesignSystem.primaryDark,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -.7,
+              ),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              subtitle,
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(height: 1.35),
+            ),
+          ],
+        ),
+      ),
+      if (trailing != null) ...[const SizedBox(width: 12), trailing!],
+    ],
+  );
+}
+
+class _StylingTools extends StatelessWidget {
+  const _StylingTools({
+    required this.onAskStylist,
+    required this.onCreateStyle,
+    required this.onSavedStyles,
+  });
+
+  final VoidCallback onAskStylist;
+  final VoidCallback onCreateStyle;
+  final VoidCallback onSavedStyles;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Expanded(
+        child: _ToolCard(
+          title: 'Ask your\nstylist',
+          caption: 'Personal advice',
+          icon: Icons.chat_bubble_outline_rounded,
+          background: DesignSystem.primary,
+          foreground: Colors.white,
+          onTap: onAskStylist,
+        ),
+      ),
+      const SizedBox(width: 10),
+      Expanded(
+        child: _ToolCard(
+          title: 'Build a\nlook',
+          caption: 'Outfit canvas',
+          icon: Icons.dashboard_customize_outlined,
+          background: const Color(0xFFE7DDD2),
+          foreground: DesignSystem.primaryDark,
+          onTap: onCreateStyle,
+        ),
+      ),
+      const SizedBox(width: 10),
+      SizedBox(
+        width: 70,
+        child: _ToolCard(
+          title: 'Saved',
+          caption: '',
+          icon: Icons.bookmark_border_rounded,
+          background: const Color(0xFFDCE9E7),
+          foreground: DesignSystem.primaryDark,
+          compact: true,
+          onTap: onSavedStyles,
+        ),
+      ),
+    ],
+  );
+}
+
+class _ToolCard extends StatelessWidget {
+  const _ToolCard({
+    required this.title,
+    required this.caption,
+    required this.icon,
+    required this.background,
+    required this.foreground,
+    required this.onTap,
+    this.compact = false,
+  });
+
+  final String title;
+  final String caption;
+  final IconData icon;
+  final Color background;
+  final Color foreground;
+  final VoidCallback onTap;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) => Material(
+    color: background,
+    borderRadius: BorderRadius.circular(22),
+    clipBehavior: Clip.antiAlias,
+    child: InkWell(
+      onTap: onTap,
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 142),
+        padding: EdgeInsets.all(compact ? 12 : 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: foreground.withValues(alpha: .12),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: foreground, size: 20),
+            ),
+            const Spacer(),
+            Text(
+              title,
+              maxLines: 2,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: foreground,
+                height: 1.18,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            if (caption.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                caption,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: foreground.withValues(alpha: .72),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    ),
+  );
 }
 
 class _EventHeader extends StatelessWidget {
@@ -633,22 +973,47 @@ class _WeatherStrip extends StatelessWidget {
     if (description != null) details.add(description);
     if (city != null) details.add(city);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
       decoration: BoxDecoration(
-        color: DesignSystem.primary.withValues(alpha: .07),
-        borderRadius: BorderRadius.circular(DesignSystem.radiusMd),
+        color: const Color(0xFFDCE9E7),
+        borderRadius: BorderRadius.circular(99),
       ),
       child: Row(
         children: [
-          const Icon(Icons.wb_cloudy_outlined, size: 20),
-          const SizedBox(width: 9),
+          Container(
+            width: 29,
+            height: 29,
+            decoration: const BoxDecoration(
+              color: DesignSystem.primary,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.wb_cloudy_outlined,
+              size: 16,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(width: 10),
           Expanded(
             child: Text(
               details.join('  •  '),
-              style: Theme.of(context).textTheme.bodyMedium,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: DesignSystem.primaryDark,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
-          const Text('Comfort checked', style: TextStyle(fontSize: 11)),
+          const Text(
+            'COMFORT CHECKED',
+            style: TextStyle(
+              color: DesignSystem.primary,
+              fontSize: 9,
+              fontWeight: FontWeight.w900,
+              letterSpacing: .6,
+            ),
+          ),
         ],
       ),
     );
@@ -663,15 +1028,13 @@ class _OutfitBoard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final visibleItems = items.take(6).toList();
-    final columns = visibleItems.length <= 2 ? 2 : 3;
+    final columns = visibleItems.length <= 4 ? 2 : 3;
     final rows = (visibleItems.length / (columns == 0 ? 1 : columns)).ceil();
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 18),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(DesignSystem.radiusXl),
-        border: Border.all(color: DesignSystem.border),
-        boxShadow: DesignSystem.shadowMedium,
+        color: const Color(0xFFF0ECE6),
+        borderRadius: BorderRadius.circular(28),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -685,24 +1048,41 @@ class _OutfitBoard extends StatelessWidget {
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleLarge,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: DesignSystem.primaryDark,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
               const SizedBox(width: 8),
-              Text(
-                '${items.length} pieces',
-                style: Theme.of(context).textTheme.bodySmall,
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: .8),
+                  borderRadius: BorderRadius.circular(99),
+                ),
+                child: Text(
+                  '${items.length} PIECES',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: DesignSystem.textSecondary,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: .6,
+                  ),
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
           if (visibleItems.isEmpty)
             const Text('No pieces were selected.')
           else
             LayoutBuilder(
               builder: (context, constraints) {
-                const spacing = 10.0;
-                const aspectRatio = .72;
+                const spacing = 9.0;
+                const aspectRatio = .74;
                 final itemWidth =
                     (constraints.maxWidth - spacing * (columns - 1)) / columns;
                 final itemHeight = itemWidth / aspectRatio;
@@ -721,7 +1101,7 @@ class _OutfitBoard extends StatelessWidget {
                       childAspectRatio: aspectRatio,
                     ),
                     itemBuilder: (context, index) =>
-                        _OutfitPiece(item: visibleItems[index]),
+                        _OutfitPiece(item: visibleItems[index], index: index),
                   ),
                 );
               },
@@ -733,42 +1113,52 @@ class _OutfitBoard extends StatelessWidget {
 }
 
 class _OutfitPiece extends StatelessWidget {
-  const _OutfitPiece({required this.item});
+  const _OutfitPiece({required this.item, required this.index});
   final WardrobeItem item;
+  final int index;
 
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      Expanded(
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: ColoredBox(
-            color: Colors.white,
-            child: item.imageUrl == null
+  Widget build(BuildContext context) {
+    final imageUrl = item.canvasImageUrl;
+    final background = index.isEven
+        ? const Color(0xFFFFFDF9)
+        : const Color(0xFFE3ECEA);
+    return Container(
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      padding: const EdgeInsets.fromLTRB(8, 9, 8, 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: imageUrl == null
                 ? const Icon(Icons.checkroom_outlined, size: 34)
-                : Image.network(
-                    item.imageUrl!,
+                : CachedNetworkImage(
+                    imageUrl: imageUrl,
+                    cacheKey: 'today-outfit-${item.id}-${item.aiTagStatus}',
                     fit: BoxFit.contain,
-                    errorBuilder: (_, _, _) =>
+                    placeholder: (_, _) => const SizedBox.shrink(),
+                    errorWidget: (_, _, _) =>
                         const Icon(Icons.checkroom_outlined),
                   ),
           ),
-        ),
+          const SizedBox(height: 7),
+          Text(
+            item.name,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: DesignSystem.primaryDark,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
       ),
-      const SizedBox(height: 7),
-      Text(
-        item.name,
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-        textAlign: TextAlign.center,
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-          color: DesignSystem.textPrimary,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    ],
-  );
+    );
+  }
 }
 
 class _WhyItWorks extends StatelessWidget {
@@ -778,36 +1168,51 @@ class _WhyItWorks extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(17),
+    padding: const EdgeInsets.all(20),
     decoration: BoxDecoration(
-      gradient: LinearGradient(
-        colors: [DesignSystem.primary, DesignSystem.primaryLight],
-      ),
-      borderRadius: BorderRadius.circular(DesignSystem.radiusLg),
+      color: const Color(0xFFE2E5F5),
+      borderRadius: BorderRadius.circular(24),
     ),
-    child: Row(
+    child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Icon(Icons.lightbulb_outline, color: DesignSystem.accent),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
+        Row(
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: const BoxDecoration(
+                color: DesignSystem.primaryDark,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.lightbulb_outline_rounded,
+                color: DesignSystem.accent,
+                size: 21,
+              ),
+            ),
+            const SizedBox(width: 11),
+            Expanded(
+              child: Text(
+                title.toUpperCase(),
                 style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 16,
+                  color: DesignSystem.primaryDark,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 12,
+                  letterSpacing: 1,
                 ),
               ),
-              const SizedBox(height: 7),
-              Text(
-                reasoning,
-                style: const TextStyle(color: Colors.white, height: 1.45),
-              ),
-            ],
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Text(
+          reasoning,
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+            color: DesignSystem.primaryDark,
+            height: 1.5,
+            fontWeight: FontWeight.w500,
+            letterSpacing: -.05,
           ),
         ),
       ],
@@ -815,23 +1220,19 @@ class _WhyItWorks extends StatelessWidget {
   );
 }
 
-class _InspirationStrip extends StatelessWidget {
-  const _InspirationStrip({required this.images});
+class _VibeButton extends StatelessWidget {
+  const _VibeButton({required this.images});
   final List<Map<String, dynamic>> images;
 
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text('See the vibe', style: Theme.of(context).textTheme.headlineSmall),
-      const SizedBox(height: 4),
-      Text(
-        'Open a general style moodboard inspired by this look.',
-        style: Theme.of(context).textTheme.bodySmall,
-      ),
-      const SizedBox(height: 10),
-      OutlinedButton.icon(
-        onPressed: () {
+  Widget build(BuildContext context) => Tooltip(
+    message: 'See the vibe',
+    child: Material(
+      color: const Color(0xFFE7DDD2),
+      borderRadius: BorderRadius.circular(17),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () {
           if (images.isEmpty) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -847,10 +1248,16 @@ class _InspirationStrip extends StatelessWidget {
             ),
           );
         },
-        icon: const Icon(Icons.auto_awesome_outlined),
-        label: const Text('See the vibe'),
+        child: const SizedBox(
+          width: 56,
+          height: 52,
+          child: Icon(
+            Icons.auto_awesome_outlined,
+            color: DesignSystem.primaryDark,
+          ),
+        ),
       ),
-    ],
+    ),
   );
 }
 
@@ -928,11 +1335,10 @@ class _OutfitSelfieExplainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(18),
+    padding: const EdgeInsets.all(20),
     decoration: BoxDecoration(
-      color: DesignSystem.surface,
-      borderRadius: BorderRadius.circular(DesignSystem.radiusXl),
-      border: Border.all(color: DesignSystem.border),
+      color: DesignSystem.primaryDark,
+      borderRadius: BorderRadius.circular(26),
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -940,37 +1346,67 @@ class _OutfitSelfieExplainer extends StatelessWidget {
         Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(10),
+              width: 46,
+              height: 46,
               decoration: BoxDecoration(
-                color: DesignSystem.primary.withValues(alpha: .09),
+                color: Colors.white.withValues(alpha: .1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
-                Icons.camera_alt_outlined,
-                color: DesignSystem.primary,
-              ),
+              child: const Icon(Icons.camera_alt_outlined, color: Colors.white),
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(
-                'Teach your stylist what you actually wear',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'STYLE MEMORY',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: DesignSystem.secondary,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.1,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    'Teach your stylist what you wear',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
         ),
         const SizedBox(height: 12),
         Text(
-          'Take one outfit selfie after getting dressed. StyleStack identifies visible pieces, asks you to confirm every match, logs the confirmed items as worn, and builds your private visual outfit history. This helps avoid repetitive suggestions.',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.45),
+          'One private outfit selfie confirms what you wore, updates your visual history, and helps your stylist avoid repetitive suggestions.',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: Colors.white.withValues(alpha: .76),
+            height: 1.45,
+          ),
         ),
-        const SizedBox(height: 14),
-        FilledButton.icon(
-          onPressed: onPressed,
-          icon: const Icon(Icons.camera_alt_outlined),
-          label: const Text('Take an outfit selfie'),
+        const SizedBox(height: 16),
+        SizedBox(
+          width: double.infinity,
+          height: 48,
+          child: FilledButton.icon(
+            style: FilledButton.styleFrom(
+              backgroundColor: DesignSystem.cta,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
+            ),
+            onPressed: onPressed,
+            icon: const Icon(Icons.camera_alt_outlined),
+            label: const Text(
+              'Take an outfit selfie',
+              style: TextStyle(fontWeight: FontWeight.w800),
+            ),
+          ),
         ),
       ],
     ),
