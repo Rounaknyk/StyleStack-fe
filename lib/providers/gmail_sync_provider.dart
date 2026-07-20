@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../services/gmail_import_service.dart';
+import '../services/analytics_service.dart';
 
 enum GmailSyncPhase { idle, connecting, syncing, refreshing, completed, failed }
 
@@ -54,11 +55,19 @@ class GmailSyncProvider extends ChangeNotifier {
       if (generation != _generation) return false;
 
       _phase = GmailSyncPhase.completed;
+      await AnalyticsService.instance.event(
+        'gmail_sync_completed',
+        parameters: {
+          'imported_items': result['imported_items'] ?? 0,
+          'processed_emails': result['processed_emails'] ?? 0,
+        },
+      );
       return true;
     } catch (exception) {
       if (generation != _generation) return false;
       _error = _readableError(exception);
       _phase = GmailSyncPhase.failed;
+      await AnalyticsService.instance.event('gmail_sync_failed');
       return false;
     } finally {
       if (generation == _generation) {

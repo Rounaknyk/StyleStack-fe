@@ -121,9 +121,16 @@ You can disable notifications in StyleStack or in your device settings.
 ### 1.8 Technical information and local storage
 
 StyleStack may process technical information such as request timestamps,
-response status, app version, platform, and limited diagnostic information
-needed to secure and operate the service. We do not intentionally log passwords,
-authentication tokens, service keys, email bodies, or uploaded image contents.
+response status, app version, platform, device and app identifiers, screen
+views, feature interactions, and limited diagnostic information needed to
+understand use, secure the service, and improve reliability. Google Analytics
+for Firebase provides product analytics and may automatically collect app
+instance, device, operating-system, language, approximate-location, session,
+and interaction information as described in Google's documentation. StyleStack
+does not send wardrobe photos, item names, stylist-chat text, email contents,
+phone numbers, or calendar-event text as custom analytics event parameters.
+We do not intentionally log passwords, authentication tokens, service keys,
+email bodies, or uploaded image contents.
 
 The app uses device storage, preferences, and a local database to cache wardrobe
 information, remember settings and disclosures, support faster loading, and
@@ -175,7 +182,7 @@ We may disclose information in these circumstances:
 We use providers that process information for us only as needed to operate
 StyleStack, including:
 
-- **Google Firebase** for authentication and push messaging;
+- **Google Firebase** for authentication, push messaging, and app analytics;
 - **Supabase** for database and private file storage;
 - **backend hosting providers** such as Render for application processing;
 - **Groq and Google Gemini** for AI-supported image and styling analysis;
@@ -328,4 +335,3 @@ For privacy questions, rights requests, complaints, or account deletion:
 
 **StyleStack: Your Style AI**  
 **Email:** rondevelops1904@gmail.com
-

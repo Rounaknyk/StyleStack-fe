@@ -16,6 +16,7 @@ import '../providers/auth_provider.dart';
 import '../providers/gmail_sync_provider.dart';
 import '../providers/wardrobe_provider.dart';
 import '../services/permission_prompt_service.dart';
+import '../services/analytics_service.dart';
 import 'camera_preview_screen.dart';
 import 'batch_add_screen.dart';
 import 'canvas_style_builder_screen.dart';
@@ -36,6 +37,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _selectTab(int value) {
     setState(() => _tab = value);
+    const tabNames = ['today', 'wardrobe', 'planner', 'profile'];
+    unawaited(AnalyticsService.instance.screen(tabNames[value]));
+    unawaited(
+      AnalyticsService.instance.event(
+        'navigation_tab_selected',
+        parameters: {'tab': tabNames[value]},
+      ),
+    );
     if (value == 1) {
       // Wardrobe is deliberately lazy: Today never downloads the full closet.
       context.read<WardrobeProvider>().loadItems();
@@ -43,6 +52,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _openCreateStyle() async {
+    unawaited(AnalyticsService.instance.event('canvas_style_started'));
     await context.read<WardrobeProvider>().loadItems();
     if (!mounted) return;
     await Navigator.push(
@@ -183,6 +193,7 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
     );
     if (approved != true || !mounted) return;
+    unawaited(AnalyticsService.instance.event('gmail_sync_started'));
     final wardrobe = context.read<WardrobeProvider>();
     final sync = context.read<GmailSyncProvider>();
     unawaited(

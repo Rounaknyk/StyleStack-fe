@@ -10,6 +10,7 @@ import '../models/clothing_analysis.dart';
 import '../models/ai_analysis_job.dart';
 import '../services/api_service.dart';
 import '../services/wardrobe_cache.dart';
+import '../services/analytics_service.dart';
 
 class WardrobeProvider extends ChangeNotifier {
   WardrobeProvider(this._api, {WardrobeCacheStore? cache, String? ownerUid})
@@ -288,13 +289,29 @@ class WardrobeProvider extends ChangeNotifier {
       }
       _loaded = true;
       _scheduleTagRefresh();
+      await AnalyticsService.instance.event(
+        'wardrobe_item_uploaded',
+        parameters: {
+          'ai_prefilled': aiAnalysis == null ? 0 : 1,
+          'has_manual_details':
+              name.trim().isNotEmpty || category.trim().isNotEmpty ? 1 : 0,
+        },
+      );
       return item;
     } on ApiException catch (error) {
       _error = error.message;
+      await AnalyticsService.instance.event(
+        'wardrobe_item_upload_failed',
+        parameters: {'failure_type': 'api'},
+      );
       await _rollbackPending(ownerUid, pending.id);
       return null;
     } catch (_) {
       _error = 'Upload failed. Please try again.';
+      await AnalyticsService.instance.event(
+        'wardrobe_item_upload_failed',
+        parameters: {'failure_type': 'connection'},
+      );
       await _rollbackPending(ownerUid, pending.id);
       return null;
     } finally {

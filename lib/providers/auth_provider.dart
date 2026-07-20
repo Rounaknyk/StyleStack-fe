@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 
 import '../services/auth_service.dart';
+import '../services/analytics_service.dart';
 
 enum PhoneAuthStep {
   enteringPhone,
@@ -19,6 +20,7 @@ class AuthProvider extends ChangeNotifier {
       (user) {
         _user = user;
         _initialized = true;
+        AnalyticsService.instance.identifyUser(user?.uid);
         _notify();
       },
       onError: (Object _) {
@@ -68,6 +70,10 @@ class AuthProvider extends ChangeNotifier {
       } else {
         await _service.signInWithEmail(email, password);
       }
+      await AnalyticsService.instance.authSucceeded(
+        method: 'email',
+        signUp: createAccount,
+      );
       return true;
     } on FirebaseAuthException catch (error) {
       _error = _messageFor(error.code);
@@ -96,6 +102,10 @@ class AuthProvider extends ChangeNotifier {
     _beginAction();
     try {
       await _service.signInWithGoogle();
+      await AnalyticsService.instance.authSucceeded(
+        method: 'google',
+        signUp: false,
+      );
       return true;
     } on AuthCancelledException {
       // Closing Google's account picker is an intentional action, not an error.
@@ -225,6 +235,10 @@ class AuthProvider extends ChangeNotifier {
         verificationId: _verificationId!,
         smsCode: code,
       );
+      await AnalyticsService.instance.authSucceeded(
+        method: 'phone',
+        signUp: false,
+      );
       _phoneStep = PhoneAuthStep.verified;
       return true;
     } on FirebaseAuthException catch (error) {
@@ -261,6 +275,7 @@ class AuthProvider extends ChangeNotifier {
     _phoneAttempt++;
     try {
       await _service.signOut();
+      await AnalyticsService.instance.event('account_signed_out');
     } finally {
       _phoneStep = PhoneAuthStep.enteringPhone;
       _phoneNumber = null;

@@ -17,6 +17,8 @@ import 'screens/auth_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'services/api_service.dart';
+import 'services/analytics_service.dart';
+import 'services/app_update_service.dart';
 import 'services/auth_service.dart';
 import 'services/gmail_import_service.dart';
 import 'services/onboarding_service.dart';
@@ -38,17 +40,32 @@ Future<void> main() async {
   runApp(StyleStackApp(settingsProvider: settingsProvider));
 }
 
-class StyleStackApp extends StatelessWidget {
+class StyleStackApp extends StatefulWidget {
   const StyleStackApp({required this.settingsProvider, super.key});
 
   final SettingsProvider settingsProvider;
+
+  @override
+  State<StyleStackApp> createState() => _StyleStackAppState();
+}
+
+class _StyleStackAppState extends State<StyleStackApp> {
+  late final _analyticsObserver = AnalyticsService.instance.createObserver();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      AppUpdateService.instance.checkForFlexibleUpdate();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final foruiTheme = DesignSystem.buildForuiTheme();
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider.value(value: settingsProvider),
+        ChangeNotifierProvider.value(value: widget.settingsProvider),
         ChangeNotifierProvider(create: (_) => AuthProvider(AuthService())),
         ChangeNotifierProvider(create: (_) => WardrobeProvider(ApiService())),
         ChangeNotifierProvider(create: (_) => MvpProvider(ApiService())),
@@ -62,6 +79,7 @@ class StyleStackApp extends StatelessWidget {
       child: MaterialApp(
         title: 'StyleStack: Your Style AI',
         debugShowCheckedModeBanner: false,
+        navigatorObservers: [_analyticsObserver],
         supportedLocales: FLocalizations.supportedLocales,
         localizationsDelegates: const [
           ...FLocalizations.localizationsDelegates,

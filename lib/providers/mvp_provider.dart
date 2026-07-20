@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../models/calendar_models.dart';
 import '../models/outfit.dart';
 import '../services/api_service.dart';
+import '../services/analytics_service.dart';
 
 class MvpProvider extends ChangeNotifier {
   MvpProvider(this._api);
@@ -98,6 +99,10 @@ class MvpProvider extends ChangeNotifier {
         );
       }
       styledEvent = event;
+      await AnalyticsService.instance.event(
+        'outfit_generated',
+        parameters: {'context': 'calendar_event', 'forced': force ? 1 : 0},
+      );
       return true;
     } on ApiException catch (e) {
       eventError = e.message;
@@ -168,6 +173,12 @@ class MvpProvider extends ChangeNotifier {
     notifyListeners();
     try {
       outfit = await _api.suggestOutfit(city: city, occasion: occasion);
+      await AnalyticsService.instance.event(
+        'outfit_generated',
+        parameters: {
+          'context': occasion.contains('alternative') ? 'refresh' : 'daily',
+        },
+      );
       return true;
     } on ApiException catch (e) {
       error = e.message;
@@ -211,6 +222,10 @@ class MvpProvider extends ChangeNotifier {
   Future<bool> markOutfitWorn(Outfit target) async {
     try {
       await _api.wearOutfit(target.id);
+      await AnalyticsService.instance.event(
+        'outfit_logged',
+        parameters: {'item_count': target.items.length},
+      );
       wearHistoryRevision++;
       notifyListeners();
       return true;
