@@ -1,0 +1,6 @@
+# Copy this file to android/key.properties and keep that file private.
+# The real key.properties and keystore files are ignored by Git.
+storePassword=replace-with-keystore-password
+keyPassword=replace-with-key-password
+keyAlias=stylestack
+storeFile=/absolute/path/to/stylestack-upload-key.jks
