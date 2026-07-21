@@ -10,6 +10,10 @@
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>GIDClientID</key>
 	<string>87320160492-6br2rpjo7vpk46hd47bl9uvkla95hp9q.apps.googleusercontent.com</string>
+	<!-- Google sample App ID. Replace with the StyleStack AdMob App ID before
+	     publishing a monetized build. -->
+	<key>GADApplicationIdentifier</key>
+	<string>ca-app-pub-3940256099942544~1458002511</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

@@ -11,6 +11,8 @@ import '../models/outfit.dart';
 import '../models/wardrobe_item.dart';
 import '../providers/auth_provider.dart';
 import '../providers/mvp_provider.dart';
+import '../services/analytics_service.dart';
+import '../services/rewarded_ad_service.dart';
 import 'saved_styles_screen.dart';
 import 'stylist_chat_screen.dart';
 
@@ -84,11 +86,86 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
       widget.onOpenProfile();
       return;
     }
+
+    final ads = RewardedAdService.instance;
+    final userId = context.read<AuthProvider>().user?.uid ?? 'anonymous';
+    var access = await ads.dailyRefreshAccess(userId);
+    if (!mounted) return;
+    if (access == DailyRefreshAccess.rewardedAdRequired) {
+      final accepted = await _confirmExtraLookAd();
+      if (!mounted || !accepted) return;
+      await AnalyticsService.instance.event(
+        'rewarded_ad_offer_accepted',
+        parameters: {'placement': RewardedPlacement.dailyOutfit.name},
+      );
+      final outcome = await ads.show(RewardedPlacement.dailyOutfit);
+      if (!mounted) return;
+      if (outcome != RewardedAdOutcome.earned) {
+        final message = outcome == RewardedAdOutcome.unavailable
+            ? 'The ad is not ready yet. Please try again in a moment.'
+            : 'Finish the rewarded ad to unlock another look.';
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(message)));
+        return;
+      }
+      await ads.grantBonusRefresh(userId);
+      access = DailyRefreshAccess.bonus;
+    }
+
     final ok = await mvp.generateOutfit(city, 'daily alternative');
+    if (ok) await ads.consumeRefresh(userId, access);
     if (!mounted || ok) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(mvp.error ?? 'Could not create a new look.')),
     );
+  }
+
+  Future<bool> _confirmExtraLookAd() async {
+    await AnalyticsService.instance.event(
+      'rewarded_ad_offer_viewed',
+      parameters: {'placement': RewardedPlacement.dailyOutfit.name},
+    );
+    if (!mounted) return false;
+    return await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            icon: const Icon(
+              Icons.auto_awesome_rounded,
+              color: DesignSystem.accent,
+            ),
+            title: const Text('Unlock one more look'),
+            content: const Text(
+              'You have used today’s two free outfit refreshes. Watch one rewarded ad to create one additional look. Your current outfit stays available if you skip.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: const Text('Not now'),
+              ),
+              FilledButton.icon(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                icon: const Icon(Icons.play_circle_outline_rounded),
+                label: const Text('Watch & refresh'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
+  Future<void> _refreshTodayContext() async {
+    final mvp = context.read<MvpProvider>();
+    await Future.wait([
+      mvp.loadPreferences(force: true),
+      mvp.loadTodayEvents(force: true),
+    ]);
+    if (!mounted) return;
+    final city = mvp.preferences?.city?.trim() ?? '';
+    final event = mvp.priorityEvent;
+    if (city.isNotEmpty && event != null) {
+      await mvp.generateEventOutfit(city, event, force: true);
+    }
   }
 
   Future<void> _newEventLook(StyleCalendarEvent event) async {
@@ -204,7 +281,10 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
     }
 
     return RefreshIndicator(
-      onRefresh: () => _bootstrap(refresh: true),
+      // Pull-to-refresh updates live context; alternate daily looks must use
+      // the visible refresh action so the two-free-refresh rule cannot be
+      // bypassed accidentally.
+      onRefresh: _refreshTodayContext,
       child: ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(18, 12, 18, 120),

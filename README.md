@@ -46,6 +46,37 @@ Do not use `localhost` from a physical phone. Use the computer's LAN IP for loca
 - Editable AI category, color, season, formality, description, and tag chips
 - Permission-based automatic city detection
 - Closet Sync ecommerce import from supported Gmail order messages
+- Opt-in AdMob rewards after two free daily outfit refreshes and after the
+  first Google Calendar connection
+
+## AdMob rewarded ads
+
+The app currently uses Google's official sample App IDs and rewarded ad-unit
+IDs. These are safe for development and always show test inventory; they do not
+earn revenue. Before the next store release:
+
+1. Create Android and iOS apps in AdMob.
+2. Create two rewarded units per platform: `daily_outfit` and
+   `calendar_connection`.
+3. Replace the sample App ID in `android/app/src/main/AndroidManifest.xml` and
+   `ios/Runner/Info.plist`.
+4. Provide the rewarded unit IDs when building:
+
+```bash
+flutter build appbundle \
+  --dart-define=ADMOB_REWARDED_DAILY_ANDROID=ca-app-pub-.../... \
+  --dart-define=ADMOB_REWARDED_CALENDAR_ANDROID=ca-app-pub-.../...
+```
+
+Use the corresponding `ADMOB_REWARDED_DAILY_IOS` and
+`ADMOB_REWARDED_CALENDAR_IOS` values for iOS. Calendar connection itself is
+never gated by an ad: after connection, the user may optionally watch one ad
+for one bonus daily-outfit refresh. On Today, the initial outfit and two
+successful refreshes are free; each later refresh requires an earned bonus.
+
+Because this integration adds a native plugin and native App IDs, it requires a
+new Play Store/App Store binary and cannot be introduced to an existing release
+using only a Shorebird patch.
 
 ## Closet Sync development setup
 

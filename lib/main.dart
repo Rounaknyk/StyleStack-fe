@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -23,6 +25,7 @@ import 'services/auth_service.dart';
 import 'services/gmail_import_service.dart';
 import 'services/onboarding_service.dart';
 import 'services/notification_service.dart';
+import 'services/rewarded_ad_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,6 +36,8 @@ Future<void> main() async {
     sound: true,
   );
   await NotificationService.initializeInteractionHandling();
+  // Preload both opt-in rewarded placements without delaying app startup.
+  unawaited(RewardedAdService.instance.initialize());
 
   // Initialize settings provider
   final settingsProvider = SettingsProvider();

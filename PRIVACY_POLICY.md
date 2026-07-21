@@ -1,7 +1,7 @@
 # Privacy Policy for StyleStack: Your Style AI
 
 **Effective date:** 20 July 2026  
-**Last updated:** 20 July 2026
+**Last updated:** 21 July 2026
 
 StyleStack: Your Style AI (“StyleStack,” “we,” “us,” or “our”) is a personal
 wardrobe and styling application. This Privacy Policy explains what information
@@ -137,6 +137,18 @@ information, remember settings and disclosures, support faster loading, and
 provide limited offline access. Local data may remain on your device until you
 sign out, clear app data, delete your account, or uninstall the app.
 
+### 1.9 Optional rewarded advertising
+
+StyleStack may offer an optional Google AdMob rewarded advertisement after you
+use the daily free outfit refreshes or after you connect Google Calendar. You
+can decline the offer and keep using the app; connecting Calendar never depends
+on watching an advertisement. If you choose to view one, Google Mobile Ads may
+process advertising identifiers, IP address, approximate location, device and
+app information, ad interactions, and diagnostic information to request,
+deliver, measure, prevent fraud in, and personalize or limit ads as permitted by
+your settings, consent choices, and applicable law. StyleStack records whether
+the reward was earned so it can provide the promised bonus outfit refresh.
+
 ## 2. How We Use Information
 
 We use information to:
@@ -151,6 +163,8 @@ We use information to:
 - import eligible purchases and synchronize connected calendar events;
 - provide weather-aware comfort guidance using your stored city;
 - deliver notifications and in-app messages you request or enable;
+- offer optional rewarded advertisements and provide the disclosed in-app
+  reward when earned;
 - save, edit, display, and share styles at your direction;
 - detect duplicate images, prevent abuse, manage service limits, troubleshoot
   failures, and improve reliability;
@@ -172,8 +186,9 @@ decisions.
 
 ## 4. When We Share Information
 
-We do not sell your personal information. We do not currently use your personal
-information for third-party behavioral advertising or cross-app tracking.
+We do not sell your personal information. Google AdMob may use advertising and
+device information to deliver or measure ads, including personalized ads where
+allowed by your consent choices, device settings, and applicable law.
 
 We may disclose information in these circumstances:
 
@@ -183,6 +198,8 @@ We use providers that process information for us only as needed to operate
 StyleStack, including:
 
 - **Google Firebase** for authentication, push messaging, and app analytics;
+- **Google AdMob** for optional rewarded advertising, measurement, and ad-fraud
+  prevention;
 - **Supabase** for database and private file storage;
 - **backend hosting providers** such as Render for application processing;
 - **Groq and Google Gemini** for AI-supported image and styling analysis;
@@ -252,6 +269,8 @@ Depending on where you live, you may have rights to:
 - withdraw consent;
 - revoke connected Google access;
 - opt out of notifications and device permissions; and
+- decline any rewarded-ad offer without losing Calendar access or other core
+  app functionality; and
 - complain to an applicable data-protection authority.
 
 You can edit many profile and wardrobe fields directly in the app. You can also
