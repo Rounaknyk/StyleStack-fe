@@ -27,6 +27,7 @@ class RewardedAdService {
   final Map<RewardedPlacement, RewardedAd?> _ads = {};
   final Map<RewardedPlacement, Future<bool>> _loads = {};
   bool _initialized = false;
+  bool _available = true;
 
   bool get _isSupported =>
       defaultTargetPlatform == TargetPlatform.android ||
@@ -35,14 +36,21 @@ class RewardedAdService {
   Future<void> initialize() async {
     if (_initialized || !_isSupported) return;
     _initialized = true;
-    await MobileAds.instance.initialize();
-    unawaited(_ensureLoaded(RewardedPlacement.dailyOutfit));
-    unawaited(_ensureLoaded(RewardedPlacement.calendarConnection));
+    try {
+      await MobileAds.instance.initialize();
+      unawaited(_ensureLoaded(RewardedPlacement.dailyOutfit));
+      unawaited(_ensureLoaded(RewardedPlacement.calendarConnection));
+    } catch (error) {
+      _available = false;
+      debugPrint('admob_initialization_failed error=$error');
+      await AnalyticsService.instance.event('admob_initialization_failed');
+    }
   }
 
   Future<RewardedAdOutcome> show(RewardedPlacement placement) async {
     if (!_isSupported) return RewardedAdOutcome.unavailable;
     await initialize();
+    if (!_available) return RewardedAdOutcome.unavailable;
     if (!await _ensureLoaded(placement)) {
       await AnalyticsService.instance.event(
         'rewarded_ad_unavailable',
@@ -74,8 +82,18 @@ class RewardedAdService {
         }
         unawaited(_ensureLoaded(placement));
       },
-      onAdFailedToShowFullScreenContent: (failedAd, _) {
+      onAdFailedToShowFullScreenContent: (failedAd, error) {
         failedAd.dispose();
+        debugPrint(
+          'rewarded_ad_show_failed placement=${placement.name} '
+          'code=${error.code} domain=${error.domain} message=${error.message}',
+        );
+        unawaited(
+          AnalyticsService.instance.event(
+            'rewarded_ad_show_failed',
+            parameters: {'placement': placement.name, 'error_code': error.code},
+          ),
+        );
         if (!result.isCompleted) result.complete(RewardedAdOutcome.failed);
         unawaited(_ensureLoaded(placement));
       },
@@ -96,8 +114,11 @@ class RewardedAdService {
           );
         },
       );
-    } catch (_) {
+    } catch (error) {
       await ad.dispose();
+      debugPrint(
+        'rewarded_ad_show_exception placement=${placement.name} error=$error',
+      );
       if (!result.isCompleted) result.complete(RewardedAdOutcome.failed);
       unawaited(_ensureLoaded(placement));
     }
@@ -165,21 +186,42 @@ class RewardedAdService {
       return completer.future;
     }
 
-    RewardedAd.load(
-      adUnitId: adUnitId,
-      request: const AdRequest(),
-      rewardedAdLoadCallback: RewardedAdLoadCallback(
-        onAdLoaded: (ad) {
-          _ads[placement] = ad;
-          _loads.remove(placement);
-          completer.complete(true);
-        },
-        onAdFailedToLoad: (_) {
-          _loads.remove(placement);
-          completer.complete(false);
-        },
-      ),
-    );
+    try {
+      RewardedAd.load(
+        adUnitId: adUnitId,
+        request: const AdRequest(),
+        rewardedAdLoadCallback: RewardedAdLoadCallback(
+          onAdLoaded: (ad) {
+            _ads[placement] = ad;
+            _loads.remove(placement);
+            if (!completer.isCompleted) completer.complete(true);
+          },
+          onAdFailedToLoad: (error) {
+            debugPrint(
+              'rewarded_ad_load_failed placement=${placement.name} '
+              'code=${error.code} domain=${error.domain} message=${error.message}',
+            );
+            unawaited(
+              AnalyticsService.instance.event(
+                'rewarded_ad_load_failed',
+                parameters: {
+                  'placement': placement.name,
+                  'error_code': error.code,
+                },
+              ),
+            );
+            _loads.remove(placement);
+            if (!completer.isCompleted) completer.complete(false);
+          },
+        ),
+      );
+    } catch (error) {
+      debugPrint(
+        'rewarded_ad_load_exception placement=${placement.name} error=$error',
+      );
+      _loads.remove(placement);
+      if (!completer.isCompleted) completer.complete(false);
+    }
     return completer.future;
   }
 

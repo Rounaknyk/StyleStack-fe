@@ -10,6 +10,7 @@ import '../models/calendar_models.dart';
 import '../models/outfit.dart';
 import '../models/wardrobe_item.dart';
 import '../providers/auth_provider.dart';
+import '../providers/access_provider.dart';
 import '../providers/mvp_provider.dart';
 import '../providers/wardrobe_provider.dart';
 import '../services/analytics_service.dart';
@@ -90,10 +91,27 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
     }
 
     final ads = RewardedAdService.instance;
-    final userId = context.read<AuthProvider>().user?.uid ?? 'anonymous';
+    final user = context.read<AuthProvider>().user;
+    final userId = user?.uid ?? 'anonymous';
     var access = await ads.dailyRefreshAccess(userId);
+    var bypassAllowance = false;
     if (!mounted) return;
     if (access == DailyRefreshAccess.rewardedAdRequired) {
+      final monetization = context.read<AccessProvider>();
+      if (user != null) await monetization.syncUser(user, force: true);
+      if (!mounted) return;
+      if (monetization.bypassAds) {
+        bypassAllowance = true;
+        await AnalyticsService.instance.event(
+          'rewarded_ad_bypassed',
+          parameters: {
+            'placement': RewardedPlacement.dailyOutfit.name,
+            'reason': monetization.tester ? 'tester' : 'premium',
+          },
+        );
+      }
+    }
+    if (access == DailyRefreshAccess.rewardedAdRequired && !bypassAllowance) {
       final accepted = await _confirmExtraLookAd();
       if (!mounted || !accepted) return;
       await AnalyticsService.instance.event(
@@ -102,21 +120,30 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
       );
       final outcome = await ads.show(RewardedPlacement.dailyOutfit);
       if (!mounted) return;
-      if (outcome != RewardedAdOutcome.earned) {
-        final message = outcome == RewardedAdOutcome.unavailable
-            ? 'The ad is not ready yet. Please try again in a moment.'
-            : 'Finish the rewarded ad to unlock another look.';
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(message)));
+      if (outcome == RewardedAdOutcome.dismissed) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Finish the rewarded ad to unlock another look.'),
+          ),
+        );
         return;
       }
-      await ads.grantBonusRefresh(userId);
-      access = DailyRefreshAccess.bonus;
+      if (outcome == RewardedAdOutcome.earned) {
+        await ads.grantBonusRefresh(userId);
+        access = DailyRefreshAccess.bonus;
+      } else {
+        // Invalid credentials, SDK, network, load, or show failures must not
+        // punish the user. Only deliberately dismissing a working ad blocks.
+        bypassAllowance = true;
+        await AnalyticsService.instance.event(
+          'rewarded_ad_failed_open',
+          parameters: {'placement': RewardedPlacement.dailyOutfit.name},
+        );
+      }
     }
 
     final ok = await mvp.generateOutfit(city, 'daily alternative');
-    if (ok) await ads.consumeRefresh(userId, access);
+    if (ok && !bypassAllowance) await ads.consumeRefresh(userId, access);
     if (!mounted || ok) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(mvp.error ?? 'Could not create a new look.')),

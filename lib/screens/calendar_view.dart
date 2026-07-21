@@ -1,9 +1,11 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../config/design_system.dart';
 import '../config/custom_widgets.dart';
 import '../models/calendar_models.dart';
+import '../providers/access_provider.dart';
 import '../services/api_service.dart';
 import '../services/analytics_service.dart';
 import '../services/calendar_sync_service.dart';
@@ -64,6 +66,7 @@ class _StyleCalendarViewState extends State<StyleCalendarView> {
   }
 
   Future<void> _connectGoogle() async {
+    if (!await _authorizeCalendarConnection() || !mounted) return;
     setState(() => _syncing = true);
     try {
       final result = await _sync.connectAndSync();
@@ -76,16 +79,6 @@ class _StyleCalendarViewState extends State<StyleCalendarView> {
           ),
         ),
       );
-      // Advertising is optional and must never turn a successful Calendar
-      // connection into a failed connection experience.
-      try {
-        await _offerCalendarConnectionReward();
-      } catch (_) {
-        await AnalyticsService.instance.event(
-          'rewarded_ad_offer_failed',
-          parameters: {'placement': RewardedPlacement.calendarConnection.name},
-        );
-      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -96,73 +89,82 @@ class _StyleCalendarViewState extends State<StyleCalendarView> {
     }
   }
 
-  Future<void> _offerCalendarConnectionReward() async {
-    final userId = FirebaseAuth.instance.currentUser?.uid;
-    if (userId == null) return;
-    final ads = RewardedAdService.instance;
-    if (await ads.hasSeenCalendarOffer(userId) || !mounted) return;
+  Future<bool> _authorizeCalendarConnection() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return false;
+    final access = context.read<AccessProvider>();
+    await access.syncUser(user, force: true);
+    if (!mounted) return false;
+    if (access.bypassAds) {
+      await AnalyticsService.instance.event(
+        'rewarded_ad_bypassed',
+        parameters: {
+          'placement': RewardedPlacement.calendarConnection.name,
+          'reason': access.tester ? 'tester' : 'premium',
+        },
+      );
+      return true;
+    }
 
     await AnalyticsService.instance.event(
       'rewarded_ad_offer_viewed',
       parameters: {'placement': RewardedPlacement.calendarConnection.name},
     );
-    if (!mounted) return;
+    if (!mounted) return false;
     final accepted =
         await showDialog<bool>(
           context: context,
           builder: (dialogContext) => AlertDialog(
-            icon: const Icon(
-              Icons.event_available_rounded,
-              color: DesignSystem.success,
-            ),
-            title: const Text('Calendar connected'),
+            icon: const Icon(Icons.event_rounded, color: DesignSystem.primary),
+            title: const Text('Connect Google Calendar'),
             content: const Text(
-              'Your events will sync whether or not you watch an ad. Optionally watch one rewarded ad now to add one bonus daily-outfit refresh.',
+              'Watch one short rewarded video to connect your calendar. StyleStack will then use your events to prepare relevant outfit suggestions. If advertising is unavailable, you can continue without it.',
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(dialogContext, false),
-                child: const Text('Not now'),
+                child: const Text('Cancel'),
               ),
               FilledButton.icon(
                 onPressed: () => Navigator.pop(dialogContext, true),
                 icon: const Icon(Icons.play_circle_outline_rounded),
-                label: const Text('Watch & unlock'),
+                label: const Text('Watch to connect'),
               ),
             ],
           ),
         ) ??
         false;
-    await ads.markCalendarOfferSeen(userId);
-    if (!accepted || !mounted) return;
+    if (!accepted || !mounted) return false;
 
     await AnalyticsService.instance.event(
       'rewarded_ad_offer_accepted',
       parameters: {'placement': RewardedPlacement.calendarConnection.name},
     );
-    final outcome = await ads.show(RewardedPlacement.calendarConnection);
-    if (!mounted) return;
-    if (outcome == RewardedAdOutcome.earned) {
-      await ads.grantBonusRefresh(userId);
-      if (!mounted) return;
+    final outcome = await RewardedAdService.instance.show(
+      RewardedPlacement.calendarConnection,
+    );
+    if (!mounted) return false;
+    if (outcome == RewardedAdOutcome.earned) return true;
+    if (outcome == RewardedAdOutcome.unavailable ||
+        outcome == RewardedAdOutcome.failed) {
+      await AnalyticsService.instance.event(
+        'rewarded_ad_failed_open',
+        parameters: {'placement': RewardedPlacement.calendarConnection.name},
+      );
+      if (!mounted) return false;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            'Bonus refresh added. Use it in Today after your two free refreshes.',
-          ),
+          content: Text('The ad is unavailable, so you can continue.'),
         ),
       );
-      return;
+      return true;
     }
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          outcome == RewardedAdOutcome.unavailable
-              ? 'The ad is not ready. Calendar sync is still connected.'
-              : 'No bonus was used. Calendar sync is still connected.',
-        ),
+      const SnackBar(
+        content: Text('Finish the rewarded video to connect your calendar.'),
       ),
     );
+    return false;
   }
 
   Future<void> _syncGoogleNow() async {

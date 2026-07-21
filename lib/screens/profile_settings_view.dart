@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../config/custom_widgets.dart';
 import '../config/design_system.dart';
 import '../providers/auth_provider.dart';
+import '../providers/access_provider.dart';
 import '../providers/gmail_sync_provider.dart';
 import '../providers/mvp_provider.dart';
 import '../providers/onboarding_provider.dart';
@@ -17,6 +18,7 @@ import '../services/api_service.dart';
 import 'outfit_history_screen.dart';
 import 'onboarding_screen.dart';
 import 'privacy_policy_screen.dart';
+import 'subscription_paywall_screen.dart';
 
 Future<bool> showDeleteAccountConfirmation(BuildContext context) async {
   var canDelete = false;
@@ -420,6 +422,7 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
       }
     }
     final auth = context.watch<AuthProvider>();
+    final access = context.watch<AccessProvider>();
     final gmailSync = context.watch<GmailSyncProvider>();
     final email = auth.user?.email ?? 'StyleStack user';
     final displayName = auth.user?.displayName?.trim();
@@ -435,6 +438,38 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
         children: [
           _ProfileHeader(title: title, email: email),
           const SizedBox(height: 22),
+          _SettingsSection(
+            title: 'StyleStack Premium',
+            subtitle: access.tester
+                ? 'Tester access is active and refreshes automatically.'
+                : access.premium
+                ? 'Your premium subscription is active.'
+                : 'Start a 7-day free trial or restore a purchase.',
+            children: [
+              _SettingsTile(
+                icon: access.premium || access.tester
+                    ? Icons.verified_rounded
+                    : Icons.workspace_premium_outlined,
+                title: access.tester
+                    ? 'Tester access'
+                    : access.premium
+                    ? 'Premium active'
+                    : 'Explore Premium',
+                subtitle: access.bypassAds
+                    ? 'Subscription and rewarded ads are bypassed'
+                    : 'Personal styling, Calendar and an ad-free experience',
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.push<void>(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        const SubscriptionPaywallScreen(allowClose: true),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
           _SettingsSection(
             title: 'Preferences',
             subtitle: 'Tune comfort and reminders. Styling remains automatic.',
@@ -667,6 +702,7 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
                   context.read<GmailSyncProvider>().reset();
                   context.read<WardrobeProvider>().reset();
                   context.read<MvpProvider>().reset();
+                  context.read<AccessProvider>().reset();
                   await context.read<AuthProvider>().signOut();
                 },
               ),

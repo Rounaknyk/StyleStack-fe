@@ -63,6 +63,14 @@ class ApiService {
     _decode(response);
   }
 
+  Future<Map<String, dynamic>> fetchUserAccess() async {
+    final response = await _client.get(
+      Uri.parse('${RuntimeConfig.apiBaseUrl}/users/me/access'),
+      headers: {'Authorization': 'Bearer ${await _token()}'},
+    );
+    return _decode(response) as Map<String, dynamic>;
+  }
+
   Future<List<WardrobeItem>> fetchItems() async {
     final response = await _client.get(
       Uri.parse('${RuntimeConfig.apiBaseUrl}/wardrobe/items'),

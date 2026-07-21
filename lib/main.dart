@@ -10,6 +10,7 @@ import 'config/design_system.dart';
 import 'config/custom_widgets.dart';
 import 'config/runtime_config.dart';
 import 'providers/auth_provider.dart';
+import 'providers/access_provider.dart';
 import 'providers/gmail_sync_provider.dart';
 import 'providers/onboarding_provider.dart';
 import 'providers/settings_provider.dart';
@@ -18,6 +19,7 @@ import 'providers/mvp_provider.dart';
 import 'screens/auth_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/onboarding_screen.dart';
+import 'screens/subscription_paywall_screen.dart';
 import 'services/api_service.dart';
 import 'services/analytics_service.dart';
 import 'services/app_update_service.dart';
@@ -109,6 +111,7 @@ class _StyleStackAppState extends State<StyleStackApp> {
       providers: [
         ChangeNotifierProvider.value(value: widget.settingsProvider),
         ChangeNotifierProvider(create: (_) => AuthProvider(AuthService())),
+        ChangeNotifierProvider(create: (_) => AccessProvider(ApiService())),
         ChangeNotifierProvider(create: (_) => WardrobeProvider(ApiService())),
         ChangeNotifierProvider(create: (_) => MvpProvider(ApiService())),
         ChangeNotifierProvider(
@@ -252,7 +255,9 @@ class _AuthGateState extends State<AuthGate> {
           if (_requestedUserId != null) {
             _requestedUserId = null;
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) context.read<OnboardingProvider>().reset();
+              if (!mounted) return;
+              context.read<OnboardingProvider>().reset();
+              context.read<AccessProvider>().reset();
             });
           }
           return const AuthScreen();
@@ -263,6 +268,7 @@ class _AuthGateState extends State<AuthGate> {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) {
               context.read<OnboardingProvider>().loadForUser(user.uid);
+              context.read<AccessProvider>().syncUser(user, force: true);
             }
           });
           return const _StartupView();
@@ -329,6 +335,16 @@ class _AuthGateState extends State<AuthGate> {
               await user.reload();
             },
           );
+        }
+
+        final access = context.watch<AccessProvider>();
+        if (access.subscriptionRequired) {
+          if (access.userId != user.uid || access.loading || !access.loaded) {
+            return const _StartupView();
+          }
+          if (!access.hasAppAccess) {
+            return SubscriptionPaywallScreen(onSignOut: auth.signOut);
+          }
         }
 
         return const HomeScreen();
