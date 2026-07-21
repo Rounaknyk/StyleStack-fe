@@ -344,7 +344,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         ],
                         decoration: const InputDecoration(
                           labelText: 'Mobile number',
-                          hintText: '98765 43210',
+                          hintText: '12345 67890',
                           prefixIcon: Padding(
                             padding: EdgeInsets.only(left: 16, right: 10),
                             child: Center(
