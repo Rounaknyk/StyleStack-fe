@@ -17,6 +17,7 @@ import '../providers/gmail_sync_provider.dart';
 import '../providers/wardrobe_provider.dart';
 import '../services/permission_prompt_service.dart';
 import '../services/analytics_service.dart';
+import '../services/notification_service.dart';
 import 'camera_preview_screen.dart';
 import 'batch_add_screen.dart';
 import 'canvas_style_builder_screen.dart';
@@ -24,6 +25,9 @@ import 'item_detail_screen.dart';
 import 'outfit_view.dart';
 import 'outfit_history_screen.dart';
 import 'profile_settings_view.dart';
+import 'notification_inbox_screen.dart';
+import 'reminder_outfit_screen.dart';
+import 'saved_styles_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -34,6 +38,73 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final _picker = ImagePicker();
   int _tab = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    NotificationService.navigation.addListener(_openNotificationDestination);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _openNotificationDestination();
+    });
+  }
+
+  @override
+  void dispose() {
+    NotificationService.navigation.removeListener(_openNotificationDestination);
+    super.dispose();
+  }
+
+  void _openNotificationDestination() {
+    if (!mounted || NotificationService.navigation.value == null) return;
+    final request = NotificationService.takeNavigationRequest();
+    if (request == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      switch (request.destination) {
+        case 'wardrobe':
+          _selectTab(1);
+          return;
+        case 'planner':
+          _selectTab(2);
+          return;
+        case 'profile':
+          _selectTab(3);
+          return;
+        case 'notifications':
+          Navigator.push<void>(
+            context,
+            MaterialPageRoute(builder: (_) => const NotificationInboxScreen()),
+          );
+          return;
+        case 'saved_styles':
+          Navigator.push<void>(
+            context,
+            MaterialPageRoute(builder: (_) => const SavedStylesScreen()),
+          );
+          return;
+        case 'outfit':
+          final outfitId = request.outfitId;
+          if (outfitId == null || outfitId.isEmpty) {
+            _selectTab(0);
+            return;
+          }
+          Navigator.push<void>(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ReminderOutfitScreen(
+                outfitId: outfitId,
+                title: request.title ?? 'Your StyleStack outfit',
+              ),
+            ),
+          );
+          return;
+        case 'today':
+        default:
+          _selectTab(0);
+          return;
+      }
+    });
+  }
 
   void _selectTab(int value) {
     setState(() => _tab = value);

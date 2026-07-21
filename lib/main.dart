@@ -22,6 +22,7 @@ import 'services/app_update_service.dart';
 import 'services/auth_service.dart';
 import 'services/gmail_import_service.dart';
 import 'services/onboarding_service.dart';
+import 'services/notification_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,6 +32,7 @@ Future<void> main() async {
     badge: true,
     sound: true,
   );
+  await NotificationService.initializeInteractionHandling();
 
   // Initialize settings provider
   final settingsProvider = SettingsProvider();

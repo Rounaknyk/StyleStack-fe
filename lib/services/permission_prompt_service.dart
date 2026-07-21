@@ -21,9 +21,9 @@ class PermissionPromptService {
       title: 'Stay ready for your day',
       body:
           'StyleStack uses notifications to send your morning outfit, '
-          'event reminders, and updates when wardrobe items finish processing. '
-          'Notifications are optional, can be turned off anytime, and are not '
-          'used for advertising.',
+          'event reminders, wardrobe processing updates, and occasional '
+          'StyleStack announcements. Notifications are optional, can be turned '
+          'off anytime, and are never sold or used for third-party ads.',
       actionLabel: 'Continue',
     );
     if (!accepted || !context.mounted) return null;

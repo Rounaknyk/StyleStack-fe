@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Notification icons are alpha masks: Android supplies the final color. -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M7,2.5L10.2,2.5L12,4.3L13.8,2.5L17,2.5L21,6.4L18.8,9L18.8,21.5L5.2,21.5L5.2,9L3,6.4L7,2.5ZM10.2,4.4L8.2,4.4L10.2,8.2L12,5.8L13.8,8.2L15.8,4.4L13.8,4.4L12,6.2L10.2,4.4ZM11.1,7.6L10.3,14.7L12,17.3L13.7,14.7L12.9,7.6L12,6.4L11.1,7.6ZM7.2,11L7.2,14L10,14L10,11L7.2,11ZM14,11L14,14L16.8,14L16.8,11L14,11ZM7.2,16L7.2,19.5L10,19.5L10,16L7.2,16ZM14,16L14,19.5L16.8,19.5L16.8,16L14,16Z" />
+</vector>
