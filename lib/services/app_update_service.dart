@@ -15,13 +15,17 @@ class AppUpdateService {
 
   bool _checked = false;
 
-  Future<void> checkForFlexibleUpdate() async {
+  Future<void> checkForFlexibleUpdate({
+    required Future<bool> Function() confirmRestart,
+  }) async {
     if (_checked || !kReleaseMode || !Platform.isAndroid) return;
     _checked = true;
 
     try {
       final info = await InAppUpdate.checkForUpdate();
-      if (info.updateAvailability != UpdateAvailability.updateAvailable) {
+      final updateDownloaded = info.installStatus == InstallStatus.downloaded;
+      if (!updateDownloaded &&
+          info.updateAvailability != UpdateAvailability.updateAvailable) {
         return;
       }
 
@@ -33,16 +37,28 @@ class AppUpdateService {
         },
       );
 
-      if (!info.flexibleUpdateAllowed) return;
-      final result = await InAppUpdate.startFlexibleUpdate();
-      if (result != AppUpdateResult.success) {
-        await AnalyticsService.instance.event(
-          'app_update_download_incomplete',
-          parameters: {'result': result.name},
-        );
+      if (!updateDownloaded) {
+        if (!info.flexibleUpdateAllowed) return;
+        final result = await InAppUpdate.startFlexibleUpdate();
+        if (result != AppUpdateResult.success) {
+          await AnalyticsService.instance.event(
+            'app_update_download_incomplete',
+            parameters: {'result': result.name},
+          );
+          return;
+        }
+      }
+
+      await AnalyticsService.instance.event('app_update_downloaded');
+      final shouldRestart = await confirmRestart();
+      if (!shouldRestart) {
+        await AnalyticsService.instance.event('app_update_restart_deferred');
         return;
       }
 
+      // Google Play closes and restarts the process while installing. Only do
+      // this after explicit confirmation so the expected restart never looks
+      // like an application crash.
       await InAppUpdate.completeFlexibleUpdate();
       await AnalyticsService.instance.event('app_update_installed');
     } catch (error) {

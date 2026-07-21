@@ -58,13 +58,48 @@ class StyleStackApp extends StatefulWidget {
 
 class _StyleStackAppState extends State<StyleStackApp> {
   late final _analyticsObserver = AnalyticsService.instance.createObserver();
+  final _navigatorKey = GlobalKey<NavigatorState>();
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      AppUpdateService.instance.checkForFlexibleUpdate();
+      AppUpdateService.instance.checkForFlexibleUpdate(
+        confirmRestart: _confirmUpdateRestart,
+      );
     });
+  }
+
+  Future<bool> _confirmUpdateRestart() async {
+    final context = _navigatorKey.currentContext;
+    if (!mounted || context == null) return false;
+
+    return await showDialog<bool>(
+          context: context,
+          barrierDismissible: false,
+          builder: (dialogContext) => AlertDialog(
+            icon: const Icon(
+              Icons.system_update_alt_rounded,
+              color: DesignSystem.primary,
+            ),
+            title: const Text('Update ready'),
+            content: const Text(
+              'StyleStack has finished downloading the update. Restart now '
+              'to install it. The app will reopen automatically.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: const Text('Later'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                child: const Text('Restart now'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
   }
 
   @override
@@ -84,6 +119,7 @@ class _StyleStackAppState extends State<StyleStackApp> {
         ),
       ],
       child: MaterialApp(
+        navigatorKey: _navigatorKey,
         title: 'StyleStack: Your Style AI',
         debugShowCheckedModeBanner: false,
         navigatorObservers: [_analyticsObserver],
