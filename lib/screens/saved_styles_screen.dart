@@ -250,10 +250,10 @@ class _StudioHero extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const _EditorialLabel(label: 'YOUR PRIVATE STUDIO'),
+                const _EditorialLabel(label: 'YOUR STYLE ARCHIVE'),
                 const SizedBox(height: 14),
                 Text(
-                  'Looks worth\nremembering.',
+                  'Saved. Styled.\nYours.',
                   style: Theme.of(context).textTheme.displayMedium?.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.w800,
