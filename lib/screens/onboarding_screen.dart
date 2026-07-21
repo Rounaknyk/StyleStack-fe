@@ -10,11 +10,13 @@ class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({
     required this.updateDisplayName,
     this.onCompleted,
+    this.editMode = false,
     super.key,
   });
 
   final Future<void> Function(String name) updateDisplayName;
   final VoidCallback? onCompleted;
+  final bool editMode;
 
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
@@ -84,7 +86,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Future<void> _back() async {
-    if (_step == 0) return;
+    if (_step == 0) {
+      if (widget.editMode && mounted) Navigator.pop(context);
+      return;
+    }
     await _pages.previousPage(
       duration: DesignSystem.transitionStandard,
       curve: Curves.easeOutCubic,
@@ -172,12 +177,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
               child: Row(
                 children: [
-                  if (_step > 0)
+                  if (_step > 0 || widget.editMode)
                     IconButton(
                       key: const Key('onboarding_back'),
-                      tooltip: 'Previous question',
+                      tooltip: _step == 0 ? 'Close' : 'Previous question',
                       onPressed: provider.saving ? null : _back,
-                      icon: const Icon(Icons.arrow_back_rounded),
+                      icon: Icon(
+                        _step == 0
+                            ? Icons.close_rounded
+                            : Icons.arrow_back_rounded,
+                      ),
                     )
                   else
                     const SizedBox(width: 48),
@@ -186,7 +195,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       children: [
                         Text(
                           onSummary
-                              ? 'Ready to style'
+                              ? widget.editMode
+                                    ? 'Review changes'
+                                    : 'Ready to style'
                               : 'Step ${_step + 1} of 8',
                           style: Theme.of(context).textTheme.labelLarge
                               ?.copyWith(
@@ -244,7 +255,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   Widget _nameCard() => _QuestionCard(
     icon: Icons.auto_awesome_rounded,
-    title: 'Welcome to StyleStack',
+    title: widget.editMode ? 'Edit your profile' : 'Welcome to StyleStack',
     subtitle:
         "Let's set up your personal stylist so every suggestion feels like you.",
     child: TextField(
@@ -481,8 +492,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         : _styles.map(_readable).join(', ');
     return _QuestionCard(
       icon: Icons.check_circle_outline_rounded,
-      title: "You're all set, ${_name.text.trim()}!",
-      subtitle: 'Your personal stylist is ready to learn and evolve with you.',
+      title: widget.editMode
+          ? 'Save your style profile'
+          : "You're all set, ${_name.text.trim()}!",
+      subtitle: widget.editMode
+          ? 'These details guide future outfit suggestions.'
+          : 'Your personal stylist is ready to learn and evolve with you.',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -521,7 +536,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 : const Icon(Icons.arrow_forward_rounded),
             child: Text(
               provider.saving
-                  ? 'Building your profile…'
+                  ? widget.editMode
+                        ? 'Saving changes…'
+                        : 'Building your profile…'
+                  : widget.editMode
+                  ? 'Save profile changes'
                   : 'Show my first outfit',
             ),
           ),

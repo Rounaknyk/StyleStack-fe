@@ -9,11 +9,13 @@ import '../config/design_system.dart';
 import '../providers/auth_provider.dart';
 import '../providers/gmail_sync_provider.dart';
 import '../providers/mvp_provider.dart';
+import '../providers/onboarding_provider.dart';
 import '../providers/wardrobe_provider.dart';
 import '../services/location_service.dart';
 import '../services/permission_prompt_service.dart';
 import '../services/api_service.dart';
 import 'outfit_history_screen.dart';
+import 'onboarding_screen.dart';
 import 'privacy_policy_screen.dart';
 
 Future<bool> showDeleteAccountConfirmation(BuildContext context) async {
@@ -349,6 +351,24 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
     }
   }
 
+  Future<void> _editStyleProfile() async {
+    final user = context.read<AuthProvider>().user;
+    if (user == null) return;
+    await context.read<OnboardingProvider>().loadForUser(user.uid, force: true);
+    if (!mounted) return;
+    await Navigator.push<void>(
+      context,
+      MaterialPageRoute(
+        builder: (routeContext) => OnboardingScreen(
+          editMode: true,
+          updateDisplayName: (name) => user.updateDisplayName(name),
+          onCompleted: () => Navigator.pop(routeContext),
+        ),
+      ),
+    );
+    if (mounted) setState(() {});
+  }
+
   Future<void> _deleteAccount() async {
     if (_deletingAccount) return;
     final confirmed = await showDeleteAccountConfirmation(context);
@@ -595,6 +615,15 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
           _SettingsSection(
             title: 'Account',
             children: [
+              _SettingsTile(
+                icon: Icons.manage_accounts_outlined,
+                title: 'Edit profile details',
+                subtitle:
+                    'Update your name, height, body type, style and goals',
+                trailing: const Icon(Icons.chevron_right),
+                onTap: _editStyleProfile,
+              ),
+              const Divider(height: 1),
               _SettingsTile(
                 icon: Icons.photo_camera_back_outlined,
                 title: 'Outfit history',

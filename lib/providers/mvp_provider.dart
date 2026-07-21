@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../models/calendar_models.dart';
 import '../models/outfit.dart';
+import '../models/wardrobe_item.dart';
 import '../services/api_service.dart';
 import '../services/analytics_service.dart';
 
@@ -235,6 +236,38 @@ class MvpProvider extends ChangeNotifier {
       return false;
     } catch (_) {
       error = 'Cannot reach the StyleStack backend. Check the API address.';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  Future<bool> markWardrobeItemsWorn(List<WardrobeItem> items) async {
+    if (items.isEmpty) return false;
+    error = null;
+    try {
+      final wornAt = DateTime.now();
+      await Future.wait(
+        items.map(
+          (item) => _api.wearWardrobeItem(
+            item.id,
+            wornAt: wornAt,
+            notes: 'Selected from Today: I wore something else',
+          ),
+        ),
+      );
+      await AnalyticsService.instance.event(
+        'alternate_outfit_logged',
+        parameters: {'item_count': items.length},
+      );
+      wearHistoryRevision++;
+      notifyListeners();
+      return true;
+    } on ApiException catch (e) {
+      error = e.message;
+      notifyListeners();
+      return false;
+    } catch (_) {
+      error = 'Could not log the selected wardrobe items.';
       notifyListeners();
       return false;
     }

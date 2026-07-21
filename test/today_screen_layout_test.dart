@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:forui/forui.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:stylestack_fe/config/design_system.dart';
 import 'package:stylestack_fe/models/calendar_models.dart';
 import 'package:stylestack_fe/models/outfit.dart';
@@ -17,6 +18,7 @@ import 'package:stylestack_fe/services/auth_service.dart';
 
 void main() {
   testWidgets('Today styling tools lay out on a compact phone', (tester) async {
+    SharedPreferences.setMockInitialValues({});
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -66,7 +68,8 @@ void main() {
     expect(find.text('Ask your\nstylist'), findsOneWidget);
 
     await tester.tap(find.byTooltip('Create another look'));
-    await tester.pump();
+    // The refresh ledger is loaded asynchronously before outfit generation.
+    await tester.pump(const Duration(milliseconds: 250));
     expect(find.text('Creating your next look'), findsOneWidget);
 
     api.completePendingLook();

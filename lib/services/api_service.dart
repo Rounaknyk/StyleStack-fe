@@ -480,6 +480,26 @@ class ApiService {
     return (_decode(response) as Map<String, dynamic>)['logged_items'] as int;
   }
 
+  Future<void> wearWardrobeItem(
+    String itemId, {
+    required DateTime wornAt,
+    String? notes,
+  }) async {
+    final payload = <String, dynamic>{
+      'worn_at': wornAt.toUtc().toIso8601String(),
+    };
+    if (notes != null) payload['notes'] = notes;
+    final response = await _client.post(
+      Uri.parse('${RuntimeConfig.apiBaseUrl}/wardrobe/items/$itemId/wear'),
+      headers: {
+        'Authorization': 'Bearer ${await _token()}',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode(payload),
+    );
+    _decode(response);
+  }
+
   Future<Outfit> fetchOutfit(String outfitId) async {
     final response = await _client.get(
       Uri.parse('${RuntimeConfig.apiBaseUrl}/outfits/$outfitId'),

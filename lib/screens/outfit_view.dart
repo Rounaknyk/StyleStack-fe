@@ -11,6 +11,7 @@ import '../models/outfit.dart';
 import '../models/wardrobe_item.dart';
 import '../providers/auth_provider.dart';
 import '../providers/mvp_provider.dart';
+import '../providers/wardrobe_provider.dart';
 import '../services/analytics_service.dart';
 import '../services/rewarded_ad_service.dart';
 import 'saved_styles_screen.dart';
@@ -40,6 +41,7 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
   bool _autoRequestScheduled = false;
   final Set<String> _loggingOutfitIds = {};
   final Set<String> _loggedOutfitIds = {};
+  bool _loggingAlternateOutfit = false;
 
   @override
   void initState() {
@@ -227,6 +229,74 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
           items.isEmpty
               ? '$label is in your history.'
               : '${items.map((item) => item.name).join(', ')} marked as worn today.',
+          textAlign: TextAlign.center,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Back to Today'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              widget.onOpenHistory();
+            },
+            child: const Text('View history'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _logSomethingElse() async {
+    if (_loggingAlternateOutfit) return;
+    final wardrobe = context.read<WardrobeProvider>();
+    final selected = await showModalBottomSheet<List<WardrobeItem>>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: DesignSystem.background,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (_) => ChangeNotifierProvider.value(
+        value: wardrobe,
+        child: const _AlternateOutfitSheet(),
+      ),
+    );
+    if (!mounted || selected == null || selected.isEmpty) return;
+    setState(() => _loggingAlternateOutfit = true);
+    final ok = await context.read<MvpProvider>().markWardrobeItemsWorn(
+      selected,
+    );
+    if (!mounted) return;
+    setState(() => _loggingAlternateOutfit = false);
+    if (ok) {
+      await _showAlternateLoggedSuccess(selected);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            context.read<MvpProvider>().error ?? 'Could not log this outfit.',
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _showAlternateLoggedSuccess(List<WardrobeItem> items) async {
+    HapticFeedback.heavyImpact();
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        icon: const Icon(
+          Icons.check_circle_rounded,
+          color: DesignSystem.success,
+          size: 48,
+        ),
+        title: const Text('Your outfit is logged'),
+        content: Text(
+          '${items.map((item) => item.name).join(', ')} marked as worn today.',
           textAlign: TextAlign.center,
         ),
         actions: [
@@ -498,7 +568,207 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
                 _VibeButton(images: mvp.outfit!.inspirationImages),
               ],
             ),
+            const SizedBox(height: 10),
+            SizedBox(
+              height: 50,
+              child: OutlinedButton.icon(
+                onPressed: _loggingAlternateOutfit ? null : _logSomethingElse,
+                icon: _loggingAlternateOutfit
+                    ? const SizedBox.square(
+                        dimension: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.checkroom_outlined),
+                label: Text(
+                  _loggingAlternateOutfit
+                      ? 'Logging your outfit…'
+                      : 'I wore something else',
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+              ),
+            ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+class _AlternateOutfitSheet extends StatefulWidget {
+  const _AlternateOutfitSheet();
+
+  @override
+  State<_AlternateOutfitSheet> createState() => _AlternateOutfitSheetState();
+}
+
+class _AlternateOutfitSheetState extends State<_AlternateOutfitSheet> {
+  final Set<String> _selectedIds = {};
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) context.read<WardrobeProvider>().loadItems();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final wardrobe = context.watch<WardrobeProvider>();
+    final items = wardrobe.items.where((item) => !item.isUploading).toList();
+    final selected = items
+        .where((item) => _selectedIds.contains(item.id))
+        .toList(growable: false);
+    return FractionallySizedBox(
+      heightFactor: .88,
+      child: Column(
+        children: [
+          const SizedBox(height: 10),
+          Container(
+            width: 42,
+            height: 4,
+            decoration: BoxDecoration(
+              color: DesignSystem.border,
+              borderRadius: BorderRadius.circular(99),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 18, 12, 12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'What did you wear?',
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(fontWeight: FontWeight.w900),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Choose every piece from your wardrobe.',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: DesignSystem.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Close',
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close_rounded),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          Expanded(
+            child: items.isEmpty
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(30),
+                      child: wardrobe.loading || wardrobe.syncing
+                          ? const Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                CircularProgressIndicator(),
+                                SizedBox(height: 16),
+                                Text('Opening your wardrobe…'),
+                              ],
+                            )
+                          : const Text(
+                              'Add wardrobe pieces before logging another outfit.',
+                              textAlign: TextAlign.center,
+                            ),
+                    ),
+                  )
+                : ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                    itemCount: items.length,
+                    separatorBuilder: (_, _) => const SizedBox(height: 8),
+                    itemBuilder: (context, index) {
+                      final item = items[index];
+                      final isSelected = _selectedIds.contains(item.id);
+                      return Material(
+                        color: isSelected
+                            ? DesignSystem.editorialMint
+                            : DesignSystem.surface,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(18),
+                          side: BorderSide(
+                            color: isSelected
+                                ? DesignSystem.primary
+                                : DesignSystem.border,
+                          ),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: CheckboxListTile(
+                          value: isSelected,
+                          onChanged: (_) => setState(() {
+                            isSelected
+                                ? _selectedIds.remove(item.id)
+                                : _selectedIds.add(item.id);
+                          }),
+                          secondary: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: ColoredBox(
+                              color: Colors.white,
+                              child: SizedBox.square(
+                                dimension: 58,
+                                child: item.gridImageUrl == null
+                                    ? const Icon(Icons.checkroom_outlined)
+                                    : CachedNetworkImage(
+                                        imageUrl: item.gridImageUrl!,
+                                        cacheKey: item.gridImageCacheKey,
+                                        fit: BoxFit.contain,
+                                      ),
+                              ),
+                            ),
+                          ),
+                          title: Text(
+                            item.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontWeight: FontWeight.w800),
+                          ),
+                          subtitle: Text(
+                            [item.displayCategory, item.displayColor]
+                                .whereType<String>()
+                                .where((value) => value.trim().isNotEmpty)
+                                .join(' · '),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          controlAffinity: ListTileControlAffinity.trailing,
+                        ),
+                      );
+                    },
+                  ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+            child: SafeArea(
+              top: false,
+              child: SizedBox(
+                width: double.infinity,
+                height: 54,
+                child: FilledButton.icon(
+                  onPressed: selected.isEmpty
+                      ? null
+                      : () => Navigator.pop(context, selected),
+                  icon: const Icon(Icons.check_circle_outline_rounded),
+                  label: Text(
+                    selected.isEmpty
+                        ? 'Select wardrobe items'
+                        : 'Log this outfit (${selected.length})',
+                    style: const TextStyle(fontWeight: FontWeight.w900),
+                  ),
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
