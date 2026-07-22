@@ -18,6 +18,7 @@ import 'outfit_history_screen.dart';
 import 'onboarding_screen.dart';
 import 'privacy_policy_screen.dart';
 import 'app_help_screen.dart';
+import 'quick_tour_screen.dart';
 
 Future<bool> showDeleteAccountConfirmation(BuildContext context) async {
   var canDelete = false;
@@ -549,6 +550,22 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
                       ),
                     ),
                   ],
+                ),
+              ),
+              const Divider(height: 1),
+              _SettingsTile(
+                icon: Icons.slideshow_outlined,
+                title: 'Test quick tour',
+                subtitle:
+                    'Replay the exact first-time experience without resetting it',
+                trailing: const Icon(Icons.play_arrow_rounded),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (routeContext) => QuickTourScreen(
+                      onFinished: () async => Navigator.pop(routeContext),
+                    ),
+                  ),
                 ),
               ),
             ],

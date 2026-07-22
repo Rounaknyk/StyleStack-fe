@@ -10,6 +10,11 @@ Profile > Help & guide. It has built-in illustrated fallbacks. To use real app
 screenshots, add the four optional images documented in
 `assets/images/help/README.md`; the UI adopts them automatically after rebuild.
 
+After onboarding, a four-slide Quick Tour is shown once per signed-in account
+on that device. Completion is stored locally using the Firebase UID, so changing
+accounts does not incorrectly skip the tour. Profile > Help & guide > **Test
+quick tour** replays the same screen without resetting its completion state.
+
 Flutter client for the StyleStack FastAPI backend with Firebase email/password authentication, camera uploads, and a wardrobe grid.
 
 ## Firebase

@@ -19,6 +19,7 @@ import 'providers/mvp_provider.dart';
 import 'screens/auth_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/onboarding_screen.dart';
+import 'screens/quick_tour_screen.dart';
 import 'services/api_service.dart';
 import 'services/analytics_service.dart';
 import 'services/app_update_service.dart';
@@ -340,7 +341,7 @@ class _AuthGateState extends State<AuthGate> {
           );
         }
 
-        return const HomeScreen();
+        return QuickTourGate(userId: user.uid, child: const HomeScreen());
       },
     );
   }
