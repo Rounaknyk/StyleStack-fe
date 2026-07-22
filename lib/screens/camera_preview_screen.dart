@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../config/design_system.dart';
 import '../providers/wardrobe_provider.dart';
+import 'photo_editor_screen.dart';
 
 class CameraPreviewScreen extends StatefulWidget {
   const CameraPreviewScreen({
@@ -22,9 +23,25 @@ class CameraPreviewScreen extends StatefulWidget {
 }
 
 class _CameraPreviewScreenState extends State<CameraPreviewScreen> {
+  late File _image;
+
+  @override
+  void initState() {
+    super.initState();
+    _image = widget.image;
+  }
+
+  Future<void> _editPhoto() async {
+    final edited = await Navigator.push<File>(
+      context,
+      MaterialPageRoute(builder: (_) => PhotoEditorScreen(image: _image)),
+    );
+    if (edited != null && mounted) setState(() => _image = edited);
+  }
+
   Future<void> _save() async {
     await context.read<WardrobeProvider>().uploadOptimistically(
-      image: widget.image,
+      image: _image,
       name: 'New wardrobe item',
       category: 'other',
     );
@@ -51,7 +68,7 @@ class _CameraPreviewScreenState extends State<CameraPreviewScreen> {
                     borderRadius: BorderRadius.circular(DesignSystem.radiusXl),
                     boxShadow: DesignSystem.shadowMedium,
                   ),
-                  child: Image.file(widget.image, fit: BoxFit.contain),
+                  child: Image.file(_image, fit: BoxFit.contain),
                 ),
               ),
             ),
@@ -92,6 +109,17 @@ class _CameraPreviewScreenState extends State<CameraPreviewScreen> {
               ),
             ),
             const SizedBox(height: DesignSystem.spacingXl),
+            OutlinedButton.icon(
+              onPressed: _editPhoto,
+              icon: const Icon(Icons.crop_rotate_rounded),
+              label: const Text('Crop or rotate photo'),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  vertical: DesignSystem.spacingMd,
+                ),
+              ),
+            ),
+            const SizedBox(height: DesignSystem.spacingMd),
             Row(
               children: [
                 Expanded(

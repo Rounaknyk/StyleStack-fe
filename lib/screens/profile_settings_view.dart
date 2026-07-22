@@ -17,6 +17,7 @@ import '../services/api_service.dart';
 import 'outfit_history_screen.dart';
 import 'onboarding_screen.dart';
 import 'privacy_policy_screen.dart';
+import 'app_help_screen.dart';
 
 Future<bool> showDeleteAccountConfirmation(BuildContext context) async {
   var canDelete = false;
@@ -591,6 +592,24 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
                       )
                     : const Icon(Icons.chevron_right),
                 onTap: gmailSync.isRunning ? null : _importFromGmail,
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          _SettingsSection(
+            title: 'Help & guide',
+            subtitle: 'New to StyleStack? Start here.',
+            children: [
+              _SettingsTile(
+                icon: Icons.auto_stories_outlined,
+                title: 'How to use StyleStack',
+                subtitle:
+                    'Photo tips, daily outfits, logging, calendar and styling tools',
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AppHelpScreen()),
+                ),
               ),
             ],
           ),

@@ -8,6 +8,7 @@ class Outfit {
     required this.weather,
     required this.items,
     this.inspirationImages = const [],
+    this.inspirationEnabled = true,
   });
   final String id;
   final String occasion;
@@ -15,6 +16,7 @@ class Outfit {
   final Map<String, dynamic> weather;
   final List<WardrobeItem> items;
   final List<Map<String, dynamic>> inspirationImages;
+  final bool inspirationEnabled;
 
   factory Outfit.fromJson(Map<String, dynamic> json) => Outfit(
     id: json['id'] as String,
@@ -28,6 +30,7 @@ class Outfit {
         (json['inspiration_images'] as List<dynamic>? ?? const [])
             .whereType<Map<String, dynamic>>()
             .toList(),
+    inspirationEnabled: json['inspiration_enabled'] as bool? ?? true,
   );
 }
 

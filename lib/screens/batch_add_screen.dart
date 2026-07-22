@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../config/design_system.dart';
 import '../providers/wardrobe_provider.dart';
+import 'photo_editor_screen.dart';
 
 const int maxBatchImages = 10;
 
@@ -69,6 +70,19 @@ class _BatchAddScreenState extends State<BatchAddScreen> {
       );
     }
     Navigator.pop(context, selected.length);
+  }
+
+  Future<void> _editPhoto(int index) async {
+    if (_uploading) return;
+    final edited = await Navigator.push<File>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PhotoEditorScreen(image: _drafts[index].image),
+      ),
+    );
+    if (edited != null && mounted) {
+      setState(() => _drafts[index].image = edited);
+    }
   }
 
   @override
@@ -154,6 +168,7 @@ class _BatchAddScreenState extends State<BatchAddScreen> {
                   total: _drafts.length,
                   disabled: _uploading,
                   onSelected: (value) => _toggleSelected(index, value),
+                  onEdit: () => _editPhoto(index),
                 ),
               ),
             ),
@@ -186,6 +201,7 @@ class _BatchDraftPage extends StatelessWidget {
     required this.total,
     required this.disabled,
     required this.onSelected,
+    required this.onEdit,
   });
 
   final _BatchItemDraft draft;
@@ -193,6 +209,7 @@ class _BatchDraftPage extends StatelessWidget {
   final int total;
   final bool disabled;
   final ValueChanged<bool> onSelected;
+  final VoidCallback onEdit;
 
   @override
   Widget build(BuildContext context) => ListView(
@@ -225,6 +242,12 @@ class _BatchDraftPage extends StatelessWidget {
           border: Border.all(color: DesignSystem.border),
         ),
         child: Image.file(draft.image, fit: BoxFit.contain),
+      ),
+      const SizedBox(height: 10),
+      OutlinedButton.icon(
+        onPressed: disabled ? null : onEdit,
+        icon: const Icon(Icons.crop_rotate_rounded),
+        label: const Text('Crop or rotate this photo'),
       ),
       if (draft.error != null) ...[
         const SizedBox(height: 12),
@@ -273,7 +296,7 @@ class _BatchDraftPage extends StatelessWidget {
 class _BatchItemDraft {
   _BatchItemDraft(this.image);
 
-  final File image;
+  File image;
   String? error;
   bool selected = true;
 }

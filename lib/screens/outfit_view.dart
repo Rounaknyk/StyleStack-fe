@@ -17,6 +17,7 @@ import '../services/analytics_service.dart';
 import '../services/rewarded_ad_service.dart';
 import 'saved_styles_screen.dart';
 import 'stylist_chat_screen.dart';
+import 'app_help_screen.dart';
 
 class DailyOutfitView extends StatefulWidget {
   const DailyOutfitView({
@@ -401,6 +402,10 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
             priorityEvent: priorityEvent,
             onHistory: widget.onOpenHistory,
             onProfile: widget.onOpenProfile,
+            onHelp: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AppHelpScreen()),
+            ),
           ),
           const SizedBox(height: 22),
           const _SectionLabel('YOUR STYLING STUDIO'),
@@ -600,8 +605,10 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
                     ),
                   ),
                 ),
-                const SizedBox(width: 10),
-                _VibeButton(images: mvp.outfit!.inspirationImages),
+                if (mvp.outfit!.inspirationEnabled) ...[
+                  const SizedBox(width: 10),
+                  _VibeButton(images: mvp.outfit!.inspirationImages),
+                ],
               ],
             ),
             const SizedBox(height: 10),
@@ -818,6 +825,7 @@ class _EditorialHeader extends StatelessWidget {
     required this.priorityEvent,
     required this.onHistory,
     required this.onProfile,
+    required this.onHelp,
   });
 
   final String greeting;
@@ -825,6 +833,7 @@ class _EditorialHeader extends StatelessWidget {
   final StyleCalendarEvent? priorityEvent;
   final VoidCallback onHistory;
   final VoidCallback onProfile;
+  final VoidCallback onHelp;
 
   String _dateLabel() {
     const weekdays = [
@@ -887,6 +896,12 @@ class _EditorialHeader extends StatelessWidget {
               ],
             ),
           ),
+          _RoundIconButton(
+            tooltip: 'How to use StyleStack',
+            icon: Icons.help_outline_rounded,
+            onPressed: onHelp,
+          ),
+          const SizedBox(width: 8),
           _RoundIconButton(
             tooltip: 'Style planner',
             icon: Icons.calendar_month_outlined,

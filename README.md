@@ -1,5 +1,15 @@
 # StyleStack Flutter
 
+## Photo adjustment and beginner guide
+
+Wardrobe photos can be cropped and rotated on-device before upload. This uses
+the pure-Flutter `crop_image` editor and does not consume backend or AI calls.
+
+The **StyleStack guide** is available from the help icon on Today and from
+Profile > Help & guide. It has built-in illustrated fallbacks. To use real app
+screenshots, add the four optional images documented in
+`assets/images/help/README.md`; the UI adopts them automatically after rebuild.
+
 Flutter client for the StyleStack FastAPI backend with Firebase email/password authentication, camera uploads, and a wardrobe grid.
 
 ## Firebase
