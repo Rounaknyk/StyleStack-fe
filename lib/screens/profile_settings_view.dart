@@ -10,7 +10,6 @@ import '../providers/auth_provider.dart';
 import '../providers/access_provider.dart';
 import '../providers/gmail_sync_provider.dart';
 import '../providers/mvp_provider.dart';
-import '../providers/onboarding_provider.dart';
 import '../providers/wardrobe_provider.dart';
 import '../services/location_service.dart';
 import '../services/permission_prompt_service.dart';
@@ -355,8 +354,9 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
   Future<void> _editStyleProfile() async {
     final user = context.read<AuthProvider>().user;
     if (user == null) return;
-    await context.read<OnboardingProvider>().loadForUser(user.uid, force: true);
-    if (!mounted) return;
+    // The authenticated shell is already backed by a loaded onboarding
+    // profile. Forcing another load here briefly replaces HomeScreen with the
+    // startup view, which destroys this Navigator before the editor opens.
     await Navigator.push<void>(
       context,
       MaterialPageRoute(

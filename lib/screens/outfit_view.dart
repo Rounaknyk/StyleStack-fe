@@ -139,6 +139,15 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
           'rewarded_ad_failed_open',
           parameters: {'placement': RewardedPlacement.dailyOutfit.name},
         );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'The ad is unavailable, so we are creating your look anyway.',
+              ),
+            ),
+          );
+        }
       }
     }
 

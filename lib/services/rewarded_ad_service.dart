@@ -24,6 +24,8 @@ class RewardedAdService {
   static final RewardedAdService instance = RewardedAdService._();
 
   static const int freeDailyRefreshes = 2;
+  static const int _maxNoFillAttempts = 2;
+  static const Duration _noFillRetryDelay = Duration(seconds: 2);
   final Map<RewardedPlacement, RewardedAd?> _ads = {};
   final Map<RewardedPlacement, Future<bool>> _loads = {};
   bool _initialized = false;
@@ -186,42 +188,59 @@ class RewardedAdService {
       return completer.future;
     }
 
-    try {
-      RewardedAd.load(
-        adUnitId: adUnitId,
-        request: const AdRequest(),
-        rewardedAdLoadCallback: RewardedAdLoadCallback(
-          onAdLoaded: (ad) {
-            _ads[placement] = ad;
-            _loads.remove(placement);
-            if (!completer.isCompleted) completer.complete(true);
-          },
-          onAdFailedToLoad: (error) {
-            debugPrint(
-              'rewarded_ad_load_failed placement=${placement.name} '
-              'code=${error.code} domain=${error.domain} message=${error.message}',
-            );
-            unawaited(
-              AnalyticsService.instance.event(
-                'rewarded_ad_load_failed',
-                parameters: {
-                  'placement': placement.name,
-                  'error_code': error.code,
-                },
-              ),
-            );
-            _loads.remove(placement);
-            if (!completer.isCompleted) completer.complete(false);
-          },
-        ),
-      );
-    } catch (error) {
-      debugPrint(
-        'rewarded_ad_load_exception placement=${placement.name} error=$error',
-      );
-      _loads.remove(placement);
-      if (!completer.isCompleted) completer.complete(false);
+    void load({required int attempt}) {
+      if (completer.isCompleted) return;
+      try {
+        RewardedAd.load(
+          adUnitId: adUnitId,
+          request: const AdRequest(),
+          rewardedAdLoadCallback: RewardedAdLoadCallback(
+            onAdLoaded: (ad) {
+              _ads[placement] = ad;
+              _loads.remove(placement);
+              if (!completer.isCompleted) completer.complete(true);
+            },
+            onAdFailedToLoad: (error) {
+              debugPrint(
+                'rewarded_ad_load_failed placement=${placement.name} '
+                'attempt=$attempt code=${error.code} domain=${error.domain} '
+                'message=${error.message}',
+              );
+              unawaited(
+                AnalyticsService.instance.event(
+                  'rewarded_ad_load_failed',
+                  parameters: {
+                    'placement': placement.name,
+                    'error_code': error.code,
+                    'attempt': attempt,
+                  },
+                ),
+              );
+              // iOS error code 1 is "no fill". Even Google's dedicated test
+              // unit can occasionally return this during SDK/network startup,
+              // so retry once before applying the existing fail-open policy.
+              if (error.code == 1 && attempt < _maxNoFillAttempts) {
+                Future<void>.delayed(
+                  _noFillRetryDelay,
+                  () => load(attempt: attempt + 1),
+                );
+                return;
+              }
+              _loads.remove(placement);
+              if (!completer.isCompleted) completer.complete(false);
+            },
+          ),
+        );
+      } catch (error) {
+        debugPrint(
+          'rewarded_ad_load_exception placement=${placement.name} error=$error',
+        );
+        _loads.remove(placement);
+        if (!completer.isCompleted) completer.complete(false);
+      }
     }
+
+    load(attempt: 1);
     return completer.future;
   }
 
