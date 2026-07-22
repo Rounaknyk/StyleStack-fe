@@ -73,3 +73,11 @@ kotlin {
 flutter {
     source = "../.."
 }
+
+dependencies {
+    // Google Mobile Ads 25.3.0 still declares WorkManager 2.7.0. That old
+    // release can fail to create its Room database before Flutter starts in a
+    // modern minified Play build. Pin the current AndroidX implementation so
+    // Gradle replaces the obsolete transitive dependency.
+    implementation("androidx.work:work-runtime:2.11.2")
+}
