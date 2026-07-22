@@ -169,11 +169,19 @@ class MvpProvider extends ChangeNotifier {
   }
 
   Future<bool> generateOutfit(String city, String occasion) async {
+    final previousOutfit = outfit;
     loadingOutfit = true;
     error = null;
     notifyListeners();
     try {
       outfit = await _api.suggestOutfit(city: city, occasion: occasion);
+      if (occasion.contains('alternative') && previousOutfit != null) {
+        try {
+          await _api.submitOutfitFeedback(previousOutfit.id, 'refreshed');
+        } catch (_) {
+          // Learning is best-effort and must never block a fresh suggestion.
+        }
+      }
       await AnalyticsService.instance.event(
         'outfit_generated',
         parameters: {
@@ -241,7 +249,24 @@ class MvpProvider extends ChangeNotifier {
     }
   }
 
-  Future<bool> markWardrobeItemsWorn(List<WardrobeItem> items) async {
+  Future<bool> submitOutfitFeedback(Outfit target, String signal) async {
+    try {
+      await _api.submitOutfitFeedback(target.id, signal);
+      await AnalyticsService.instance.event(
+        'outfit_feedback',
+        parameters: {'signal': signal},
+      );
+      return true;
+    } catch (_) {
+      // Feedback is optional and should never disturb the styling flow.
+      return false;
+    }
+  }
+
+  Future<bool> markWardrobeItemsWorn(
+    List<WardrobeItem> items, {
+    String? suggestedOutfitId,
+  }) async {
     if (items.isEmpty) return false;
     error = null;
     try {
@@ -255,6 +280,16 @@ class MvpProvider extends ChangeNotifier {
           ),
         ),
       );
+      if (suggestedOutfitId != null) {
+        try {
+          await _api.submitOutfitFeedback(
+            suggestedOutfitId,
+            'wore_something_else',
+          );
+        } catch (_) {
+          // Wear logging succeeds even if preference learning is unavailable.
+        }
+      }
       await AnalyticsService.instance.event(
         'alternate_outfit_logged',
         parameters: {'item_count': items.length},

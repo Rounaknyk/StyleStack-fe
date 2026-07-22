@@ -488,6 +488,26 @@ class ApiService {
     return (_decode(response) as Map<String, dynamic>)['logged_items'] as int;
   }
 
+  Future<void> submitOutfitFeedback(
+    String outfitId,
+    String signal, {
+    String? reason,
+  }) async {
+    final payload = <String, dynamic>{'signal': signal};
+    if (reason != null && reason.trim().isNotEmpty) {
+      payload['reason'] = reason.trim();
+    }
+    final response = await _client.post(
+      Uri.parse('${RuntimeConfig.apiBaseUrl}/outfits/$outfitId/feedback'),
+      headers: {
+        'Authorization': 'Bearer ${await _token()}',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode(payload),
+    );
+    _decode(response);
+  }
+
   Future<void> wearWardrobeItem(
     String itemId, {
     required DateTime wornAt,

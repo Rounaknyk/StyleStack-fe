@@ -43,7 +43,26 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
   bool _autoRequestScheduled = false;
   final Set<String> _loggingOutfitIds = {};
   final Set<String> _loggedOutfitIds = {};
+  final Map<String, String> _outfitFeedback = {};
   bool _loggingAlternateOutfit = false;
+
+  Future<void> _sendOutfitFeedback(Outfit outfit, String signal) async {
+    if (_outfitFeedback[outfit.id] == signal) return;
+    final previous = _outfitFeedback[outfit.id];
+    setState(() => _outfitFeedback[outfit.id] = signal);
+    final saved = await context.read<MvpProvider>().submitOutfitFeedback(
+      outfit,
+      signal,
+    );
+    if (!mounted || saved) return;
+    setState(() {
+      if (previous == null) {
+        _outfitFeedback.remove(outfit.id);
+      } else {
+        _outfitFeedback[outfit.id] = previous;
+      }
+    });
+  }
 
   @override
   void initState() {
@@ -305,6 +324,7 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
     setState(() => _loggingAlternateOutfit = true);
     final ok = await context.read<MvpProvider>().markWardrobeItemsWorn(
       selected,
+      suggestedOutfitId: context.read<MvpProvider>().outfit?.id,
     );
     if (!mounted) return;
     setState(() => _loggingAlternateOutfit = false);
@@ -560,6 +580,11 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
             _OutfitBoard(items: mvp.outfit!.items),
             const SizedBox(height: 14),
             _WhyItWorks(reasoning: mvp.outfit!.reasoning),
+            const SizedBox(height: 10),
+            _OutfitFeedbackBar(
+              selected: _outfitFeedback[mvp.outfit!.id],
+              onSelected: (signal) => _sendOutfitFeedback(mvp.outfit!, signal),
+            ),
             const SizedBox(height: 14),
             Row(
               children: [
@@ -1674,6 +1699,45 @@ class _WhyItWorks extends StatelessWidget {
         ),
       ],
     ),
+  );
+}
+
+class _OutfitFeedbackBar extends StatelessWidget {
+  const _OutfitFeedbackBar({required this.selected, required this.onSelected});
+
+  final String? selected;
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      Expanded(
+        child: Text(
+          selected == null
+              ? 'Does this feel like you?'
+              : 'Thanks — your stylist learns from this.',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: DesignSystem.textSecondary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+      IconButton.outlined(
+        tooltip: 'I like this look',
+        isSelected: selected == 'liked',
+        onPressed: () => onSelected('liked'),
+        icon: const Icon(Icons.thumb_up_alt_outlined, size: 18),
+        selectedIcon: const Icon(Icons.thumb_up_alt_rounded, size: 18),
+      ),
+      const SizedBox(width: 6),
+      IconButton.outlined(
+        tooltip: 'Not for me',
+        isSelected: selected == 'disliked',
+        onPressed: () => onSelected('disliked'),
+        icon: const Icon(Icons.thumb_down_alt_outlined, size: 18),
+        selectedIcon: const Icon(Icons.thumb_down_alt_rounded, size: 18),
+      ),
+    ],
   );
 }
 
