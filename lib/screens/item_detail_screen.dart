@@ -437,7 +437,7 @@ class _AiResultCard extends StatelessWidget {
                   children: [
                     Text(
                       processing
-                          ? 'AI is analyzing…'
+                          ? 'Preparing your item…'
                           : success
                           ? 'AI Suggestions'
                           : 'Analysis Failed',
@@ -447,7 +447,7 @@ class _AiResultCard extends StatelessWidget {
                     ),
                     Text(
                       processing
-                          ? 'Identifying item details'
+                          ? 'Removing background and adding details'
                           : success
                           ? 'Based on AI analysis'
                           : 'Please review manually',

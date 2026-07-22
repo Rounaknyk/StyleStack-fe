@@ -8,7 +8,6 @@ import 'package:provider/provider.dart';
 
 import 'config/design_system.dart';
 import 'config/custom_widgets.dart';
-import 'config/brand_logo.dart';
 import 'config/runtime_config.dart';
 import 'providers/auth_provider.dart';
 import 'providers/access_provider.dart';
@@ -32,14 +31,6 @@ import 'services/rewarded_ad_service.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
-    alert: true,
-    badge: true,
-    sound: true,
-  );
-  await NotificationService.initializeInteractionHandling();
-  // Preload both opt-in rewarded placements without delaying app startup.
-  unawaited(RewardedAdService.instance.initialize());
 
   // Initialize settings provider
   final settingsProvider = SettingsProvider();
@@ -47,6 +38,18 @@ Future<void> main() async {
   RuntimeConfig.setSettingsProvider(settingsProvider);
 
   runApp(StyleStackApp(settingsProvider: settingsProvider));
+
+  // These platform calls are useful but should never hold the first Flutter
+  // frame hostage, especially while debugging over a wireless iOS connection.
+  unawaited(
+    FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
+      alert: true,
+      badge: true,
+      sound: true,
+    ),
+  );
+  unawaited(NotificationService.initializeInteractionHandling());
+  unawaited(RewardedAdService.instance.initialize());
 }
 
 class StyleStackApp extends StatefulWidget {
@@ -350,17 +353,10 @@ class _StartupView extends StatelessWidget {
   Widget build(BuildContext context) => const Scaffold(
     body: SafeArea(
       child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            StyleStackLogo(size: 96),
-            SizedBox(height: 22),
-            StyleStackLoadingIndicator(
-              message: 'Preparing your StyleStack…',
-              animationSize: 112,
-              padding: EdgeInsets.zero,
-            ),
-          ],
+        child: StyleStackLoadingIndicator(
+          message: 'Preparing your StyleStack…',
+          animationSize: 112,
+          padding: EdgeInsets.zero,
         ),
       ),
     ),

@@ -817,7 +817,7 @@ class _WardrobeViewState extends State<WardrobeView> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'Preparing ${processingItems.length} ${processingItems.length == 1 ? 'item' : 'items'} in the background. You can keep using StyleStack.',
+                        'Removing backgrounds and adding details for ${processingItems.length} ${processingItems.length == 1 ? 'item' : 'items'}. You can keep using StyleStack.',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
@@ -1497,10 +1497,10 @@ class _ItemProcessingFooter extends StatelessWidget {
     }
 
     final label = item.isUploading
-        ? 'Uploading'
+        ? 'Uploading for background removal'
         : item.aiTagStatus == 'processing'
-        ? 'AI analyzing'
-        : 'In queue';
+        ? 'Removing background & adding details'
+        : 'Queued for background removal';
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),

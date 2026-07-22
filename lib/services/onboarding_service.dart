@@ -18,23 +18,28 @@ class OnboardingService implements OnboardingRepository {
 
   final http.Client _client;
   final FirebaseAuth _firebaseAuth;
+  static const _requestTimeout = Duration(seconds: 15);
 
   @override
   Future<OnboardingProfile> fetch() async {
-    final response = await _client.get(
-      Uri.parse('${RuntimeConfig.apiBaseUrl}/users/me/onboarding'),
-      headers: await _headers(),
-    );
+    final response = await _client
+        .get(
+          Uri.parse('${RuntimeConfig.apiBaseUrl}/users/me/onboarding'),
+          headers: await _headers(),
+        )
+        .timeout(_requestTimeout);
     return OnboardingProfile.fromJson(_decode(response));
   }
 
   @override
   Future<OnboardingProfile> save(OnboardingProfile profile) async {
-    final response = await _client.put(
-      Uri.parse('${RuntimeConfig.apiBaseUrl}/users/me/onboarding'),
-      headers: await _headers(json: true),
-      body: jsonEncode(profile.toJson()),
-    );
+    final response = await _client
+        .put(
+          Uri.parse('${RuntimeConfig.apiBaseUrl}/users/me/onboarding'),
+          headers: await _headers(json: true),
+          body: jsonEncode(profile.toJson()),
+        )
+        .timeout(_requestTimeout);
     return OnboardingProfile.fromJson(_decode(response));
   }
 
