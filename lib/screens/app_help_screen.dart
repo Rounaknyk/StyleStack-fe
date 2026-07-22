@@ -178,12 +178,13 @@ class _GuideCard extends StatelessWidget {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        AspectRatio(
-          aspectRatio: 16 / 9,
-          child: Image.asset(
-            assetPath,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) => ColoredBox(
+        Image.asset(
+          assetPath,
+          width: double.infinity,
+          fit: BoxFit.fitWidth,
+          errorBuilder: (context, error, stackTrace) => SizedBox(
+            height: 220,
+            child: ColoredBox(
               color: fallbackColor,
               child: Center(
                 child: Icon(icon, size: 62, color: DesignSystem.primaryDark),
