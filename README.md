@@ -70,8 +70,8 @@ flutter build appbundle \
 
 Use the corresponding `ADMOB_REWARDED_DAILY_IOS` and
 `ADMOB_REWARDED_CALENDAR_IOS` values for iOS. A completed reward is required
-before the first Calendar connection. Premium subscribers and backend-managed
-testers bypass both placements. Deliberately dismissing an available Calendar
+before the first Calendar connection. Backend-managed testers bypass both
+placements. Deliberately dismissing an available Calendar
 ad keeps it disconnected; SDK, configuration, network, load, and show failures
 fail open so an advertising outage does not block the user. On Today, the
 initial outfit and two successful refreshes are free; each later refresh
@@ -80,23 +80,6 @@ requires an earned reward unless the user has a bypass.
 Because this integration adds a native plugin and native App IDs, it requires a
 new Play Store/App Store binary and cannot be introduced to an existing release
 using only a Shorebird patch.
-
-## RevenueCat subscriptions
-
-The app uses RevenueCat entitlement `premium`, Firebase UID as the App User ID,
-and the current/default offering. Configure a 7-day introductory trial in both
-store consoles; the client never creates its own local trial timer.
-
-```bash
-flutter build appbundle --release \
-  --dart-define=SUBSCRIPTION_REQUIRED=true \
-  --dart-define=REVENUECAT_ANDROID_API_KEY=goog_your_public_sdk_key
-```
-
-For iOS, pass `REVENUECAT_IOS_API_KEY=appl_...` to `flutter build ipa`. Keep
-`SUBSCRIPTION_REQUIRED=false` until products, packages, entitlement, and the
-default offering are live. Tester email bypasses come from the backend
-`GET /users/me/access` endpoint and refresh on sign-in, resume, and ad gates.
 
 ## Closet Sync development setup
 

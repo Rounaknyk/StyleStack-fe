@@ -19,7 +19,6 @@ import 'providers/mvp_provider.dart';
 import 'screens/auth_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/onboarding_screen.dart';
-import 'screens/subscription_paywall_screen.dart';
 import 'services/api_service.dart';
 import 'services/analytics_service.dart';
 import 'services/app_update_service.dart';
@@ -335,16 +334,6 @@ class _AuthGateState extends State<AuthGate> {
               await user.reload();
             },
           );
-        }
-
-        final access = context.watch<AccessProvider>();
-        if (access.subscriptionRequired) {
-          if (access.userId != user.uid || access.loading || !access.loaded) {
-            return const _StartupView();
-          }
-          if (!access.hasAppAccess) {
-            return SubscriptionPaywallScreen(onSignOut: auth.signOut);
-          }
         }
 
         return const HomeScreen();

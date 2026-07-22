@@ -106,7 +106,7 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
           'rewarded_ad_bypassed',
           parameters: {
             'placement': RewardedPlacement.dailyOutfit.name,
-            'reason': monetization.tester ? 'tester' : 'premium',
+            'reason': 'tester',
           },
         );
       }

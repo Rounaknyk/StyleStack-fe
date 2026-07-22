@@ -100,7 +100,7 @@ class _StyleCalendarViewState extends State<StyleCalendarView> {
         'rewarded_ad_bypassed',
         parameters: {
           'placement': RewardedPlacement.calendarConnection.name,
-          'reason': access.tester ? 'tester' : 'premium',
+          'reason': 'tester',
         },
       );
       return true;
