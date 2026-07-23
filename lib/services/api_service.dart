@@ -449,10 +449,19 @@ class ApiService {
     required String city,
     required String occasion,
     String? calendarEventId,
+    bool refresh = false,
+    String? previousOutfitId,
   }) async {
-    final payload = <String, String>{'city': city, 'occasion': occasion};
+    final payload = <String, dynamic>{
+      'city': city,
+      'occasion': occasion,
+      'refresh': refresh,
+    };
     if (calendarEventId != null) {
       payload['calendar_event_id'] = calendarEventId;
+    }
+    if (previousOutfitId != null) {
+      payload['previous_outfit_id'] = previousOutfitId;
     }
     final response = await _client.post(
       Uri.parse('${RuntimeConfig.apiBaseUrl}/outfits/suggest'),

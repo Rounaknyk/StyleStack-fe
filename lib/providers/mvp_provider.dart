@@ -170,12 +170,18 @@ class MvpProvider extends ChangeNotifier {
 
   Future<bool> generateOutfit(String city, String occasion) async {
     final previousOutfit = outfit;
+    final isRefresh = occasion.contains('alternative');
     loadingOutfit = true;
     error = null;
     notifyListeners();
     try {
-      outfit = await _api.suggestOutfit(city: city, occasion: occasion);
-      if (occasion.contains('alternative') && previousOutfit != null) {
+      outfit = await _api.suggestOutfit(
+        city: city,
+        occasion: occasion,
+        refresh: isRefresh,
+        previousOutfitId: isRefresh ? previousOutfit?.id : null,
+      );
+      if (isRefresh && previousOutfit != null) {
         try {
           await _api.submitOutfitFeedback(previousOutfit.id, 'refreshed');
         } catch (_) {
@@ -184,9 +190,7 @@ class MvpProvider extends ChangeNotifier {
       }
       await AnalyticsService.instance.event(
         'outfit_generated',
-        parameters: {
-          'context': occasion.contains('alternative') ? 'refresh' : 'daily',
-        },
+        parameters: {'context': isRefresh ? 'refresh' : 'daily'},
       );
       return true;
     } on ApiException catch (e) {
