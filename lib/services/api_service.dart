@@ -577,6 +577,42 @@ class ApiService {
     _decode(response);
   }
 
+  Future<String> uploadBroadcastImage(File image) async {
+    final request =
+        http.MultipartRequest(
+            "POST",
+            Uri.parse("${RuntimeConfig.apiBaseUrl}/admin/notifications/media"),
+          )
+          ..headers["Authorization"] = "Bearer ${await _token()}"
+          ..files.add(await http.MultipartFile.fromPath("image", image.path));
+    final streamed = await request.send();
+    final response = await http.Response.fromStream(streamed);
+    final result = _decode(response) as Map<String, dynamic>;
+    return result["image_url"] as String;
+  }
+
+  Future<Map<String, dynamic>> sendBroadcastNotification({
+    required String title,
+    required String body,
+    required String destination,
+    String? imageUrl,
+  }) async {
+    final response = await _client.post(
+      Uri.parse("${RuntimeConfig.apiBaseUrl}/admin/notifications/broadcast"),
+      headers: {
+        "Authorization": "Bearer ${await _token()}",
+        "Content-Type": "application/json",
+      },
+      body: jsonEncode({
+        "title": title,
+        "body": body,
+        "destination": destination,
+        if (imageUrl != null) "image_url": imageUrl,
+      }),
+    );
+    return _decode(response) as Map<String, dynamic>;
+  }
+
   Future<Map<String, int>> sendTestNotification() async {
     final response = await _client.post(
       Uri.parse('${RuntimeConfig.apiBaseUrl}/users/me/test-notification'),

@@ -106,12 +106,38 @@ extension _CanvasCategoryPresentation on _CanvasCategory {
 }
 
 _CanvasCategory _canvasCategoryFor(WardrobeItem item) {
+  final explicitCategory = item.displayCategory.trim().toLowerCase();
+  if (explicitCategory.contains("accessor") ||
+      explicitCategory.contains("bag") ||
+      explicitCategory.contains("jewell") ||
+      explicitCategory.contains("watch")) {
+    return _CanvasCategory.accessories;
+  }
+  if (explicitCategory.contains("shoe") ||
+      explicitCategory.contains("footwear")) {
+    return _CanvasCategory.shoes;
+  }
+  if (explicitCategory.contains("bottom") ||
+      explicitCategory.contains("pant")) {
+    return _CanvasCategory.bottoms;
+  }
+  if (explicitCategory.contains("hat") ||
+      explicitCategory.contains("headwear")) {
+    return _CanvasCategory.hats;
+  }
+  if (explicitCategory.contains("top") ||
+      explicitCategory.contains("shirt") ||
+      explicitCategory.contains("outerwear") ||
+      explicitCategory.contains("dress") ||
+      explicitCategory.contains("ethnic")) {
+    return _CanvasCategory.tops;
+  }
+
   final values = <String>[
-    item.displayCategory,
-    item.aiCategory ?? '',
+    item.aiCategory ?? "",
     item.name,
     ...item.tags,
-  ].join(' ').toLowerCase();
+  ].join(" ").toLowerCase();
   bool hasAny(List<String> words) => words.any(values.contains);
 
   if (hasAny(const ['hat', 'cap', 'beanie', 'turban', 'headwear'])) {

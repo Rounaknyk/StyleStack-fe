@@ -16,12 +16,14 @@ class AccessProvider extends ChangeNotifier with WidgetsBindingObserver {
   bool _loaded = false;
   bool _tester = false;
   bool _bypassAds = false;
+  bool _owner = false;
 
   String? get userId => _userId;
   bool get loading => _loading;
   bool get loaded => _loaded;
   bool get tester => _tester;
   bool get bypassAds => _bypassAds;
+  bool get owner => _owner;
 
   Future<void> syncUser(User user, {bool force = false}) async {
     if (_loading) return;
@@ -33,10 +35,12 @@ class AccessProvider extends ChangeNotifier with WidgetsBindingObserver {
     try {
       final access = await _api.fetchUserAccess();
       if (_userId != user.uid) return;
+      _owner = access['owner'] as bool? ?? false;
       _tester = access['tester'] as bool? ?? false;
       _bypassAds = access['bypass_ads'] as bool? ?? false;
     } catch (_) {
       // Tester overrides fail closed without affecting ordinary app access.
+      _owner = false;
       _tester = false;
       _bypassAds = false;
     } finally {
@@ -52,6 +56,7 @@ class AccessProvider extends ChangeNotifier with WidgetsBindingObserver {
     _userId = null;
     _loading = false;
     _loaded = false;
+    _owner = false;
     _tester = false;
     _bypassAds = false;
     notifyListeners();

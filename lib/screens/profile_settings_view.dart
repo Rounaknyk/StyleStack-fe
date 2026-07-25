@@ -3,6 +3,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../config/custom_widgets.dart';
 import '../config/design_system.dart';
@@ -89,13 +91,25 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
   bool _runningNotificationSimulation = false;
   bool _schedulingNotificationSimulation = false;
   bool _deletingAccount = false;
+  bool _adminMode = false;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback(
-      (_) => context.read<MvpProvider>().loadPreferences(),
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      context.read<MvpProvider>().loadPreferences();
+      final user = context.read<AuthProvider>().user;
+      if (user != null) {
+        await context.read<AccessProvider>().syncUser(user, force: true);
+      }
+      final preferences = await SharedPreferences.getInstance();
+      if (mounted) {
+        setState(
+          () => _adminMode =
+              preferences.getBool("stylestack_admin_mode") ?? false,
+        );
+      }
+    });
   }
 
   @override
@@ -398,6 +412,12 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
     }
   }
 
+  Future<void> _setAdminMode(bool enabled) async {
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setBool("stylestack_admin_mode", enabled);
+    if (mounted) setState(() => _adminMode = enabled);
+  }
+
   void _message(String text) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
@@ -424,6 +444,8 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
     }
     final auth = context.watch<AuthProvider>();
     final gmailSync = context.watch<GmailSyncProvider>();
+    final access = context.watch<AccessProvider>();
+    final showAdminTools = access.owner && _adminMode;
     final email = auth.user?.email ?? 'StyleStack user';
     final displayName = auth.user?.displayName?.trim();
     final title = displayName == null || displayName.isEmpty
@@ -490,84 +512,97 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    IconButton.outlined(
-                      tooltip: 'Send a test notification',
-                      onPressed: provider.testingNotification
-                          ? null
-                          : _sendTestNotification,
-                      icon: provider.testingNotification
-                          ? const SizedBox.square(
-                              dimension: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.notifications_active_outlined),
-                    ),
-                  ],
-                ),
-              ),
-              const Divider(height: 1),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      'Notification test lab',
-                      style: Theme.of(context).textTheme.titleSmall,
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'These buttons use the same backend delivery logic as the real 8 AM flow.',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                    const SizedBox(height: 10),
-                    OutlinedButton.icon(
-                      onPressed: _runningNotificationSimulation
-                          ? null
-                          : _runMorningSimulation,
-                      icon: _runningNotificationSimulation
-                          ? const SizedBox.square(
-                              dimension: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.play_circle_outline),
-                      label: const Text('Run 8 AM flow now'),
-                    ),
-                    const SizedBox(height: 8),
-                    OutlinedButton.icon(
-                      onPressed: _schedulingNotificationSimulation
-                          ? null
-                          : _scheduleDelayedSimulation,
-                      icon: _schedulingNotificationSimulation
-                          ? const SizedBox.square(
-                              dimension: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Icon(Icons.timer_outlined),
-                      label: const Text(
-                        'Send 10 seconds after I close the app',
+                    if (showAdminTools) ...[
+                      const SizedBox(width: 8),
+                      IconButton.outlined(
+                        tooltip: 'Send a test notification',
+                        onPressed: provider.testingNotification
+                            ? null
+                            : _sendTestNotification,
+                        icon: provider.testingNotification
+                            ? const SizedBox.square(
+                                dimension: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.notifications_active_outlined),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),
-              const Divider(height: 1),
-              _SettingsTile(
-                icon: Icons.slideshow_outlined,
-                title: 'Test quick tour',
-                subtitle:
-                    'Replay the exact first-time experience without resetting it',
-                trailing: const Icon(Icons.play_arrow_rounded),
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (routeContext) => QuickTourScreen(
-                      onFinished: () async => Navigator.pop(routeContext),
+              if (showAdminTools) const Divider(height: 1),
+              if (showAdminTools)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                  child: Visibility(
+                    visible: showAdminTools,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          'Notification test lab',
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'These buttons use the same backend delivery logic as the real 8 AM flow.',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        const SizedBox(height: 10),
+                        OutlinedButton.icon(
+                          onPressed: _runningNotificationSimulation
+                              ? null
+                              : _runMorningSimulation,
+                          icon: _runningNotificationSimulation
+                              ? const SizedBox.square(
+                                  dimension: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.play_circle_outline),
+                          label: const Text('Run 8 AM flow now'),
+                        ),
+                        const SizedBox(height: 8),
+                        OutlinedButton.icon(
+                          onPressed: _schedulingNotificationSimulation
+                              ? null
+                              : _scheduleDelayedSimulation,
+                          icon: _schedulingNotificationSimulation
+                              ? const SizedBox.square(
+                                  dimension: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.timer_outlined),
+                          label: const Text(
+                            'Send 10 seconds after I close the app',
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-              ),
+              if (showAdminTools) const Divider(height: 1),
+              if (showAdminTools)
+                _SettingsTile(
+                  icon: Icons.slideshow_outlined,
+                  title: 'Test quick tour',
+                  subtitle:
+                      'Replay the exact first-time experience without resetting it',
+                  trailing: const Icon(Icons.play_arrow_rounded),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (routeContext) => QuickTourScreen(
+                        onFinished: () async => Navigator.pop(routeContext),
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
           const SizedBox(height: 18),
@@ -630,6 +665,43 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
               ),
             ],
           ),
+          if (access.owner) ...[
+            const SizedBox(height: 18),
+            _SettingsSection(
+              title: 'Admin tools',
+              subtitle: _adminMode
+                  ? 'Private tools are enabled on this device.'
+                  : 'Enable private tools only when you need them.',
+              children: [
+                SwitchListTile(
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                  secondary: const Icon(Icons.admin_panel_settings_outlined),
+                  value: _adminMode,
+                  title: const Text('Admin tools'),
+                  subtitle: const Text(
+                    'Show private tests and broadcast controls',
+                  ),
+                  onChanged: _setAdminMode,
+                ),
+                if (_adminMode) ...[
+                  const Divider(height: 1),
+                  _SettingsTile(
+                    icon: Icons.campaign_outlined,
+                    title: 'Broadcast notification',
+                    subtitle:
+                        'Send opted-in users a message, image and deep link',
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const _BroadcastNotificationComposer(),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ],
           const SizedBox(height: 18),
           _SettingsSection(
             title: 'Legal & privacy',
@@ -711,6 +783,187 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _BroadcastNotificationComposer extends StatefulWidget {
+  const _BroadcastNotificationComposer();
+
+  State<_BroadcastNotificationComposer> createState() =>
+      _BroadcastNotificationComposerState();
+}
+
+class _BroadcastNotificationComposerState
+    extends State<_BroadcastNotificationComposer> {
+  final _title = TextEditingController();
+  final _body = TextEditingController();
+  final _api = ApiService();
+  XFile? _image;
+  String _destination = "today";
+  bool _sending = false;
+
+  void dispose() {
+    _title.dispose();
+    _body.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    final image = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 88,
+      maxWidth: 1600,
+    );
+    if (image != null && mounted) setState(() => _image = image);
+  }
+
+  Future<void> _send() async {
+    final title = _title.text.trim();
+    final body = _body.text.trim();
+    if (title.isEmpty || body.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Add both a title and message.")),
+      );
+      return;
+    }
+    setState(() => _sending = true);
+    try {
+      final imageUrl = _image == null
+          ? null
+          : await _api.uploadBroadcastImage(File(_image!.path));
+      final result = await _api.sendBroadcastNotification(
+        title: title,
+        body: body,
+        destination: _destination,
+        imageUrl: imageUrl,
+      );
+      if (!mounted) return;
+      final devices = result["subscribed_devices"] ?? 0;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Broadcast sent to $devices opted-in device(s)."),
+        ),
+      );
+      Navigator.pop(context);
+    } on ApiException catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.message)));
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Broadcast could not be sent. Try again."),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
+  }
+
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text("Broadcast notification")),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(20),
+          children: [
+            Text(
+              "Send to opted-in StyleStack devices",
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              "This private tool sends a push notification to users who enabled notifications. Add an image only when it improves the message.",
+              style: TextStyle(color: DesignSystem.textSecondary, height: 1.4),
+            ),
+            const SizedBox(height: 22),
+            TextField(
+              controller: _title,
+              maxLength: 120,
+              decoration: const InputDecoration(
+                labelText: "Notification title",
+                hintText: "A fresh edit is waiting",
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _body,
+              maxLength: 500,
+              minLines: 3,
+              maxLines: 5,
+              decoration: const InputDecoration(
+                labelText: "Message",
+                hintText: "Open StyleStack to see it",
+              ),
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              value: _destination,
+              decoration: const InputDecoration(labelText: "Open when tapped"),
+              items: const [
+                DropdownMenuItem(value: "today", child: Text("Today")),
+                DropdownMenuItem(value: "wardrobe", child: Text("Wardrobe")),
+                DropdownMenuItem(value: "planner", child: Text("Planner")),
+                DropdownMenuItem(value: "profile", child: Text("Profile")),
+                DropdownMenuItem(
+                  value: "notifications",
+                  child: Text("Notifications"),
+                ),
+                DropdownMenuItem(
+                  value: "saved_styles",
+                  child: Text("My Styles"),
+                ),
+              ],
+              onChanged: _sending
+                  ? null
+                  : (value) => setState(() => _destination = value ?? "today"),
+            ),
+            const SizedBox(height: 18),
+            OutlinedButton.icon(
+              onPressed: _sending ? null : _pickImage,
+              icon: const Icon(Icons.image_outlined),
+              label: Text(
+                _image == null ? "Add optional image" : "Change image",
+              ),
+            ),
+            if (_image != null) ...[
+              const SizedBox(height: 12),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(18),
+                child: Image.file(
+                  File(_image!.path),
+                  height: 180,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              TextButton.icon(
+                onPressed: _sending
+                    ? null
+                    : () => setState(() => _image = null),
+                icon: const Icon(Icons.close),
+                label: const Text("Remove image"),
+              ),
+            ],
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              onPressed: _sending ? null : _send,
+              icon: _sending
+                  ? const SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.campaign_outlined),
+              label: Text(_sending ? "Sending…" : "Send broadcast"),
+            ),
+          ],
+        ),
       ),
     );
   }
