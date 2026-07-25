@@ -81,7 +81,7 @@ flutter:
   uses-material-design: true
 
   assets:
-    - assets/images/stylestack_logo.png
+    - assets/images/stylestack_s_logo.png
     - assets/images/google_icon_logo.svg
     - assets/images/help/
     - assets/animations/
