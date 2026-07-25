@@ -77,6 +77,100 @@ class _CanvasGridPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
+enum _CanvasCategory { tops, bottoms, shoes, accessories, hats }
+
+extension _CanvasCategoryPresentation on _CanvasCategory {
+  String get title => switch (this) {
+    _CanvasCategory.tops => 'Tops',
+    _CanvasCategory.bottoms => 'Bottoms',
+    _CanvasCategory.shoes => 'Shoes',
+    _CanvasCategory.accessories => 'Accessories',
+    _CanvasCategory.hats => 'Hats',
+  };
+
+  String get emoji => switch (this) {
+    _CanvasCategory.tops => '👕',
+    _CanvasCategory.bottoms => '👖',
+    _CanvasCategory.shoes => '👟',
+    _CanvasCategory.accessories => '💎',
+    _CanvasCategory.hats => '🧢',
+  };
+
+  Color get color => switch (this) {
+    _CanvasCategory.tops => const Color(0xFF4385F5),
+    _CanvasCategory.bottoms => const Color(0xFF3C9B6D),
+    _CanvasCategory.shoes => const Color(0xFFF28B36),
+    _CanvasCategory.accessories => const Color(0xFF8A61C8),
+    _CanvasCategory.hats => const Color(0xFFD65757),
+  };
+}
+
+_CanvasCategory _canvasCategoryFor(WardrobeItem item) {
+  final values = <String>[
+    item.displayCategory,
+    item.aiCategory ?? '',
+    item.name,
+    ...item.tags,
+  ].join(' ').toLowerCase();
+  bool hasAny(List<String> words) => words.any(values.contains);
+
+  if (hasAny(const ['hat', 'cap', 'beanie', 'turban', 'headwear'])) {
+    return _CanvasCategory.hats;
+  }
+  if (hasAny(const [
+    'shoe',
+    'sneaker',
+    'trainer',
+    'boot',
+    'sandal',
+    'slipper',
+    'heel',
+    'loafer',
+    'footwear',
+    'crocs',
+  ])) {
+    return _CanvasCategory.shoes;
+  }
+  if (hasAny(const [
+    'pants',
+    'pant',
+    'trouser',
+    'jean',
+    'shorts',
+    'skirt',
+    'bottom',
+    'salwar',
+    'palazzo',
+    'dhoti',
+    'legging',
+    'jogger',
+  ])) {
+    return _CanvasCategory.bottoms;
+  }
+  if (hasAny(const [
+    'shirt',
+    't-shirt',
+    'tshirt',
+    'tee',
+    'top',
+    'blouse',
+    'kurta',
+    'sweater',
+    'hoodie',
+    'jacket',
+    'outerwear',
+    'sweatshirt',
+    'dress',
+    'saree',
+    'lehenga',
+    'sherwani',
+    'jumpsuit',
+  ])) {
+    return _CanvasCategory.tops;
+  }
+  return _CanvasCategory.accessories;
+}
+
 class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
   final _canvasKey = GlobalKey();
   final _api = ApiService();
@@ -85,6 +179,7 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
   bool _saving = false;
   bool _exportingCanvas = false;
   _PlacedCanvasItem? _gestureTarget;
+  _CanvasCategory _activeCategory = _CanvasCategory.tops;
 
   _PlacedCanvasItem? get _selectedPlaced {
     final id = _selectedId;
@@ -381,8 +476,14 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
             ),
           ),
           SizedBox(
-            height: 148,
-            child: _Sidebar(items: items, onAdd: _add),
+            height: 188,
+            child: _Sidebar(
+              items: items,
+              activeCategory: _activeCategory,
+              onCategoryChanged: (category) =>
+                  setState(() => _activeCategory = category),
+              onAdd: _add,
+            ),
           ),
         ],
       ),
@@ -502,50 +603,210 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
 }
 
 class _Sidebar extends StatelessWidget {
-  const _Sidebar({required this.items, required this.onAdd});
+  const _Sidebar({
+    required this.items,
+    required this.activeCategory,
+    required this.onCategoryChanged,
+    required this.onAdd,
+  });
+
   final List<WardrobeItem> items;
+  final _CanvasCategory activeCategory;
+  final ValueChanged<_CanvasCategory> onCategoryChanged;
   final ValueChanged<WardrobeItem> onAdd;
 
   @override
-  Widget build(BuildContext context) => Container(
-    decoration: const BoxDecoration(
-      color: DesignSystem.surfaceAlt,
-      border: Border(top: BorderSide(color: DesignSystem.border)),
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Padding(
-          padding: EdgeInsets.fromLTRB(12, 6, 12, 2),
-          child: Text(
-            'Add items',
-            style: TextStyle(fontWeight: FontWeight.w700),
+  Widget build(BuildContext context) {
+    final visibleItems = items
+        .where((item) => _canvasCategoryFor(item) == activeCategory)
+        .toList(growable: false);
+    final counts = <_CanvasCategory, int>{
+      for (final category in _CanvasCategory.values)
+        category: items
+            .where((item) => _canvasCategoryFor(item) == category)
+            .length,
+    };
+
+    return Container(
+      decoration: const BoxDecoration(
+        color: DesignSystem.surfaceAlt,
+        border: Border(top: BorderSide(color: DesignSystem.border)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+            child: Row(
+              children: [
+                const Text(
+                  'Add items',
+                  style: TextStyle(fontWeight: FontWeight.w800),
+                ),
+                const Spacer(),
+                Text(
+                  '${visibleItems.length} available',
+                  style: const TextStyle(
+                    color: DesignSystem.textSecondary,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(
+            height: 46,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.fromLTRB(12, 4, 12, 2),
+              itemCount: _CanvasCategory.values.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 6),
+              itemBuilder: (context, index) {
+                final category = _CanvasCategory.values[index];
+                final active = category == activeCategory;
+                return _CategoryTab(
+                  category: category,
+                  count: counts[category] ?? 0,
+                  active: active,
+                  onTap: () => onCategoryChanged(category),
+                );
+              },
+            ),
+          ),
+          Expanded(
+            child: AnimatedSwitcher(
+              duration: DesignSystem.transitionStandard,
+              switchInCurve: Curves.easeOutCubic,
+              switchOutCurve: Curves.easeInCubic,
+              transitionBuilder: (child, animation) => FadeTransition(
+                opacity: animation,
+                child: SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(.035, 0),
+                    end: Offset.zero,
+                  ).animate(animation),
+                  child: child,
+                ),
+              ),
+              child: visibleItems.isEmpty
+                  ? Center(
+                      key: ValueKey('empty-${activeCategory.name}'),
+                      child: Text(
+                        'No ${activeCategory.title.toLowerCase()} yet',
+                        style: const TextStyle(
+                          color: DesignSystem.textSecondary,
+                          fontSize: 13,
+                        ),
+                      ),
+                    )
+                  : ListView.separated(
+                      key: ValueKey('items-${activeCategory.name}'),
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.fromLTRB(8, 2, 8, 8),
+                      itemCount: visibleItems.length,
+                      separatorBuilder: (_, _) => const SizedBox(width: 8),
+                      itemBuilder: (context, index) {
+                        final item = visibleItems[index];
+                        return LongPressDraggable<WardrobeItem>(
+                          delay: const Duration(milliseconds: 260),
+                          data: item,
+                          feedback: Material(
+                            color: Colors.transparent,
+                            child: SizedBox(
+                              width: 86,
+                              child: _SidebarTile(item: item),
+                            ),
+                          ),
+                          child: SizedBox(
+                            width: 86,
+                            child: _SidebarTile(
+                              item: item,
+                              onTap: () => onAdd(item),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CategoryTab extends StatelessWidget {
+  const _CategoryTab({
+    required this.category,
+    required this.count,
+    required this.active,
+    required this.onTap,
+  });
+
+  final _CanvasCategory category;
+  final int count;
+  final bool active;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    selected: active,
+    label: '${category.title}, $count items',
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: AnimatedContainer(
+        duration: DesignSystem.transitionQuick,
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        decoration: BoxDecoration(
+          color: active ? Colors.white : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          border: Border(
+            bottom: BorderSide(
+              color: active ? category.color : Colors.transparent,
+              width: 3,
+            ),
           ),
         ),
-        Expanded(
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            itemCount: items.length,
-            separatorBuilder: (_, _) => const SizedBox(width: 8),
-            itemBuilder: (context, index) {
-              final item = items[index];
-              return LongPressDraggable<WardrobeItem>(
-                delay: const Duration(milliseconds: 260),
-                data: item,
-                feedback: Material(
-                  color: Colors.transparent,
-                  child: SizedBox(width: 86, child: _SidebarTile(item: item)),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(category.emoji, style: const TextStyle(fontSize: 15)),
+            const SizedBox(width: 4),
+            Text(
+              category.title,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: active ? FontWeight.w800 : FontWeight.w600,
+                color: active
+                    ? DesignSystem.textPrimary
+                    : DesignSystem.textSecondary,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Container(
+              constraints: const BoxConstraints(minWidth: 18),
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+              decoration: BoxDecoration(
+                color: active
+                    ? category.color.withValues(alpha: .13)
+                    : DesignSystem.border.withValues(alpha: .65),
+                borderRadius: BorderRadius.circular(99),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                '$count',
+                style: TextStyle(
+                  color: active ? category.color : DesignSystem.textSecondary,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
                 ),
-                child: SizedBox(
-                  width: 86,
-                  child: _SidebarTile(item: item, onTap: () => onAdd(item)),
-                ),
-              );
-            },
-          ),
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     ),
   );
 }
@@ -556,35 +817,66 @@ class _SidebarTile extends StatelessWidget {
   final VoidCallback? onTap;
 
   @override
-  Widget build(BuildContext context) => InkWell(
-    onTap: onTap,
-    borderRadius: BorderRadius.circular(10),
-    child: Padding(
-      padding: const EdgeInsets.all(4),
-      child: Column(
-        children: [
-          AspectRatio(
-            aspectRatio: 1,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(10),
+  Widget build(BuildContext context) {
+    final category = _canvasCategoryFor(item);
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Padding(
+        padding: const EdgeInsets.all(4),
+        child: Column(
+          children: [
+            Expanded(
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: category.color.withValues(alpha: .13),
+                        ),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: item.gridImageUrl == null
+                            ? const Icon(Icons.checkroom_outlined)
+                            : Image.network(
+                                item.gridImageUrl!,
+                                fit: BoxFit.contain,
+                                errorBuilder: (_, _, _) =>
+                                    const Icon(Icons.broken_image_outlined),
+                              ),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    top: 6,
+                    right: 6,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: category.color,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 1.5),
+                      ),
+                      child: const SizedBox(width: 8, height: 8),
+                    ),
+                  ),
+                ],
               ),
-              child: item.gridImageUrl == null
-                  ? const Icon(Icons.checkroom_outlined)
-                  : Image.network(item.gridImageUrl!, fit: BoxFit.contain),
             ),
-          ),
-          const SizedBox(height: 3),
-          Text(
-            item.name,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 10),
-          ),
-        ],
+            const SizedBox(height: 3),
+            Text(
+              item.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 10),
+            ),
+          ],
+        ),
       ),
-    ),
-  );
+    );
+  }
 }
