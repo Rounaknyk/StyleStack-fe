@@ -76,7 +76,7 @@ class AuthProvider extends ChangeNotifier {
       );
       return true;
     } on FirebaseAuthException catch (error) {
-      _error = _messageFor(error.code);
+      _error = _messageForException(error);
       return false;
     } catch (_) {
       _error = 'Something went wrong. Please try again.';
@@ -111,7 +111,7 @@ class AuthProvider extends ChangeNotifier {
       // Closing Google's account picker is an intentional action, not an error.
       return false;
     } on FirebaseAuthException catch (error) {
-      _error = _messageFor(error.code);
+      _error = _messageForException(error);
       return false;
     } catch (_) {
       _error = 'Could not sign in with Google. Please try again.';
@@ -175,7 +175,7 @@ class AuthProvider extends ChangeNotifier {
               ? PhoneAuthStep.enteringPhone
               : PhoneAuthStep.awaitingCode;
           _loading = false;
-          _error = _messageFor(error.code);
+          _error = _messageForException(error);
           _notify();
           complete(false);
         },
@@ -202,7 +202,7 @@ class AuthProvider extends ChangeNotifier {
       if (isCurrentAttempt()) {
         _phoneStep = PhoneAuthStep.enteringPhone;
         _loading = false;
-        _error = _messageFor(error.code);
+        _error = _messageForException(error);
         _notify();
       }
       complete(false);
@@ -243,7 +243,7 @@ class AuthProvider extends ChangeNotifier {
       return true;
     } on FirebaseAuthException catch (error) {
       _phoneStep = PhoneAuthStep.awaitingCode;
-      _error = _messageFor(error.code);
+      _error = _messageForException(error);
       return false;
     } catch (_) {
       _phoneStep = PhoneAuthStep.awaitingCode;
@@ -309,6 +309,15 @@ class AuthProvider extends ChangeNotifier {
     if (digits.length == 10) return '+91$digits';
     if (digits.length == 12 && digits.startsWith('91')) return '+$digits';
     throw const FormatException('Invalid Indian phone number');
+  }
+
+  String _messageForException(FirebaseAuthException error) {
+    final providerMessage = (error.message ?? '').toLowerCase();
+    if (providerMessage.contains('billing_not_enabled') ||
+        providerMessage.contains('billing not enabled')) {
+      return 'Phone sign-in is temporarily unavailable. Please use Google or email while SMS verification is being enabled.';
+    }
+    return _messageFor(error.code);
   }
 
   String _messageFor(String code) => switch (code) {
