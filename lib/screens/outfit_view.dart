@@ -15,6 +15,7 @@ import '../providers/mvp_provider.dart';
 import '../providers/wardrobe_provider.dart';
 import '../services/analytics_service.dart';
 import '../services/rewarded_ad_service.dart';
+import '../services/image_cache_service.dart';
 import 'saved_styles_screen.dart';
 import 'stylist_chat_screen.dart';
 import 'app_help_screen.dart';
@@ -790,6 +791,12 @@ class _AlternateOutfitSheetState extends State<_AlternateOutfitSheet> {
                                     : CachedNetworkImage(
                                         imageUrl: item.gridImageUrl!,
                                         cacheKey: item.gridImageCacheKey,
+                                        cacheManager:
+                                            StyleStackImageCache.instance,
+                                        maxWidthDiskCache: 180,
+                                        maxHeightDiskCache: 180,
+                                        memCacheWidth: 180,
+                                        memCacheHeight: 180,
                                         fit: BoxFit.contain,
                                       ),
                               ),
@@ -1620,6 +1627,11 @@ class _OutfitPiece extends StatelessWidget {
                 : CachedNetworkImage(
                     imageUrl: imageUrl,
                     cacheKey: 'today-outfit-${item.id}-${item.aiTagStatus}',
+                    cacheManager: StyleStackImageCache.instance,
+                    maxWidthDiskCache: 900,
+                    maxHeightDiskCache: 900,
+                    memCacheWidth: 900,
+                    memCacheHeight: 900,
                     fit: BoxFit.contain,
                     placeholder: (_, _) => const SizedBox.shrink(),
                     errorWidget: (_, _, _) =>
@@ -1824,6 +1836,11 @@ class _VibeMoodboardScreen extends StatelessWidget {
                 child: CachedNetworkImage(
                   imageUrl: url,
                   cacheKey: 'style-vibe-${image['id'] ?? url}',
+                  cacheManager: StyleStackImageCache.instance,
+                  maxWidthDiskCache: 720,
+                  maxHeightDiskCache: 1080,
+                  memCacheWidth: 360,
+                  memCacheHeight: 540,
                   fit: BoxFit.cover,
                   placeholder: (_, _) => const ColoredBox(
                     color: DesignSystem.surfaceAlt,

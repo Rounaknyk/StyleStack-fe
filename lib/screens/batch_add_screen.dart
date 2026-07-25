@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../config/design_system.dart';
 import '../providers/wardrobe_provider.dart';
+import '../services/temporary_image_cleanup.dart';
 import 'photo_editor_screen.dart';
 
 const int maxBatchImages = 10;
@@ -24,6 +25,7 @@ class _BatchAddScreenState extends State<BatchAddScreen> {
   final _pageController = PageController();
   int _page = 0;
   bool _submitting = false;
+  bool _uploadsHandedOff = false;
 
   bool get _uploading => _submitting;
 
@@ -39,6 +41,11 @@ class _BatchAddScreenState extends State<BatchAddScreen> {
   @override
   void dispose() {
     _pageController.dispose();
+    if (!_uploadsHandedOff) {
+      for (final draft in _drafts) {
+        unawaited(TemporaryImageCleanup.deleteIfManaged(draft.image));
+      }
+    }
     super.dispose();
   }
 
@@ -58,6 +65,10 @@ class _BatchAddScreenState extends State<BatchAddScreen> {
     final wardrobe = context.read<WardrobeProvider>();
     final selected = _drafts.where((draft) => draft.selected).toList();
     setState(() => _submitting = true);
+    _uploadsHandedOff = true;
+    for (final draft in _drafts.where((draft) => !draft.selected)) {
+      unawaited(TemporaryImageCleanup.deleteIfManaged(draft.image));
+    }
     for (var index = 0; index < _drafts.length; index++) {
       final draft = _drafts[index];
       if (!draft.selected) continue;

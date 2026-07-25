@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -5,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../config/design_system.dart';
 import '../providers/wardrobe_provider.dart';
+import '../services/temporary_image_cleanup.dart';
 import 'photo_editor_screen.dart';
 
 class CameraPreviewScreen extends StatefulWidget {
@@ -24,11 +26,20 @@ class CameraPreviewScreen extends StatefulWidget {
 
 class _CameraPreviewScreenState extends State<CameraPreviewScreen> {
   late File _image;
+  bool _uploadHandedOff = false;
 
   @override
   void initState() {
     super.initState();
     _image = widget.image;
+  }
+
+  @override
+  void dispose() {
+    if (!_uploadHandedOff) {
+      unawaited(TemporaryImageCleanup.deleteIfManaged(_image));
+    }
+    super.dispose();
   }
 
   Future<void> _editPhoto() async {
@@ -40,6 +51,7 @@ class _CameraPreviewScreenState extends State<CameraPreviewScreen> {
   }
 
   Future<void> _save() async {
+    _uploadHandedOff = true;
     await context.read<WardrobeProvider>().uploadOptimistically(
       image: _image,
       name: 'New wardrobe item',

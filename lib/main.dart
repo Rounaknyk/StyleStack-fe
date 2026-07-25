@@ -25,12 +25,14 @@ import 'services/analytics_service.dart';
 import 'services/app_update_service.dart';
 import 'services/auth_service.dart';
 import 'services/gmail_import_service.dart';
+import 'services/image_cache_service.dart';
 import 'services/onboarding_service.dart';
 import 'services/notification_service.dart';
 import 'services/rewarded_ad_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  StyleStackImageCache.configureMemoryCache();
   await Firebase.initializeApp();
 
   // Initialize settings provider
@@ -39,6 +41,9 @@ Future<void> main() async {
   RuntimeConfig.setSettingsProvider(settingsProvider);
 
   runApp(StyleStackApp(settingsProvider: settingsProvider));
+
+  // Cache maintenance is deliberately non-blocking for first paint.
+  unawaited(StyleStackImageCache.migrateLegacyCacheOnce());
 
   // These platform calls are useful but should never hold the first Flutter
   // frame hostage, especially while debugging over a wireless iOS connection.

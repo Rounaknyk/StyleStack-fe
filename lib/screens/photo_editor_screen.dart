@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
 
 import '../config/design_system.dart';
+import '../services/temporary_image_cleanup.dart';
 
 /// A lightweight, fully on-device editor used before wardrobe uploads.
 /// Cropping and rotation do not consume backend or AI capacity.
@@ -37,6 +38,7 @@ class _PhotoEditorScreenState extends State<PhotoEditorScreen> {
         ),
       );
       await output.writeAsBytes(data.buffer.asUint8List(), flush: true);
+      await TemporaryImageCleanup.deleteIfManaged(widget.image);
       if (mounted) Navigator.pop(context, output);
     } catch (_) {
       if (!mounted) return;

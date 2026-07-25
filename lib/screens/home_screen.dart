@@ -18,6 +18,7 @@ import '../providers/wardrobe_provider.dart';
 import '../services/permission_prompt_service.dart';
 import '../services/analytics_service.dart';
 import '../services/notification_service.dart';
+import '../services/image_cache_service.dart';
 import 'camera_preview_screen.dart';
 import 'batch_add_screen.dart';
 import 'canvas_style_builder_screen.dart';
@@ -1259,6 +1260,11 @@ class _ItemCard extends StatelessWidget {
                               imageUrl: item.gridImageUrl!,
                               key: ValueKey(item.gridImageCacheKey),
                               cacheKey: item.gridImageCacheKey,
+                              cacheManager: StyleStackImageCache.instance,
+                              maxWidthDiskCache: 720,
+                              maxHeightDiskCache: 720,
+                              memCacheWidth: 720,
+                              memCacheHeight: 720,
                               fit: BoxFit.contain,
                               placeholder: (context, url) => const Center(
                                 child: SizedBox.square(

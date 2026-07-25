@@ -11,6 +11,7 @@ import '../models/ai_analysis_job.dart';
 import '../services/api_service.dart';
 import '../services/wardrobe_cache.dart';
 import '../services/analytics_service.dart';
+import '../services/temporary_image_cleanup.dart';
 
 class WardrobeProvider extends ChangeNotifier {
   WardrobeProvider(this._api, {WardrobeCacheStore? cache, String? ownerUid})
@@ -289,6 +290,9 @@ class WardrobeProvider extends ChangeNotifier {
       }
       _loaded = true;
       _scheduleTagRefresh();
+      // Image picker/crop output lives in an app cache directory. Once the
+      // server owns the upload, retaining that full-size source wastes space.
+      unawaited(TemporaryImageCleanup.deleteIfManaged(image));
       await AnalyticsService.instance.event(
         'wardrobe_item_uploaded',
         parameters: {
