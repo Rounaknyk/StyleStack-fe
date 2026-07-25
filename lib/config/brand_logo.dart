@@ -8,11 +8,14 @@ class StyleStackLogo extends StatelessWidget {
   final double size;
 
   @override
-  Widget build(BuildContext context) => Image.asset(
-    'assets/images/stylestack_s_logo.png',
-    width: size,
-    height: size,
-    fit: BoxFit.contain,
-    filterQuality: FilterQuality.high,
+  Widget build(BuildContext context) => ClipRRect(
+    borderRadius: BorderRadius.circular(size * 0.24),
+    child: Image.asset(
+      'assets/images/stylestack_s_logo.png',
+      width: size,
+      height: size,
+      fit: BoxFit.cover,
+      filterQuality: FilterQuality.high,
+    ),
   );
 }
