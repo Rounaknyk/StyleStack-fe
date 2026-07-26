@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../config/design_system.dart';
 import '../providers/wardrobe_provider.dart';
 import '../services/temporary_image_cleanup.dart';
+import '../services/api_service.dart';
 import 'photo_editor_screen.dart';
 
 const int maxBatchImages = 10;
@@ -26,6 +27,7 @@ class _BatchAddScreenState extends State<BatchAddScreen> {
   int _page = 0;
   bool _submitting = false;
   bool _uploadsHandedOff = false;
+  Map<String, dynamic>? _quota;
 
   bool get _uploading => _submitting;
 
@@ -36,6 +38,7 @@ class _BatchAddScreenState extends State<BatchAddScreen> {
         .take(maxBatchImages)
         .map(_BatchItemDraft.new)
         .toList();
+    unawaited(_loadQuota());
   }
 
   @override
@@ -48,6 +51,24 @@ class _BatchAddScreenState extends State<BatchAddScreen> {
     }
     super.dispose();
   }
+
+  Future<void> _loadQuota() async {
+    try {
+      final quota = await ApiService().fetchWardrobeUploadQuota();
+      if (mounted) {
+        setState(() => _quota = quota);
+      }
+    } catch (_) {
+      // Uploads remain usable if the allowance endpoint is temporarily offline.
+    }
+  }
+
+  int get _remainingAllowance =>
+      (_quota?['remaining'] as num?)?.toInt() ?? maxBatchImages;
+
+  String get _allowanceMessage =>
+      _quota?['message'] as String? ??
+      'You can upload up to $maxBatchImages outfits today.';
 
   void _toggleSelected(int index, bool selected) {
     if (_uploading) return;
@@ -64,6 +85,14 @@ class _BatchAddScreenState extends State<BatchAddScreen> {
     if (_uploading) return;
     final wardrobe = context.read<WardrobeProvider>();
     final selected = _drafts.where((draft) => draft.selected).toList();
+    if (selected.length > _remainingAllowance) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('$_allowanceMessage Select fewer photos to continue.'),
+        ),
+      );
+      return;
+    }
     setState(() => _submitting = true);
     _uploadsHandedOff = true;
     for (final draft in _drafts.where((draft) => !draft.selected)) {
@@ -118,6 +147,17 @@ class _BatchAddScreenState extends State<BatchAddScreen> {
                         ),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 4),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      _allowanceMessage,
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: DesignSystem.textSecondary,
+                        height: 1.35,
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 12),
                   Row(

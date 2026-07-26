@@ -82,6 +82,14 @@ class ApiService {
         .toList();
   }
 
+  Future<Map<String, dynamic>> fetchWardrobeUploadQuota() async {
+    final response = await _client.get(
+      Uri.parse('${RuntimeConfig.apiBaseUrl}/wardrobe/upload-quota'),
+      headers: {'Authorization': 'Bearer ${await _token()}'},
+    );
+    return _decode(response) as Map<String, dynamic>;
+  }
+
   Future<WardrobeItem> uploadItem({
     required File image,
     required String name,
