@@ -358,7 +358,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 : DesignSystem.primary,
           ),
         ),
-        const SizedBox(height: 16),
+        // The Material slider's value indicator expands above its track while
+        // dragging. Give it a dedicated buffer so it never covers the selected
+        // height shown above.
+        const SizedBox(height: 56),
         Slider(
           key: const Key('onboarding_height'),
           min: 122,
