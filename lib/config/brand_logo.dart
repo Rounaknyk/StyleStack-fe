@@ -1,21 +1,18 @@
 import 'package:flutter/material.dart';
 
-/// The official StyleStack mark. Keep this widget as the single branding entry
-/// point so every screen uses the supplied asset consistently.
+/// The transparent StyleStack mark for normal in-app placements. The opaque
+/// splash asset is deliberately reserved for the full-green startup screen.
 class StyleStackLogo extends StatelessWidget {
   const StyleStackLogo({super.key, this.size = 48});
 
   final double size;
 
   @override
-  Widget build(BuildContext context) => ClipRRect(
-    borderRadius: BorderRadius.circular(size * 0.24),
-    child: Image.asset(
-      'assets/images/stylestack_s_logo.png',
-      width: size,
-      height: size,
-      fit: BoxFit.cover,
-      filterQuality: FilterQuality.high,
-    ),
+  Widget build(BuildContext context) => Image.asset(
+    'assets/images/stylestack_s_mark.png',
+    width: size,
+    height: size,
+    fit: BoxFit.contain,
+    filterQuality: FilterQuality.high,
   );
 }
