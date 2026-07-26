@@ -1624,18 +1624,19 @@ class _OutfitPiece extends StatelessWidget {
           Expanded(
             child: imageUrl == null
                 ? const Icon(Icons.checkroom_outlined, size: 34)
-                : CachedNetworkImage(
-                    imageUrl: imageUrl,
-                    cacheKey: 'today-outfit-${item.id}-${item.aiTagStatus}',
-                    cacheManager: StyleStackImageCache.instance,
-                    maxWidthDiskCache: 900,
-                    maxHeightDiskCache: 900,
-                    memCacheWidth: 900,
-                    memCacheHeight: 900,
+                : Image.network(
+                    imageUrl,
+                    cacheWidth: 900,
+                    filterQuality: FilterQuality.medium,
                     fit: BoxFit.contain,
-                    placeholder: (_, _) => const SizedBox.shrink(),
-                    errorWidget: (_, _, _) =>
-                        const Icon(Icons.checkroom_outlined),
+                    loadingBuilder: (_, child, progress) =>
+                        progress == null ? child : const SizedBox.shrink(),
+                    errorBuilder: (_, error, stackTrace) {
+                      debugPrint(
+                        'today_outfit_image_load_failed item=${item.id} error=$error',
+                      );
+                      return const Icon(Icons.checkroom_outlined);
+                    },
                   ),
           ),
           const SizedBox(height: 7),

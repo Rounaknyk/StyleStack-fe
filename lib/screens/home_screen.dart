@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:forui/forui.dart';
@@ -18,7 +17,6 @@ import '../providers/wardrobe_provider.dart';
 import '../services/permission_prompt_service.dart';
 import '../services/analytics_service.dart';
 import '../services/notification_service.dart';
-import '../services/image_cache_service.dart';
 import 'camera_preview_screen.dart';
 import 'batch_add_screen.dart';
 import 'canvas_style_builder_screen.dart';
@@ -1256,28 +1254,31 @@ class _ItemCard extends StatelessWidget {
                                 color: DesignSystem.textTertiary,
                               ),
                             )
-                          : CachedNetworkImage(
-                              imageUrl: item.gridImageUrl!,
+                          : Image.network(
+                              item.gridImageUrl!,
                               key: ValueKey(item.gridImageCacheKey),
-                              cacheKey: item.gridImageCacheKey,
-                              cacheManager: StyleStackImageCache.instance,
-                              maxWidthDiskCache: 720,
-                              maxHeightDiskCache: 720,
-                              memCacheWidth: 720,
-                              memCacheHeight: 720,
+                              cacheWidth: 720,
+                              filterQuality: FilterQuality.medium,
                               fit: BoxFit.contain,
-                              placeholder: (context, url) => const Center(
-                                child: SizedBox.square(
-                                  dimension: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 1.5,
-                                  ),
-                                ),
-                              ),
-                              errorWidget: (context, url, error) =>
-                                  const Center(
-                                    child: Icon(Icons.broken_image_outlined),
-                                  ),
+                              loadingBuilder: (context, child, progress) =>
+                                  progress == null
+                                  ? child
+                                  : const Center(
+                                      child: SizedBox.square(
+                                        dimension: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 1.5,
+                                        ),
+                                      ),
+                                    ),
+                              errorBuilder: (context, error, stackTrace) {
+                                debugPrint(
+                                  'wardrobe_image_load_failed item=${item.id} error=$error',
+                                );
+                                return const Center(
+                                  child: Icon(Icons.broken_image_outlined),
+                                );
+                              },
                             ),
                     ),
                   ),
