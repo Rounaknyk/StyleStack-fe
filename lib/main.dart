@@ -356,14 +356,14 @@ class _StartupView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: const Color(0xFF3E6644),
+    backgroundColor: const Color(0xFF446048),
     body: SafeArea(
       child: Center(
         child: Semantics(
           image: true,
           label: 'StyleStack',
           child: Image(
-            image: AssetImage('assets/images/logo.png'),
+            image: AssetImage('assets/images/stylestack_s_logo.png'),
             width: 220,
             height: 220,
             filterQuality: FilterQuality.high,
