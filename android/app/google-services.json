@@ -38,6 +38,14 @@
           }
         },
         {
+          "client_id": "87320160492-s1f8sd6vlh7nnidc6s56iqa69fternnl.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.stylestack.stylestack",
+            "certificate_hash": "f981756416586a6df1777a020efc7e757402acef"
+          }
+        },
+        {
           "client_id": "87320160492-oc6bkr97kcr3n700tvgjh21ol9hi9l98.apps.googleusercontent.com",
           "client_type": 3
         }
