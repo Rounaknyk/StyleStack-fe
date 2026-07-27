@@ -10,6 +10,7 @@ import '../models/wardrobe_item.dart';
 import '../models/canvas_style.dart';
 import '../providers/wardrobe_provider.dart';
 import '../services/api_service.dart';
+import '../widgets/schedule_canvas_dialog.dart';
 import 'saved_styles_screen.dart';
 import 'style_story_share_screen.dart';
 
@@ -402,6 +403,18 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
     });
   }
 
+  Future<void> _scheduleCanvas() async {
+    if (widget.initialStyle == null) {
+      _message('Please save your style first before scheduling.');
+      return;
+    }
+    await ScheduleCanvasDialog.show(
+      context,
+      styleId: widget.initialStyle!.id,
+      initialTitle: widget.initialStyle!.name,
+    );
+  }
+
   void _message(String value) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(value)));
@@ -417,6 +430,11 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
           widget.initialStyle == null ? 'Create Style' : 'Edit Style',
         ),
         actions: [
+          IconButton(
+            onPressed: _scheduleCanvas,
+            icon: const Icon(Icons.edit_calendar_outlined),
+            tooltip: 'Schedule to Calendar',
+          ),
           IconButton(
             onPressed: _shareCanvas,
             icon: const Icon(Icons.ios_share_outlined),

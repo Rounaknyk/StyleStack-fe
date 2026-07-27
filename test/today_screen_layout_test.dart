@@ -112,8 +112,10 @@ class _TodayApi extends ApiService {
   Future<Outfit> suggestOutfit({
     required String city,
     required String occasion,
+    bool refresh = false,
+    String? previousOutfitId,
     String? calendarEventId,
-  }) {
+  }) async {
     final outfit = Outfit(
       id: 'outfit-${_suggestionCalls + 1}',
       occasion: occasion,

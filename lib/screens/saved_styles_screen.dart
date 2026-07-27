@@ -4,6 +4,7 @@ import '../config/custom_widgets.dart';
 import '../config/design_system.dart';
 import '../models/canvas_style.dart';
 import '../services/api_service.dart';
+import '../widgets/schedule_canvas_dialog.dart';
 import 'canvas_style_builder_screen.dart';
 import 'style_story_share_screen.dart';
 
@@ -34,6 +35,14 @@ class _SavedStylesScreenState extends State<SavedStylesScreen> {
       ),
     );
     if (mounted) _reload();
+  }
+
+  Future<void> _scheduleCanvas(CanvasStyle style) async {
+    await ScheduleCanvasDialog.show(
+      context,
+      styleId: style.id,
+      initialTitle: style.name,
+    );
   }
 
   void _share(CanvasStyle style) {
@@ -205,6 +214,7 @@ class _SavedStylesScreenState extends State<SavedStylesScreen> {
                       key: ValueKey(style.id),
                       style: style,
                       onOpen: () => _openBuilder(style),
+                      onSchedule: () => _scheduleCanvas(style),
                       onShare: style.previewUrl == null
                           ? null
                           : () => _share(style),
@@ -307,19 +317,21 @@ class _EditorialLabel extends StatelessWidget {
   );
 }
 
-enum _StyleAction { edit, share, delete }
+enum _StyleAction { edit, schedule, share, delete }
 
 class _StylePortfolioCard extends StatelessWidget {
   const _StylePortfolioCard({
     super.key,
     required this.style,
     required this.onOpen,
+    required this.onSchedule,
     required this.onDelete,
     this.onShare,
   });
 
   final CanvasStyle style;
   final VoidCallback onOpen;
+  final VoidCallback onSchedule;
   final VoidCallback? onShare;
   final VoidCallback onDelete;
 
@@ -360,6 +372,8 @@ class _StylePortfolioCard extends StatelessWidget {
                           switch (action) {
                             case _StyleAction.edit:
                               onOpen();
+                            case _StyleAction.schedule:
+                              onSchedule();
                             case _StyleAction.share:
                               onShare?.call();
                             case _StyleAction.delete:
@@ -372,6 +386,13 @@ class _StylePortfolioCard extends StatelessWidget {
                             child: _MenuLabel(
                               icon: Icons.edit_outlined,
                               label: 'Edit style',
+                            ),
+                          ),
+                          const PopupMenuItem(
+                            value: _StyleAction.schedule,
+                            child: _MenuLabel(
+                              icon: Icons.edit_calendar_outlined,
+                              label: 'Schedule to Calendar',
                             ),
                           ),
                           PopupMenuItem(

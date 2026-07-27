@@ -153,6 +153,8 @@ class _StartupApi extends ApiService {
   Future<Outfit> suggestOutfit({
     required String city,
     required String occasion,
+    bool refresh = false,
+    String? previousOutfitId,
     String? calendarEventId,
   }) async => Outfit(
     id: 'outfit-1',

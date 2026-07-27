@@ -768,6 +768,40 @@ class ApiService {
     _decode(response);
   }
 
+  Future<StyleCalendarEvent> scheduleCanvasStyle({
+    required String styleId,
+    required String title,
+    String? description,
+    String? location,
+    required DateTime startAt,
+    DateTime? endAt,
+    bool allDay = false,
+  }) async {
+    final payload = <String, dynamic>{
+      'title': title,
+      'start_at': startAt.toUtc().toIso8601String(),
+      'all_day': allDay,
+    };
+    if (description != null && description.isNotEmpty) {
+      payload['description'] = description;
+    }
+    if (location != null && location.isNotEmpty) {
+      payload['location'] = location;
+    }
+    if (endAt != null) {
+      payload['end_at'] = endAt.toUtc().toIso8601String();
+    }
+    final response = await _client.post(
+      Uri.parse('${RuntimeConfig.apiBaseUrl}/canvas/styles/$styleId/schedule'),
+      headers: {
+        'Authorization': 'Bearer ${await _token()}',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode(payload),
+    );
+    return StyleCalendarEvent.fromJson(_decode(response) as Map<String, dynamic>);
+  }
+
   dynamic _decode(http.Response response) {
     dynamic body;
     try {
