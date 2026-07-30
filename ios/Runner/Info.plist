@@ -4,6 +4,10 @@
 <dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>StyleStack: Your Style AI uses your location while the app is open to determine your city for weather-aware outfit comfort. You can continue without location access.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>StyleStack: Your Style AI uses your location while the app is open to determine your city for weather-aware outfit comfort. You can continue without location access.</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
