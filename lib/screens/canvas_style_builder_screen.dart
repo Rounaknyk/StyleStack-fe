@@ -205,6 +205,7 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
   String? _selectedId;
   bool _saving = false;
   bool _exportingCanvas = false;
+  bool _initialStyleRestored = false;
   _PlacedCanvasItem? _gestureTarget;
   _CanvasCategory _activeCategory = _CanvasCategory.tops;
 
@@ -235,14 +236,13 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _restoreInitialStyle());
   }
 
-  void _restoreInitialStyle() {
+  void _restoreInitialStyle(List<WardrobeItem> items) {
     final style = widget.initialStyle;
-    if (!mounted || style == null || _placed.isNotEmpty) return;
+    if (!mounted || style == null || _initialStyleRestored) return;
     final byId = {
-      for (final item in context.read<WardrobeProvider>().items) item.id: item,
+      for (final item in items) item.id: item,
     };
     final restored = style.items
         .map((saved) {
@@ -254,6 +254,7 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
         })
         .whereType<_PlacedCanvasItem>()
         .toList();
+    _initialStyleRestored = true;
     if (restored.isNotEmpty) setState(() => _placed.addAll(restored));
   }
 
@@ -424,6 +425,13 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
   Widget build(BuildContext context) {
     final wardrobe = context.watch<WardrobeProvider>();
     final items = wardrobe.items;
+
+    if (!_initialStyleRestored && widget.initialStyle != null && wardrobe.loaded) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _restoreInitialStyle(items);
+      });
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text(

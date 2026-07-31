@@ -11,6 +11,7 @@ import '../services/analytics_service.dart';
 import '../services/calendar_sync_service.dart';
 import '../services/rewarded_ad_service.dart';
 import 'reminder_outfit_screen.dart';
+import 'canvas_style_builder_screen.dart';
 
 class StyleCalendarView extends StatefulWidget {
   const StyleCalendarView({super.key});
@@ -222,6 +223,47 @@ class _StyleCalendarViewState extends State<StyleCalendarView> {
     } finally {
       if (mounted) setState(() => _syncing = false);
     }
+  }
+
+  Future<void> _askAiToStyle(StyleCalendarEvent event) async {
+    final access = context.read<AccessProvider>();
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) await access.syncUser(user);
+
+    setState(() => _syncing = true);
+    try {
+      final city = await _api.fetchPreferences().then((p) => p.city?.trim() ?? '');
+      if (city.isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please set your location in your profile first.')),
+        );
+        return;
+      }
+      await _api.suggestOutfit(
+        city: city,
+        occasion: event.title,
+        calendarEventId: event.id,
+      );
+      await _load();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e is ApiException ? e.message : 'Could not create outfit.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _syncing = false);
+    }
+  }
+
+  void _createLook(StyleCalendarEvent event) {
+    Navigator.push<void>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const CanvasStyleBuilderScreen(),
+      ),
+    );
   }
 
   Future<void> _addEvent() async {
@@ -471,6 +513,8 @@ class _StyleCalendarViewState extends State<StyleCalendarView> {
             ..._selectedEvents.map(
               (event) => _EventCard(
                 event: event,
+                onAskAi: () => _askAiToStyle(event),
+                onCreateLook: () => _createLook(event),
                 onDelete: event.source == 'manual'
                     ? () async {
                         await _api.deleteCalendarEvent(event.id);
@@ -486,8 +530,15 @@ class _StyleCalendarViewState extends State<StyleCalendarView> {
 }
 
 class _EventCard extends StatelessWidget {
-  const _EventCard({required this.event, this.onDelete});
+  const _EventCard({
+    required this.event, 
+    required this.onAskAi, 
+    required this.onCreateLook, 
+    this.onDelete,
+  });
   final StyleCalendarEvent event;
+  final VoidCallback onAskAi;
+  final VoidCallback onCreateLook;
   final Future<void> Function()? onDelete;
 
   @override
@@ -531,7 +582,7 @@ class _EventCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     event.outfitId == null
-                        ? 'Outfit reminder scheduled for the day before'
+                        ? 'Select how you want to dress'
                         : 'Your event outfit is ready',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: event.outfitId == null
@@ -569,6 +620,24 @@ class _EventCard extends StatelessWidget {
                       ),
                       icon: const Icon(Icons.checkroom, size: 18),
                       label: const Text('See what to wear'),
+                    ),
+                  ] else ...[
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        FilledButton.tonalIcon(
+                          onPressed: onAskAi,
+                          icon: const Icon(Icons.auto_awesome, size: 16),
+                          label: const Text('Ask AI to style', style: TextStyle(fontSize: 13)),
+                        ),
+                        OutlinedButton.icon(
+                          onPressed: onCreateLook,
+                          icon: const Icon(Icons.palette_outlined, size: 16),
+                          label: const Text('Create a look', style: TextStyle(fontSize: 13)),
+                        ),
+                      ],
                     ),
                   ],
                 ],

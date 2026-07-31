@@ -223,7 +223,7 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
     final city = mvp.preferences?.city?.trim() ?? '';
     final event = mvp.priorityEvent;
     if (city.isNotEmpty && event != null) {
-      await mvp.generateEventOutfit(city, event, force: true);
+      await mvp.generateEventOutfit(city, event, force: false);
     }
   }
 
@@ -404,7 +404,7 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
       });
     }
 
-    if (mvp.loadingPreferences && !mvp.preferencesAttempted) {
+    if (mvp.loadingPreferences && mvp.preferences == null) {
       return const _TodaySkeleton();
     }
 
