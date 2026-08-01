@@ -24,6 +24,12 @@ class NotificationService {
     if (_interactionHandlingInitialized) return;
     _interactionHandlingInitialized = true;
 
+    await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+
     FirebaseMessaging.onMessageOpenedApp.listen(_handleInteraction);
     final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
     if (initialMessage != null) _handleInteraction(initialMessage);
