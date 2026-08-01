@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config/runtime_config.dart';
 import '../models/wardrobe_item.dart';
@@ -460,6 +461,16 @@ class ApiService {
     bool refresh = false,
     String? previousOutfitId,
   }) async {
+    if (!refresh && calendarEventId == null) {
+      final prefs = await SharedPreferences.getInstance();
+      final today = DateTime.now().toIso8601String().split('T').first;
+      final cachedJsonString = prefs.getString('cached_outfit_${occasion}_$today');
+      if (cachedJsonString != null) {
+        try {
+          return Outfit.fromJson(jsonDecode(cachedJsonString));
+        } catch (_) {}
+      }
+    }
     final payload = <String, dynamic>{
       'city': city,
       'occasion': occasion,
@@ -479,7 +490,13 @@ class ApiService {
       },
       body: jsonEncode(payload),
     );
-    return Outfit.fromJson(_decode(response) as Map<String, dynamic>);
+    final data = _decode(response) as Map<String, dynamic>;
+    if (!refresh && calendarEventId == null) {
+      final prefs = await SharedPreferences.getInstance();
+      final today = DateTime.now().toIso8601String().split('T').first;
+      await prefs.setString('cached_outfit_${occasion}_$today', jsonEncode(data));
+    }
+    return Outfit.fromJson(data);
   }
 
   Future<Outfit> askStylist({

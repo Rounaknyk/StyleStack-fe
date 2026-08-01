@@ -479,7 +479,7 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           const FBottomNavigationBarItem(
             icon: Icon(Icons.wb_sunny_outlined),
-            label: Text('Today'),
+            label: Text('Today (P)'),
           ),
           FBottomNavigationBarItem(
             icon: Stack(

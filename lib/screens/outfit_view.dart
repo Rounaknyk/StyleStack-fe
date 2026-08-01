@@ -561,10 +561,19 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
                 title: 'Your daily outfit',
                 subtitle:
                     'A complete look using ${mvp.outfit!.items.length} pieces you own.',
-                trailing: _RoundIconButton(
-                  tooltip: 'Create another look',
-                  icon: Icons.refresh_rounded,
-                  loading: mvp.loadingOutfit,
+                trailing: FilledButton.tonalIcon(
+                  style: FilledButton.styleFrom(
+                    visualDensity: VisualDensity.compact,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                  ),
+                  icon: mvp.loadingOutfit 
+                      ? const SizedBox(
+                          width: 14,
+                          height: 14,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.refresh_rounded, size: 16),
+                  label: const Text('New look', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
                   onPressed: mvp.loadingOutfit ? null : _newLook,
                 ),
               ),
