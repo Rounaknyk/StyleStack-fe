@@ -256,9 +256,7 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
   void _restoreInitialStyle(List<WardrobeItem> items) {
     final style = widget.initialStyle;
     if (!mounted || style == null || _initialStyleRestored) return;
-    final byId = {
-      for (final item in items) item.id: item,
-    };
+    final byId = {for (final item in items) item.id: item};
     final restored = style.items
         .map((saved) {
           final item = byId[saved.itemId];
@@ -441,7 +439,9 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
     final wardrobe = context.watch<WardrobeProvider>();
     final items = wardrobe.items;
 
-    if (!_initialStyleRestored && widget.initialStyle != null && wardrobe.loaded) {
+    if (!_initialStyleRestored &&
+        widget.initialStyle != null &&
+        wardrobe.loaded) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _restoreInitialStyle(items);
       });

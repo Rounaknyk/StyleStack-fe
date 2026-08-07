@@ -69,6 +69,7 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  flutter_native_splash: ^2.4.8
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -85,6 +86,9 @@ flutter:
     - assets/images/stylestack_s_logo.png
     - assets/images/stylestack_s_mark.png
     - assets/images/google_icon_logo.svg
+    - assets/images/stylist_bg.png
+    - assets/images/build_look_bg.png
+    - assets/images/saved_bg.png
     - assets/images/help/
     - assets/animations/
     - PRIVACY_POLICY.md

@@ -464,11 +464,27 @@ class ApiService {
     if (!refresh && calendarEventId == null) {
       final prefs = await SharedPreferences.getInstance();
       final today = DateTime.now().toIso8601String().split('T').first;
-      final cachedJsonString = prefs.getString('cached_outfit_${occasion}_$today');
-      if (cachedJsonString != null) {
+      var cachedOutfitId = prefs.getString('cached_outfit_id_${occasion}_$today');
+      if (cachedOutfitId == null) {
+        final legacyJson = prefs.getString('cached_outfit_${occasion}_$today');
+        if (legacyJson != null) {
+          try {
+            cachedOutfitId = jsonDecode(legacyJson)['id'] as String?;
+          } catch (_) {}
+        }
+      }
+      if (cachedOutfitId != null) {
         try {
-          return Outfit.fromJson(jsonDecode(cachedJsonString));
-        } catch (_) {}
+          final getResponse = await _client.get(
+            Uri.parse('${RuntimeConfig.apiBaseUrl}/outfits/$cachedOutfitId'),
+            headers: {'Authorization': 'Bearer ${await _token()}'},
+          );
+          if (getResponse.statusCode >= 200 && getResponse.statusCode < 300) {
+            return Outfit.fromJson(_decode(getResponse) as Map<String, dynamic>);
+          }
+        } catch (_) {
+          // Fall through to suggest new outfit if fetch fails
+        }
       }
     }
     final payload = <String, dynamic>{
@@ -494,7 +510,7 @@ class ApiService {
     if (!refresh && calendarEventId == null) {
       final prefs = await SharedPreferences.getInstance();
       final today = DateTime.now().toIso8601String().split('T').first;
-      await prefs.setString('cached_outfit_${occasion}_$today', jsonEncode(data));
+      await prefs.setString('cached_outfit_id_${occasion}_$today', data['id'] as String);
     }
     return Outfit.fromJson(data);
   }

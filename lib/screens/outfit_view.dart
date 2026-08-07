@@ -566,14 +566,17 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
                     visualDensity: VisualDensity.compact,
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                   ),
-                  icon: mvp.loadingOutfit 
+                  icon: mvp.loadingOutfit
                       ? const SizedBox(
                           width: 14,
                           height: 14,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.refresh_rounded, size: 16),
-                  label: const Text('New look', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                  label: const Text(
+                    'New look',
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+                  ),
                   onPressed: mvp.loadingOutfit ? null : _newLook,
                 ),
               ),
@@ -1202,6 +1205,7 @@ class _StylingTools extends StatelessWidget {
             icon: Icons.chat_bubble_outline_rounded,
             background: DesignSystem.primary,
             foreground: Colors.white,
+            backgroundImage: 'assets/images/build_look_bg.png',
             onTap: onAskStylist,
           ),
         ),
@@ -1213,6 +1217,7 @@ class _StylingTools extends StatelessWidget {
             icon: Icons.dashboard_customize_outlined,
             background: const Color(0xFFE7DDD2),
             foreground: DesignSystem.primaryDark,
+            backgroundImage: 'assets/images/stylist_bg.png',
             onTap: onCreateStyle,
           ),
         ),
@@ -1225,6 +1230,7 @@ class _StylingTools extends StatelessWidget {
             icon: Icons.bookmark_border_rounded,
             background: const Color(0xFFDCE9E7),
             foreground: DesignSystem.primaryDark,
+            backgroundImage: 'assets/images/saved_bg.png',
             compact: true,
             onTap: onSavedStyles,
           ),
@@ -1242,6 +1248,7 @@ class _ToolCard extends StatelessWidget {
     required this.background,
     required this.foreground,
     required this.onTap,
+    this.backgroundImage,
     this.compact = false,
   });
 
@@ -1251,6 +1258,7 @@ class _ToolCard extends StatelessWidget {
   final Color background;
   final Color foreground;
   final VoidCallback onTap;
+  final String? backgroundImage;
   final bool compact;
 
   @override
@@ -1260,44 +1268,75 @@ class _ToolCard extends StatelessWidget {
     clipBehavior: Clip.antiAlias,
     child: InkWell(
       onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.all(compact ? 12 : 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: foreground.withValues(alpha: .12),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: foreground, size: 20),
-            ),
-            const Spacer(),
-            Text(
-              title,
-              maxLines: 2,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: foreground,
-                height: 1.18,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            if (caption.isNotEmpty) ...[
-              const SizedBox(height: 4),
-              Text(
-                caption,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: foreground.withValues(alpha: .72),
-                  fontWeight: FontWeight.w600,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (backgroundImage != null)
+            Expanded(
+              flex: 55,
+              child: Image.asset(backgroundImage!, fit: BoxFit.cover),
+            )
+          else
+            Expanded(
+              flex: 55,
+              child: Padding(
+                padding: EdgeInsets.only(
+                  top: compact ? 12 : 16,
+                  left: compact ? 12 : 16,
+                ),
+                child: Align(
+                  alignment: Alignment.topLeft,
+                  child: Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: foreground.withValues(alpha: .12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(icon, color: foreground, size: 20),
+                  ),
                 ),
               ),
-            ],
-          ],
-        ),
+            ),
+          Expanded(
+            flex: 45,
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(
+                compact ? 12 : 16,
+                0,
+                compact ? 12 : 16,
+                compact ? 12 : 16,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 2,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: foreground,
+                      height: 1.18,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  if (caption.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      caption,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: foreground.withValues(alpha: .72),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     ),
   );
