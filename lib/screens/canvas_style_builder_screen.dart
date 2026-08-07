@@ -61,24 +61,7 @@ class _PlacedCanvasItem {
   };
 }
 
-class _CanvasGridPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = DesignSystem.border.withValues(alpha: .42)
-      ..strokeWidth = .7;
-    const step = 24.0;
-    for (double x = 0; x < size.width; x += step) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-    }
-    for (double y = 0; y < size.height; y += step) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
-  }
 
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
 
 enum _CanvasCategory { tops, bottoms, shoes, accessories, hats }
 
@@ -89,22 +72,6 @@ extension _CanvasCategoryPresentation on _CanvasCategory {
     _CanvasCategory.shoes => 'Shoes',
     _CanvasCategory.accessories => 'Accessories',
     _CanvasCategory.hats => 'Hats',
-  };
-
-  String get emoji => switch (this) {
-    _CanvasCategory.tops => '👕',
-    _CanvasCategory.bottoms => '👖',
-    _CanvasCategory.shoes => '👟',
-    _CanvasCategory.accessories => '💎',
-    _CanvasCategory.hats => '🧢',
-  };
-
-  Color get color => switch (this) {
-    _CanvasCategory.tops => const Color(0xFF4385F5),
-    _CanvasCategory.bottoms => const Color(0xFF3C9B6D),
-    _CanvasCategory.shoes => const Color(0xFFF28B36),
-    _CanvasCategory.accessories => const Color(0xFF8A61C8),
-    _CanvasCategory.hats => const Color(0xFFD65757),
   };
 }
 
@@ -523,25 +490,20 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
                               child: Transform.scale(
                                 alignment: Alignment.center,
                                 scale: _canvasZoom,
-                                child: CustomPaint(
-                                  painter: _exportingCanvas
-                                      ? null
-                                      : _CanvasGridPainter(),
-                                  child: Stack(
-                                    fit: StackFit.expand,
-                                    children: [
-                                      if (_placed.isEmpty)
-                                        const Center(
-                                          child: Text(
-                                            'Drag wardrobe pieces here',
-                                            style: TextStyle(
-                                              color: DesignSystem.textSecondary,
-                                            ),
+                                child: Stack(
+                                  fit: StackFit.expand,
+                                  children: [
+                                    if (_placed.isEmpty)
+                                      const Center(
+                                        child: Text(
+                                          'Drag wardrobe pieces here',
+                                          style: TextStyle(
+                                            color: DesignSystem.textSecondary,
                                           ),
                                         ),
-                                      ..._placed.map(_placedWidget),
-                                    ],
-                                  ),
+                                      ),
+                                    ..._placed.map(_placedWidget),
+                                  ],
                                 ),
                               ),
                             ),
@@ -565,8 +527,8 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
               ),
             ),
           ),
-          SizedBox(
-            height: 188,
+          Expanded(
+            flex: 4,
             child: _Sidebar(
               items: items,
               activeCategory: _activeCategory,
@@ -621,9 +583,9 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
                   DecoratedBox(
                     decoration: BoxDecoration(
                       border: selected
-                          ? Border.all(color: DesignSystem.primary, width: 2)
-                          : null,
-                      borderRadius: BorderRadius.circular(8),
+                          ? Border.all(color: DesignSystem.border, width: 1.5)
+                          : Border.all(color: Colors.transparent, width: 1.5),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                     child: placed.item.canvasImageUrl == null
                         ? const Icon(Icons.checkroom_outlined, size: 38)
@@ -647,7 +609,9 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
                       right: 0,
                       top: 0,
                       child: Material(
-                        color: DesignSystem.error,
+                        color: Colors.white,
+                        elevation: 2,
+                        shadowColor: Colors.black26,
                         shape: const CircleBorder(),
                         child: InkWell(
                           customBorder: const CircleBorder(),
@@ -656,11 +620,11 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
                             _selectedId = null;
                           }),
                           child: const Padding(
-                            padding: EdgeInsets.all(10),
+                            padding: EdgeInsets.all(8),
                             child: Icon(
-                              Icons.close,
-                              size: 14,
-                              color: Colors.white,
+                              Icons.close_rounded,
+                              size: 16,
+                              color: DesignSystem.textPrimary,
                             ),
                           ),
                         ),
@@ -675,16 +639,22 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
                             setState(() => placed.resizeFromHandle(details)),
                         child: DecoratedBox(
                           decoration: BoxDecoration(
-                            color: DesignSystem.primary,
+                            color: Colors.white,
                             shape: BoxShape.circle,
-                            boxShadow: DesignSystem.shadowSoft,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black26,
+                                blurRadius: 4,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
                           ),
                           child: const Padding(
-                            padding: EdgeInsets.all(10),
+                            padding: EdgeInsets.all(8),
                             child: Icon(
-                              Icons.open_in_full,
-                              size: 14,
-                              color: Colors.white,
+                              Icons.open_in_full_rounded,
+                              size: 16,
+                              color: DesignSystem.textPrimary,
                             ),
                           ),
                         ),
@@ -776,19 +746,19 @@ class _Sidebar extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
             child: Row(
               children: [
                 const Text(
                   'Add items',
-                  style: TextStyle(fontWeight: FontWeight.w800),
+                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
                 ),
                 const Spacer(),
                 Text(
                   '${visibleItems.length} available',
                   style: const TextStyle(
                     color: DesignSystem.textSecondary,
-                    fontSize: 12,
+                    fontSize: 13,
                   ),
                 ),
               ],
@@ -839,30 +809,32 @@ class _Sidebar extends StatelessWidget {
                         ),
                       ),
                     )
-                  : ListView.separated(
+                  : GridView.builder(
                       key: ValueKey('items-${activeCategory.name}'),
-                      scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.fromLTRB(8, 2, 8, 8),
+                      padding: const EdgeInsets.fromLTRB(12, 12, 12, 24),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 3,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: 0.85,
+                      ),
                       itemCount: visibleItems.length,
-                      separatorBuilder: (_, _) => const SizedBox(width: 8),
                       itemBuilder: (context, index) {
                         final item = visibleItems[index];
                         return LongPressDraggable<WardrobeItem>(
-                          delay: const Duration(milliseconds: 260),
+                          delay: const Duration(milliseconds: 200),
                           data: item,
                           feedback: Material(
                             color: Colors.transparent,
                             child: SizedBox(
-                              width: 86,
+                              width: 100,
+                              height: 100,
                               child: _SidebarTile(item: item),
                             ),
                           ),
-                          child: SizedBox(
-                            width: 86,
-                            child: _SidebarTile(
-                              item: item,
-                              onTap: () => onAdd(item),
-                            ),
+                          child: _SidebarTile(
+                            item: item,
+                            onTap: () => onAdd(item),
                           ),
                         );
                       },
@@ -898,53 +870,25 @@ class _CategoryTab extends StatelessWidget {
       borderRadius: BorderRadius.circular(12),
       child: AnimatedContainer(
         duration: DesignSystem.transitionQuick,
-        padding: const EdgeInsets.symmetric(horizontal: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
-          color: active ? Colors.white : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
           border: Border(
             bottom: BorderSide(
-              color: active ? category.color : Colors.transparent,
+              color: active ? DesignSystem.textPrimary : Colors.transparent,
               width: 3,
             ),
           ),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(category.emoji, style: const TextStyle(fontSize: 15)),
-            const SizedBox(width: 4),
-            Text(
-              category.title,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: active ? FontWeight.w800 : FontWeight.w600,
-                color: active
-                    ? DesignSystem.textPrimary
-                    : DesignSystem.textSecondary,
-              ),
-            ),
-            const SizedBox(width: 4),
-            Container(
-              constraints: const BoxConstraints(minWidth: 18),
-              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-              decoration: BoxDecoration(
-                color: active
-                    ? category.color.withValues(alpha: .13)
-                    : DesignSystem.border.withValues(alpha: .65),
-                borderRadius: BorderRadius.circular(99),
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                '$count',
-                style: TextStyle(
-                  color: active ? category.color : DesignSystem.textSecondary,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ),
-          ],
+        alignment: Alignment.center,
+        child: Text(
+          category.title,
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: active ? FontWeight.w800 : FontWeight.w600,
+            color: active
+                ? DesignSystem.textPrimary
+                : DesignSystem.textSecondary,
+          ),
         ),
       ),
     ),
@@ -958,70 +902,63 @@ class _SidebarTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final category = _canvasCategoryFor(item);
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
-      child: Padding(
-        padding: const EdgeInsets.all(4),
-        child: Column(
-          children: [
-            Expanded(
-              child: Stack(
-                children: [
-                  Positioned.fill(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
-                          color: category.color.withValues(alpha: .13),
-                        ),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(10),
-                        child: item.gridImageUrl == null
-                            ? const Icon(Icons.checkroom_outlined)
-                            : CachedNetworkImage(
-                                imageUrl: item.gridImageUrl!,
-                                cacheKey: item.gridImageCacheKey,
-                                cacheManager: StyleStackImageCache.instance,
-                                maxWidthDiskCache: 240,
-                                maxHeightDiskCache: 240,
-                                memCacheWidth: 120,
-                                memCacheHeight: 120,
-                                fadeInDuration: Duration.zero,
-                                fit: BoxFit.contain,
-                                errorWidget: (_, _, _) =>
-                                    const Icon(Icons.broken_image_outlined),
-                              ),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    top: 6,
-                    right: 6,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: category.color,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 1.5),
-                      ),
-                      child: const SizedBox(width: 8, height: 8),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 3),
-            Text(
-              item.name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 10),
+      borderRadius: BorderRadius.circular(12),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: DesignSystem.border.withValues(alpha: .5),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
             ),
           ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: item.gridImageUrl == null
+                      ? const Icon(Icons.checkroom_outlined, color: DesignSystem.textSecondary)
+                      : CachedNetworkImage(
+                          imageUrl: item.gridImageUrl!,
+                          cacheKey: item.gridImageCacheKey,
+                          cacheManager: StyleStackImageCache.instance,
+                          maxWidthDiskCache: 240,
+                          maxHeightDiskCache: 240,
+                          memCacheWidth: 120,
+                          memCacheHeight: 120,
+                          fadeInDuration: Duration.zero,
+                          fit: BoxFit.contain,
+                          errorWidget: (_, _, _) =>
+                              const Icon(Icons.broken_image_outlined),
+                        ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                item.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: DesignSystem.textSecondary,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
