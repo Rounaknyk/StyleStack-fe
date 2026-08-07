@@ -210,30 +210,43 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
   bool _initialStyleRestored = false;
   _PlacedCanvasItem? _gestureTarget;
   _CanvasCategory _activeCategory = _CanvasCategory.tops;
+  double _canvasZoom = 1;
+  Offset _canvasPan = Offset.zero;
+  double _gestureStartZoom = 1;
+  Offset _gestureStartPan = Offset.zero;
+  Offset _gestureStartFocalPoint = Offset.zero;
 
-  _PlacedCanvasItem? get _selectedPlaced {
-    final id = _selectedId;
-    if (id == null) return null;
-    for (final item in _placed) {
-      if (item.item.id == id) return item;
-    }
-    return null;
+  void _clearCanvasSelection() {
+    if (_selectedId != null) setState(() => _selectedId = null);
   }
 
-  void _beginCanvasGesture() {
-    final selected = _selectedPlaced;
-    if (selected == null) return;
-    _gestureTarget = selected;
-    selected.beginGesture();
+  void _beginWorkspaceGesture(ScaleStartDetails details) {
+    _gestureStartZoom = _canvasZoom;
+    _gestureStartPan = _canvasPan;
+    _gestureStartFocalPoint = details.focalPoint;
   }
 
-  void _updateCanvasGesture(ScaleUpdateDetails details) {
-    final target = _gestureTarget ?? _selectedPlaced;
-    if (target == null) return;
-    setState(() => target.updateGesture(details));
+  void _updateWorkspaceGesture(ScaleUpdateDetails details) {
+    final zoom = (_gestureStartZoom * details.scale).clamp(0.7, 2.2);
+    final movement = details.focalPoint - _gestureStartFocalPoint;
+    setState(() {
+      _canvasZoom = zoom;
+      _canvasPan = _gestureStartPan + movement;
+    });
   }
 
-  void _endCanvasGesture() => _gestureTarget = null;
+  void _zoomCanvas(double multiplier) {
+    setState(() {
+      _canvasZoom = (_canvasZoom * multiplier).clamp(0.7, 2.2);
+    });
+  }
+
+  void _resetCanvasView() {
+    setState(() {
+      _canvasZoom = 1;
+      _canvasPan = Offset.zero;
+    });
+  }
 
   @override
   void initState() {
@@ -497,31 +510,54 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
                       borderRadius: BorderRadius.circular(
                         DesignSystem.radiusLg,
                       ),
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onScaleStart: (_) => _beginCanvasGesture(),
-                        onScaleUpdate: _updateCanvasGesture,
-                        onScaleEnd: (_) => _endCanvasGesture(),
-                        child: CustomPaint(
-                          painter: _exportingCanvas
-                              ? null
-                              : _CanvasGridPainter(),
-                          child: Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              if (_placed.isEmpty)
-                                const Center(
-                                  child: Text(
-                                    'Drag wardrobe pieces here',
-                                    style: TextStyle(
-                                      color: DesignSystem.textSecondary,
-                                    ),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: _clearCanvasSelection,
+                            onScaleStart: _beginWorkspaceGesture,
+                            onScaleUpdate: _updateWorkspaceGesture,
+                            child: Transform.translate(
+                              offset: _canvasPan,
+                              child: Transform.scale(
+                                alignment: Alignment.center,
+                                scale: _canvasZoom,
+                                child: CustomPaint(
+                                  painter: _exportingCanvas
+                                      ? null
+                                      : _CanvasGridPainter(),
+                                  child: Stack(
+                                    fit: StackFit.expand,
+                                    children: [
+                                      if (_placed.isEmpty)
+                                        const Center(
+                                          child: Text(
+                                            'Drag wardrobe pieces here',
+                                            style: TextStyle(
+                                              color: DesignSystem.textSecondary,
+                                            ),
+                                          ),
+                                        ),
+                                      ..._placed.map(_placedWidget),
+                                    ],
                                   ),
                                 ),
-                              ..._placed.map(_placedWidget),
-                            ],
+                              ),
+                            ),
                           ),
-                        ),
+                          if (!_exportingCanvas)
+                            Positioned(
+                              right: 12,
+                              bottom: 12,
+                              child: _CanvasZoomControls(
+                                zoom: _canvasZoom,
+                                onZoomOut: () => _zoomCanvas(0.85),
+                                onReset: _resetCanvasView,
+                                onZoomIn: () => _zoomCanvas(1.18),
+                              ),
+                            ),
+                        ],
                       ),
                     ),
                   ),
@@ -659,6 +695,48 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _CanvasZoomControls extends StatelessWidget {
+  const _CanvasZoomControls({
+    required this.zoom,
+    required this.onZoomOut,
+    required this.onReset,
+    required this.onZoomIn,
+  });
+
+  final double zoom;
+  final VoidCallback onZoomOut;
+  final VoidCallback onReset;
+  final VoidCallback onZoomIn;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white.withValues(alpha: 0.94),
+      elevation: 4,
+      shape: const StadiumBorder(),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            onPressed: onZoomOut,
+            tooltip: 'Zoom out',
+            icon: const Icon(Icons.remove),
+          ),
+          TextButton(
+            onPressed: onReset,
+            child: Text('${(zoom * 100).round()}%'),
+          ),
+          IconButton(
+            onPressed: onZoomIn,
+            tooltip: 'Zoom in',
+            icon: const Icon(Icons.add),
+          ),
+        ],
       ),
     );
   }
