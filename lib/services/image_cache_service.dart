@@ -9,12 +9,16 @@ import '../models/wardrobe_item.dart';
 /// Remote photos are server-owned. The app retains only resized copies for a
 /// short time, so browsing feels instant without silently consuming hundreds
 /// of megabytes on a user's device.
+class _StyleStackCacheManager extends CacheManager with ImageCacheManager {
+  _StyleStackCacheManager(super.config);
+}
+
 class StyleStackImageCache {
   StyleStackImageCache._();
 
   static const _migrationKey = 'image_cache_policy_v1_applied';
 
-  static final CacheManager instance = CacheManager(
+  static final CacheManager instance = _StyleStackCacheManager(
     Config(
       'stylestack-image-cache-v1',
       stalePeriod: const Duration(days: 7),
