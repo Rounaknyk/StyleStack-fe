@@ -52,6 +52,12 @@ class _PlacedCanvasItem {
     scale = (scale + delta).clamp(.35, 3.5).toDouble();
   }
 
+  void rotateFromHandle(DragUpdateDetails details) {
+    // Simple drag mapping: moving right or down rotates clockwise
+    final delta = (details.delta.dx + details.delta.dy) / 100;
+    rotation += delta;
+  }
+
   Map<String, dynamic> toJson() => {
     'item_id': item.id,
     'x': x,
@@ -614,6 +620,36 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
                             padding: EdgeInsets.all(8),
                             child: Icon(
                               Icons.open_in_full_rounded,
+                              size: 16,
+                              color: DesignSystem.textPrimary,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  if (selected)
+                    Positioned(
+                      left: 0,
+                      bottom: 0,
+                      child: GestureDetector(
+                        onPanUpdate: (details) =>
+                            setState(() => placed.rotateFromHandle(details)),
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black26,
+                                blurRadius: 4,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: const Padding(
+                            padding: EdgeInsets.all(8),
+                            child: Icon(
+                              Icons.rotate_right_rounded,
                               size: 16,
                               color: DesignSystem.textPrimary,
                             ),
