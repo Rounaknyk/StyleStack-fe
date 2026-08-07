@@ -458,6 +458,7 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
       body: Column(
         children: [
           Expanded(
+            flex: 5,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
               child: DragTarget<WardrobeItem>(
