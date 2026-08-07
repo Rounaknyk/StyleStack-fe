@@ -1633,14 +1633,19 @@ class _OutfitPiece extends StatelessWidget {
           Expanded(
             child: imageUrl == null
                 ? const Icon(Icons.checkroom_outlined, size: 34)
-                : Image.network(
-                    imageUrl,
-                    cacheWidth: 900,
+                : CachedNetworkImage(
+                    imageUrl: imageUrl,
+                    cacheKey: 'canvas-${item.id}-${item.aiTagStatus}',
+                    cacheManager: StyleStackImageCache.instance,
+                    maxWidthDiskCache: 900,
+                    maxHeightDiskCache: 900,
+                    memCacheWidth: 450,
+                    memCacheHeight: 450,
+                    fadeInDuration: Duration.zero,
                     filterQuality: FilterQuality.medium,
                     fit: BoxFit.contain,
-                    loadingBuilder: (_, child, progress) =>
-                        progress == null ? child : const SizedBox.shrink(),
-                    errorBuilder: (_, error, stackTrace) {
+                    placeholder: (_, _) => const SizedBox.shrink(),
+                    errorWidget: (_, _, error) {
                       debugPrint(
                         'today_outfit_image_load_failed item=${item.id} error=$error',
                       );

@@ -12,6 +12,7 @@ import '../services/api_service.dart';
 import '../services/wardrobe_cache.dart';
 import '../services/analytics_service.dart';
 import '../services/temporary_image_cleanup.dart';
+import '../services/image_cache_service.dart';
 
 class WardrobeProvider extends ChangeNotifier {
   WardrobeProvider(this._api, {WardrobeCacheStore? cache, String? ownerUid})
@@ -102,6 +103,9 @@ class WardrobeProvider extends ChangeNotifier {
           // The fresh API result remains usable if local persistence fails.
         }
       }
+      // Warm compact grid thumbnails only after the authoritative response is
+      // shown. This makes subsequent wardrobe/home visits feel instant.
+      unawaited(StyleStackImageCache.warmWardrobeGrid(_items));
       _scheduleTagRefresh();
     } on ApiException catch (error) {
       _error = error.message;

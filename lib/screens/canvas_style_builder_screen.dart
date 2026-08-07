@@ -4,12 +4,14 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:provider/provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 import '../config/design_system.dart';
 import '../models/wardrobe_item.dart';
 import '../models/canvas_style.dart';
 import '../providers/wardrobe_provider.dart';
 import '../services/api_service.dart';
+import '../services/image_cache_service.dart';
 import '../widgets/schedule_canvas_dialog.dart';
 import 'saved_styles_screen.dart';
 import 'style_story_share_screen.dart';
@@ -589,10 +591,18 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
                     ),
                     child: placed.item.canvasImageUrl == null
                         ? const Icon(Icons.checkroom_outlined, size: 38)
-                        : Image.network(
-                            placed.item.canvasImageUrl!,
+                        : CachedNetworkImage(
+                            imageUrl: placed.item.canvasImageUrl!,
+                            cacheKey:
+                                'canvas-${placed.item.id}-${placed.item.aiTagStatus}',
+                            cacheManager: StyleStackImageCache.instance,
+                            maxWidthDiskCache: 720,
+                            maxHeightDiskCache: 720,
+                            memCacheWidth: 360,
+                            memCacheHeight: 360,
+                            fadeInDuration: Duration.zero,
                             fit: BoxFit.contain,
-                            errorBuilder: (_, _, _) =>
+                            errorWidget: (_, _, _) =>
                                 const Icon(Icons.broken_image_outlined),
                           ),
                   ),
@@ -894,10 +904,17 @@ class _SidebarTile extends StatelessWidget {
                         borderRadius: BorderRadius.circular(10),
                         child: item.gridImageUrl == null
                             ? const Icon(Icons.checkroom_outlined)
-                            : Image.network(
-                                item.gridImageUrl!,
+                            : CachedNetworkImage(
+                                imageUrl: item.gridImageUrl!,
+                                cacheKey: item.gridImageCacheKey,
+                                cacheManager: StyleStackImageCache.instance,
+                                maxWidthDiskCache: 240,
+                                maxHeightDiskCache: 240,
+                                memCacheWidth: 120,
+                                memCacheHeight: 120,
+                                fadeInDuration: Duration.zero,
                                 fit: BoxFit.contain,
-                                errorBuilder: (_, _, _) =>
+                                errorWidget: (_, _, _) =>
                                     const Icon(Icons.broken_image_outlined),
                               ),
                       ),
