@@ -53,9 +53,10 @@ class _PlacedCanvasItem {
   }
 
   void rotateFromHandle(DragUpdateDetails details) {
-    // Simple drag mapping: moving right or down rotates clockwise
+    // At the bottom-left corner, clockwise motion is up (-dy) and left (-dx).
+    // In Flutter, positive rotation is clockwise. So we subtract the delta.
     final delta = (details.delta.dx + details.delta.dy) / 100;
-    rotation += delta;
+    rotation -= delta;
   }
 
   Map<String, dynamic> toJson() => {
