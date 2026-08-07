@@ -596,9 +596,7 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
                                 'canvas-${placed.item.id}-${placed.item.aiTagStatus}',
                             cacheManager: StyleStackImageCache.instance,
                             maxWidthDiskCache: 720,
-                            maxHeightDiskCache: 720,
                             memCacheWidth: 360,
-                            memCacheHeight: 360,
                             fadeInDuration: Duration.zero,
                             fit: BoxFit.contain,
                             errorWidget: (_, _, _) =>
@@ -936,9 +934,7 @@ class _SidebarTile extends StatelessWidget {
                           cacheKey: item.gridImageCacheKey,
                           cacheManager: StyleStackImageCache.instance,
                           maxWidthDiskCache: 240,
-                          maxHeightDiskCache: 240,
                           memCacheWidth: 120,
-                          memCacheHeight: 120,
                           fadeInDuration: Duration.zero,
                           fit: BoxFit.contain,
                           errorWidget: (_, _, _) =>
