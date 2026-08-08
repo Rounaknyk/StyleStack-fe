@@ -18,7 +18,8 @@ class OnboardingService implements OnboardingRepository {
 
   final http.Client _client;
   final FirebaseAuth _firebaseAuth;
-  static const _requestTimeout = Duration(seconds: 15);
+  // Increased to 60 seconds to accommodate Render backend cold starts
+  static const _requestTimeout = Duration(seconds: 60);
 
   @override
   Future<OnboardingProfile> fetch() async {
