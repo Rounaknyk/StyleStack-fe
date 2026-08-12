@@ -1,14 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'location_service.dart';
 import 'notification_service.dart';
 
 class PermissionPromptService {
-  static const _cameraDisclosureKey = 'camera_permission_disclosure_seen';
-  static const _photosDisclosureKey = 'photos_permission_disclosure_seen';
-
   static Future<String?> requestNotificationToken(BuildContext context) async {
     if (await NotificationService.isAuthorized()) {
       return NotificationService.token();
@@ -99,28 +95,11 @@ class PermissionPromptService {
     return false;
   }
 
-  static Future<bool> explainCamera(BuildContext context) => _confirmOnce(
-    context,
-    preferenceKey: _cameraDisclosureKey,
-    icon: Icons.camera_alt_outlined,
-    title: 'Photograph a wardrobe item',
-    body:
-        'StyleStack uses the camera only when you choose Take a photo. The '
-        'photo is uploaded to your private wardrobe so it can be prepared and '
-        'tagged. StyleStack does not record video or use the camera in the '
-        'background.',
-  );
+  // App Store guideline 5.1.1(iv) requires that we do not show a custom message with a "Not now" 
+  // button before a system permission prompt if the user explicitly triggered the action.
+  static Future<bool> explainCamera(BuildContext context) async => true;
 
-  static Future<bool> explainPhotos(BuildContext context) => _confirmOnce(
-    context,
-    preferenceKey: _photosDisclosureKey,
-    icon: Icons.photo_library_outlined,
-    title: 'Choose wardrobe photos',
-    body:
-        'StyleStack only receives the photos you select. They are uploaded to '
-        'your private wardrobe for background preparation and AI tagging; the '
-        'rest of your photo library is not scanned.',
-  );
+  static Future<bool> explainPhotos(BuildContext context) async => true;
 
   static Future<void> showMediaSettingsRecovery(
     BuildContext context, {
@@ -133,27 +112,6 @@ class PermissionPromptService {
         'StyleStack settings to enable access, or choose another way to add '
         'your items.',
   );
-
-  static Future<bool> _confirmOnce(
-    BuildContext context, {
-    required String preferenceKey,
-    required IconData icon,
-    required String title,
-    required String body,
-  }) async {
-    final preferences = await SharedPreferences.getInstance();
-    if (preferences.getBool(preferenceKey) == true) return true;
-    if (!context.mounted) return false;
-    final accepted = await _showDisclosure(
-      context,
-      icon: icon,
-      title: title,
-      body: body,
-      actionLabel: 'Continue',
-    );
-    if (accepted) await preferences.setBool(preferenceKey, true);
-    return accepted;
-  }
 
   static Future<bool> _showDisclosure(
     BuildContext context, {

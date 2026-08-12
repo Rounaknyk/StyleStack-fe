@@ -138,9 +138,11 @@ class _FakeAuthGateway implements AuthGateway {
 
   @override
   Future<void> signInWithGoogle() async {
-    final error = googleError;
-    if (error != null) throw error;
+    if (googleError != null) throw googleError!;
   }
+
+  @override
+  Future<void> signInWithApple() async {}
 
   @override
   Future<void> startPhoneVerification({

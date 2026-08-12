@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 typedef AuthPhoneVerificationSucceeded = void Function();
 typedef AuthPhoneVerificationFailed =
@@ -20,6 +21,8 @@ abstract interface class AuthGateway {
   Future<void> createAccountWithEmail(String email, String password);
 
   Future<void> signInWithGoogle();
+
+  Future<void> signInWithApple();
 
   Future<void> startPhoneVerification({
     required String phoneNumber,
@@ -88,6 +91,23 @@ class AuthService implements AuthGateway {
       idToken: tokens.idToken,
     );
     await _auth.signInWithCredential(credential);
+  }
+
+  @override
+  Future<void> signInWithApple() async {
+    final appleCredential = await SignInWithApple.getAppleIDCredential(
+      scopes: [
+        AppleIDAuthorizationScopes.email,
+        AppleIDAuthorizationScopes.fullName,
+      ],
+    );
+
+    final oauthCredential = OAuthProvider('apple.com').credential(
+      idToken: appleCredential.identityToken,
+      accessToken: appleCredential.authorizationCode,
+    );
+
+    await _auth.signInWithCredential(oauthCredential);
   }
 
   @override

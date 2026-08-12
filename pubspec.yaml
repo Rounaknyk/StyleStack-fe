@@ -58,6 +58,7 @@ dependencies:
   lottie: ^3.3.2
   google_mobile_ads: ^9.0.0
   crop_image: ^1.0.17
+  sign_in_with_apple: ^8.1.0
 
 dev_dependencies:
   flutter_test:

@@ -168,6 +168,9 @@ class _SignedOutGateway implements AuthGateway {
   Future<void> signInWithGoogle() async {}
 
   @override
+  Future<void> signInWithApple() async {}
+
+  @override
   Future<void> startPhoneVerification({
     required String phoneNumber,
     required AuthPhoneVerificationSucceeded verificationCompleted,

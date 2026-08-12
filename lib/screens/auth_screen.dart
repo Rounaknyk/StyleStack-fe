@@ -195,6 +195,30 @@ class _AuthScreenState extends State<AuthScreen> {
           ),
         ),
         const SizedBox(height: DesignSystem.spacingMd),
+        SizedBox(
+          height: 56,
+          child: FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.black,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: auth.loading ? null : auth.authenticateWithApple,
+            child: auth.loading
+                ? const _ButtonSpinner()
+                : const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.apple, size: 24),
+                      SizedBox(width: DesignSystem.spacingMd),
+                      Text(
+                        'Continue with Apple',
+                        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                      ),
+                    ],
+                  ),
+          ),
+        ),
+        const SizedBox(height: DesignSystem.spacingMd),
         _AuthOptionButton(
           icon: Icons.phone_iphone_rounded,
           title: 'Continue with Phone',

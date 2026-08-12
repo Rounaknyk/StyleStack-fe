@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
 import '../services/auth_service.dart';
 import '../services/analytics_service.dart';
@@ -115,6 +116,30 @@ class AuthProvider extends ChangeNotifier {
       return false;
     } catch (_) {
       _error = 'Could not sign in with Google. Please try again.';
+      return false;
+    } finally {
+      _endAction();
+    }
+  }
+
+  Future<bool> authenticateWithApple() async {
+    if (_loading) return false;
+    _beginAction();
+    try {
+      await _service.signInWithApple();
+      await AnalyticsService.instance.authSucceeded(
+        method: 'apple',
+        signUp: false,
+      );
+      return true;
+    } on SignInWithAppleAuthorizationException {
+      // User cancelled or auth failed gracefully
+      return false;
+    } on FirebaseAuthException catch (error) {
+      _error = _messageForException(error);
+      return false;
+    } catch (_) {
+      _error = 'Could not sign in with Apple. Please try again.';
       return false;
     } finally {
       _endAction();
