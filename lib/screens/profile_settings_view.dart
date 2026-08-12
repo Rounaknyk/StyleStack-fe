@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../config/custom_widgets.dart';
 import '../config/design_system.dart';
+import 'package:flutter/services.dart';
 import '../providers/auth_provider.dart';
 import '../providers/access_provider.dart';
 import '../providers/gmail_sync_provider.dart';
@@ -697,6 +698,35 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
                         builder: (_) => const _BroadcastNotificationComposer(),
                       ),
                     ),
+                  ),
+                  const Divider(height: 1),
+                  _SettingsTile(
+                    icon: Icons.notifications_active_outlined,
+                    title: 'Send test notification',
+                    subtitle: 'Send a push notification to this device via backend',
+                    onTap: () async {
+                      try {
+                        await ApiService().sendTestNotification();
+                        if (mounted) _message('Test notification requested');
+                      } catch (e) {
+                        if (mounted) _message('Failed: $e');
+                      }
+                    },
+                  ),
+                  const Divider(height: 1),
+                  _SettingsTile(
+                    icon: Icons.copy_all_outlined,
+                    title: 'Copy Device Token',
+                    subtitle: 'Copy the FCM/APNs token for manual testing',
+                    onTap: () async {
+                      final token = await NotificationService.token();
+                      if (token != null) {
+                        await Clipboard.setData(ClipboardData(text: token));
+                        if (mounted) _message('Device token copied to clipboard');
+                      } else {
+                        if (mounted) _message('Could not get device token');
+                      }
+                    },
                   ),
                 ],
               ],
