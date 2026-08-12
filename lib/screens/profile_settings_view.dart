@@ -17,6 +17,7 @@ import '../providers/wardrobe_provider.dart';
 import '../services/location_service.dart';
 import '../services/permission_prompt_service.dart';
 import '../services/api_service.dart';
+import '../services/notification_service.dart';
 import 'outfit_history_screen.dart';
 import 'onboarding_screen.dart';
 import 'privacy_policy_screen.dart';
