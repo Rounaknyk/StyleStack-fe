@@ -59,18 +59,6 @@ class PermissionPromptService {
     if (LocationService.isGranted(current)) return true;
     if (!context.mounted) return false;
 
-    final accepted = await _showDisclosure(
-      context,
-      icon: Icons.location_on_outlined,
-      title: 'Use your city for outfit comfort',
-      body:
-          'StyleStack uses your location once to detect and save your city. '
-          'Your coordinates are not stored, location is not tracked in the '
-          'background, and styling still works if you choose Not now.',
-      actionLabel: 'Continue',
-    );
-    if (!accepted || !context.mounted) return false;
-
     if (current == LocationPermission.deniedForever) {
       return _showSettingsRecovery(
         context,
@@ -82,20 +70,10 @@ class PermissionPromptService {
     }
 
     final permission = await LocationService.requestPermission();
-    if (LocationService.isGranted(permission)) return true;
-    if (context.mounted) {
-      await _showSettingsRecovery(
-        context,
-        title: 'Location was not enabled',
-        body:
-            'You can keep using StyleStack without location. If you change '
-            'your mind, open Settings or tap Detect again later.',
-      );
-    }
-    return false;
+    return LocationService.isGranted(permission);
   }
 
-  // App Store guideline 5.1.1(iv) requires that we do not show a custom message with a "Not now" 
+  // App Store guideline 5.1.1(iv) requires that we do not show a custom message with a "Not now"
   // button before a system permission prompt if the user explicitly triggered the action.
   static Future<bool> explainCamera(BuildContext context) async => true;
 

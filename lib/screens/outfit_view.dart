@@ -536,7 +536,7 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
                   'Add your first pieces to unlock styling. Location is optional and only improves weather-aware suggestions.',
               action: 'Add your first item',
               onPressed: widget.onAddItem,
-              secondaryAction: 'Enable location',
+              secondaryAction: 'Continue',
               onSecondaryPressed: widget.onOpenProfile,
             )
           else if (mvp.loadingOutfit && mvp.outfit == null)
