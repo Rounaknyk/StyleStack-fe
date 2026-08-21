@@ -107,7 +107,21 @@ class AuthService implements AuthGateway {
       accessToken: appleCredential.authorizationCode,
     );
 
-    await _auth.signInWithCredential(oauthCredential);
+    final result = await _auth.signInWithCredential(oauthCredential);
+
+    // Apple only provides the person's name during the initial authorization.
+    // Persist it immediately so the app never asks an Apple user to re-enter
+    // information that Authentication Services already supplied.
+    final appleName = [appleCredential.givenName, appleCredential.familyName]
+        .whereType<String>()
+        .map((part) => part.trim())
+        .where((part) => part.isNotEmpty)
+        .join(' ');
+    final user = result.user;
+    if (user != null && appleName.isNotEmpty) {
+      await user.updateDisplayName(appleName);
+      await user.getIdToken(true);
+    }
   }
 
   @override

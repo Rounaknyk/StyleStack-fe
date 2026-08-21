@@ -809,12 +809,16 @@ class ApiService {
     required DateTime startAt,
     DateTime? endAt,
     bool allDay = false,
+    String? eventId,
   }) async {
     final payload = <String, dynamic>{
       'title': title,
       'start_at': startAt.toUtc().toIso8601String(),
       'all_day': allDay,
     };
+    if (eventId != null) {
+      payload['event_id'] = eventId;
+    }
     if (description != null && description.isNotEmpty) {
       payload['description'] = description;
     }

@@ -2,6 +2,9 @@ import 'dart:io';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/data/latest_all.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
 
 class NotificationNavigationRequest {
   const NotificationNavigationRequest({
@@ -19,10 +22,41 @@ class NotificationService {
   static final ValueNotifier<NotificationNavigationRequest?> navigation =
       ValueNotifier(null);
   static bool _interactionHandlingInitialized = false;
+  static final FlutterLocalNotificationsPlugin _localNotifications =
+      FlutterLocalNotificationsPlugin();
 
   static Future<void> initializeInteractionHandling() async {
     if (_interactionHandlingInitialized) return;
     _interactionHandlingInitialized = true;
+
+    // Initialize Timezone for local scheduling
+    tz.initializeTimeZones();
+
+    // Initialize Local Notifications
+    const initializationSettingsIOS = DarwinInitializationSettings(
+      requestAlertPermission: false,
+      requestBadgePermission: false,
+      requestSoundPermission: false,
+    );
+    const initializationSettingsAndroid =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+    const initializationSettings = InitializationSettings(
+      android: initializationSettingsAndroid,
+      iOS: initializationSettingsIOS,
+    );
+
+    await _localNotifications.initialize(
+      settings: initializationSettings,
+      onDidReceiveNotificationResponse: (details) {
+        if (details.payload != null && details.payload!.startsWith('outfit_')) {
+          final outfitId = details.payload!.replaceFirst('outfit_', '');
+          navigation.value = NotificationNavigationRequest(
+            destination: 'outfit',
+            outfitId: outfitId,
+          );
+        }
+      },
+    );
 
     await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
       alert: true,
@@ -88,5 +122,45 @@ class NotificationService {
     );
     if (settings.authorizationStatus == AuthorizationStatus.denied) return null;
     return token();
+  }
+
+  static Future<void> scheduleOutfitReminder({
+    required String outfitId,
+    required String eventName,
+    required DateTime eventDate,
+  }) async {
+    // Schedule exactly 1 day before at 9:00 AM (or 24 hours before)
+    // Actually, let's just do 24 hours before the event date for simplicity
+    final scheduleTime = eventDate.subtract(const Duration(days: 1));
+    if (scheduleTime.isBefore(DateTime.now())) {
+      // If the event is in less than 24 hours, don't schedule
+      return;
+    }
+
+    final id = outfitId.hashCode; // Unique integer ID
+
+    const androidDetails = AndroidNotificationDetails(
+      'outfit_reminders',
+      'Outfit Reminders',
+      channelDescription: 'Reminders for your planned outfits',
+      importance: Importance.high,
+      priority: Priority.high,
+    );
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+    const details = NotificationDetails(android: androidDetails, iOS: iosDetails);
+
+    await _localNotifications.zonedSchedule(
+      id: id,
+      title: 'Your look is ready!',
+      body: 'Tap to review your planned outfit for $eventName tomorrow.',
+      scheduledDate: tz.TZDateTime.from(scheduleTime, tz.local),
+      notificationDetails: details,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      payload: 'outfit_$outfitId',
+    );
   }
 }

@@ -264,15 +264,15 @@ class _StyleCalendarViewState extends State<StyleCalendarView> {
     Navigator.push<void>(
       context,
       MaterialPageRoute(
-        builder: (_) => const CanvasStyleBuilderScreen(),
+        builder: (_) => CanvasStyleBuilderScreen(calendarEvent: event),
       ),
     );
   }
 
-  Future<void> _addEvent() async {
+  Future<void> _addEvent({DateTime? preselectedDate, bool autoOpenCanvas = false}) async {
     final title = TextEditingController();
     final details = TextEditingController();
-    var date = _selected;
+    var date = preselectedDate ?? _selected;
     var time = TimeOfDay.now();
     final saved = await showDialog<bool>(
       context: context,
@@ -355,8 +355,23 @@ class _StyleCalendarViewState extends State<StyleCalendarView> {
       time.hour,
       time.minute,
     );
+    if (autoOpenCanvas) {
+      final dummyEvent = StyleCalendarEvent(
+        id: 'new', // dummy ID
+        title: title.text.trim(),
+        description: details.text.trim().isEmpty ? null : details.text.trim(),
+        startAt: start.toUtc(),
+        endAt: start.add(const Duration(hours: 1)).toUtc(),
+        allDay: false,
+        source: 'manual',
+        occasion: 'event',
+      );
+      _createLook(dummyEvent);
+      return;
+    }
+    
     try {
-      await _api.createCalendarEvent({
+      final created = await _api.createCalendarEvent({
         'title': title.text.trim(),
         'description': details.text.trim().isEmpty ? null : details.text.trim(),
         'start_at': start.toUtc().toIso8601String(),
@@ -370,6 +385,30 @@ class _StyleCalendarViewState extends State<StyleCalendarView> {
           context,
         ).showSnackBar(SnackBar(content: Text(e.message)));
       }
+    }
+  }
+
+  void _handleDateSelected(DateTime date) {
+    setState(() => _selected = date);
+    final dayEvents = _events.where((e) => DateUtils.isSameDay(e.startAt, date)).toList();
+    final eventWithOutfit = dayEvents.where((e) => e.outfitId != null).firstOrNull;
+    
+    if (eventWithOutfit != null) {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: DesignSystem.background,
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+        builder: (context) => SizedBox(
+          height: MediaQuery.of(context).size.height * 0.7,
+          // We need OutfitViewSheet widget here, or navigate to ReminderOutfitScreen
+          child: ReminderOutfitScreen(outfitId: eventWithOutfit.outfitId!, title: eventWithOutfit.title, showAppBar: false),
+        ),
+      );
+    } else if (dayEvents.isNotEmpty) {
+      _createLook(dayEvents.first);
+    } else {
+      _addEvent(preselectedDate: date, autoOpenCanvas: true);
     }
   }
 
@@ -396,8 +435,10 @@ class _StyleCalendarViewState extends State<StyleCalendarView> {
 
   @override
   Widget build(BuildContext context) {
-    return RefreshIndicator(
-      onRefresh: _load,
+    return Scaffold(
+      appBar: AppBar(title: const Text('Plan Your Outfit')),
+      body: RefreshIndicator(
+        onRefresh: _load,
       child: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 110),
         children: [
@@ -449,9 +490,9 @@ class _StyleCalendarViewState extends State<StyleCalendarView> {
             selectedDate: _selected,
             events: _events,
             api: _api,
-            onDateSelected: (value) => setState(() => _selected = value),
+            onDateSelected: _handleDateSelected,
           ),
-          const CalendarSummaryCards(),
+
           if (_upcomingEventDays.isNotEmpty) ...[
             SizedBox(
               height: 44,
@@ -529,7 +570,7 @@ class _StyleCalendarViewState extends State<StyleCalendarView> {
             ),
         ],
       ),
-    );
+    ));
   }
 }
 

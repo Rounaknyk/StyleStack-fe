@@ -69,7 +69,7 @@ class _HomeScreenState extends State<HomeScreen> {
           _selectTab(2);
           return;
         case 'profile':
-          _selectTab(3);
+          _selectTab(2);
           return;
         case 'notifications':
           Navigator.push<void>(
@@ -109,7 +109,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _selectTab(int value) {
     setState(() => _tab = value);
-    const tabNames = ['today', 'wardrobe', 'planner', 'profile'];
+    const tabNames = ['today', 'wardrobe', 'profile'];
     unawaited(AnalyticsService.instance.screen(tabNames[value]));
     unawaited(
       AnalyticsService.instance.event(
@@ -429,7 +429,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final titles = ['Today', 'My Wardrobe', 'Style Planner', 'Profile'];
+    final titles = ['Today', 'My Wardrobe', 'Profile'];
     final wardrobeBusy = context.watch<WardrobeProvider>().items.any(
       (item) =>
           item.isUploading ||
@@ -456,13 +456,12 @@ class _HomeScreenState extends State<HomeScreen> {
           index: _tab,
           children: [
             DailyOutfitView(
-              onOpenHistory: () => _selectTab(2),
-              onOpenProfile: () => _selectTab(3),
+              onOpenHistory: () {}, // Handled internally now or via new navigation
+              onOpenProfile: () => _selectTab(2),
               onCreateStyle: _openCreateStyle,
               onAddItem: _chooseImageSource,
             ),
             WardrobeView(onAddItem: _chooseImageSource),
-            const OutfitHistoryView(),
             const ProfileSettingsView(),
           ],
         ),
@@ -503,10 +502,6 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
             label: const Text('Wardrobe'),
-          ),
-          const FBottomNavigationBarItem(
-            icon: Icon(Icons.calendar_month_outlined),
-            label: Text('Planner'),
           ),
           const FBottomNavigationBarItem(
             icon: Icon(Icons.person_outline),

@@ -19,6 +19,9 @@ import '../services/image_cache_service.dart';
 import 'saved_styles_screen.dart';
 import 'stylist_chat_screen.dart';
 import 'app_help_screen.dart';
+import 'calendar_view.dart';
+import 'outfit_history_screen.dart';
+import '../services/notification_service.dart';
 
 class DailyOutfitView extends StatefulWidget {
   const DailyOutfitView({
@@ -82,6 +85,10 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
         mvp.loadTodayEvents(force: refresh),
       ]);
       if (!mounted) return;
+
+      // Ask for notification permissions on Today page load
+      NotificationService.requestToken().ignore();
+
       final city = mvp.preferences?.city?.trim() ?? '';
       if (city.isEmpty) return;
       final event = mvp.priorityEvent;
@@ -430,6 +437,24 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
           ),
           const SizedBox(height: 22),
           const _SectionLabel('YOUR STYLING STUDIO'),
+          const SizedBox(height: 10),
+          SizedBox(
+            height: 104,
+            child: Material(
+              borderRadius: BorderRadius.circular(22),
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const Scaffold(body: SafeArea(child: StyleCalendarView()))),
+                ),
+                child: Image.asset(
+                  'assets/images/plan_outfit_banner.jpg',
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+          ),
           const SizedBox(height: 10),
           _StylingTools(
             onAskStylist: () {
@@ -944,8 +969,8 @@ class _EditorialHeader extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           _RoundIconButton(
-            tooltip: 'Style planner',
-            icon: Icons.calendar_month_outlined,
+            tooltip: 'Outfit history',
+            icon: Icons.history_rounded,
             onPressed: onHistory,
           ),
           const SizedBox(width: 8),
@@ -1246,6 +1271,7 @@ class _ToolCard extends StatelessWidget {
     required this.foreground,
     required this.onTap,
     this.backgroundImage,
+    this.fullBackgroundImage = false,
     this.compact = false,
   });
 
@@ -1256,88 +1282,113 @@ class _ToolCard extends StatelessWidget {
   final Color foreground;
   final VoidCallback onTap;
   final String? backgroundImage;
+  final bool fullBackgroundImage;
   final bool compact;
 
   @override
-  Widget build(BuildContext context) => Material(
-    color: background,
-    borderRadius: BorderRadius.circular(22),
-    clipBehavior: Clip.antiAlias,
-    child: InkWell(
-      onTap: onTap,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (backgroundImage != null)
-            Expanded(
-              flex: 55,
-              child: Image.asset(backgroundImage!, fit: BoxFit.cover),
-            )
-          else
-            Expanded(
-              flex: 55,
-              child: Padding(
-                padding: EdgeInsets.only(
-                  top: compact ? 12 : 16,
-                  left: compact ? 12 : 16,
-                ),
-                child: Align(
-                  alignment: Alignment.topLeft,
-                  child: Container(
-                    width: 38,
-                    height: 38,
-                    decoration: BoxDecoration(
-                      color: foreground.withValues(alpha: .12),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(icon, color: foreground, size: 20),
-                  ),
-                ),
-              ),
-            ),
+  Widget build(BuildContext context) {
+    final content = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (backgroundImage != null && !fullBackgroundImage)
           Expanded(
-            flex: 45,
+            flex: 55,
+            child: Image.asset(backgroundImage!, fit: BoxFit.cover),
+          )
+        else
+          Expanded(
+            flex: 55,
             child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                compact ? 12 : 16,
-                0,
-                compact ? 12 : 16,
-                compact ? 12 : 16,
+              padding: EdgeInsets.only(
+                top: compact ? 12 : 16,
+                left: compact ? 12 : 16,
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Text(
-                    title,
-                    maxLines: 2,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: foreground,
-                      height: 1.18,
-                      fontWeight: FontWeight.w800,
-                    ),
+              child: Align(
+                alignment: Alignment.topLeft,
+                child: Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: foreground.withValues(alpha: .12),
+                    shape: BoxShape.circle,
                   ),
-                  if (caption.isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      caption,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: foreground.withValues(alpha: .72),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ],
+                  child: Icon(icon, color: foreground, size: 20),
+                ),
               ),
             ),
           ),
-        ],
+        Expanded(
+          flex: 45,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              compact ? 12 : 16,
+              0,
+              compact ? 12 : 16,
+              compact ? 12 : 16,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Text(
+                  title,
+                  maxLines: 2,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: foreground,
+                    height: 1.18,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                if (caption.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    caption,
+                    maxLines: 1,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: foreground.withValues(alpha: .8),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+
+    return Material(
+      color: background,
+      borderRadius: BorderRadius.circular(22),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: fullBackgroundImage && backgroundImage != null
+            ? Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.asset(backgroundImage!, fit: BoxFit.cover),
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          background.withValues(alpha: 0.9),
+                        ],
+                      ),
+                    ),
+                  ),
+                  content,
+                ],
+              )
+            : content,
       ),
-    ),
-  );
+    );
+  }
 }
+
 
 class _EventHeader extends StatelessWidget {
   const _EventHeader({required this.event, required this.additionalEvents});

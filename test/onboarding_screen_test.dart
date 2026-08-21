@@ -9,6 +9,32 @@ import 'package:stylestack_fe/screens/onboarding_screen.dart';
 import 'package:stylestack_fe/services/onboarding_service.dart';
 
 void main() {
+  testWidgets('Apple onboarding uses the name supplied by Apple', (
+    tester,
+  ) async {
+    final provider = OnboardingProvider(_ScreenRepository());
+    await tester.pumpWidget(
+      ChangeNotifierProvider.value(
+        value: provider,
+        child: MaterialApp(
+          theme: DesignSystem.buildTheme(),
+          home: FTheme(
+            data: DesignSystem.buildForuiTheme(),
+            child: OnboardingScreen(
+              skipNameStep: true,
+              initialDisplayName: 'Taylor Appleseed',
+              updateDisplayName: (_) async {},
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byKey(const Key('onboarding_name')), findsNothing);
+    expect(find.text('Step 1 of 7'), findsOneWidget);
+    expect(find.text('How do you identify?'), findsOneWidget);
+  });
+
   testWidgets('height slider is safe after the date picker route closes', (
     tester,
   ) async {

@@ -6,10 +6,11 @@ import '../models/outfit.dart';
 import '../services/api_service.dart';
 
 class ReminderOutfitScreen extends StatefulWidget {
-  const ReminderOutfitScreen({super.key, required this.outfitId, this.title});
+  const ReminderOutfitScreen({super.key, required this.outfitId, this.title, this.showAppBar = true});
 
   final String outfitId;
   final String? title;
+  final bool showAppBar;
 
   @override
   State<ReminderOutfitScreen> createState() => _ReminderOutfitScreenState();
@@ -35,9 +36,8 @@ class _ReminderOutfitScreenState extends State<ReminderOutfitScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: Text(widget.title ?? 'Your planned outfit')),
-    body: _error != null
+  Widget build(BuildContext context) {
+    final body = _error != null
         ? Center(child: Text(_error!))
         : _outfit == null
         ? const StyleStackLoadingIndicator(
@@ -58,8 +58,14 @@ class _ReminderOutfitScreenState extends State<ReminderOutfitScreen> {
                 Expanded(child: _ReminderOutfitBoard(outfit: _outfit!)),
               ],
             ),
-          ),
-  );
+          );
+          
+    if (!widget.showAppBar) return body;
+    return Scaffold(
+      appBar: AppBar(title: Text(widget.title ?? 'Your planned outfit')),
+      body: body,
+    );
+  }
 }
 
 class _ReminderOutfitBoard extends StatelessWidget {

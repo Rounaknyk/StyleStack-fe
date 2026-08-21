@@ -337,7 +337,15 @@ class _AuthGateState extends State<AuthGate> {
         }
 
         if (!onboarding.completed) {
+          final signedInWithApple = user.providerData.any(
+            (identity) => identity.providerId == 'apple.com',
+          );
           return OnboardingScreen(
+            skipNameStep: signedInWithApple,
+            initialDisplayName:
+                user.displayName ??
+                onboarding.profile?.displayName ??
+                (signedInWithApple ? 'StyleStack member' : null),
             updateDisplayName: (name) async {
               await user.updateDisplayName(name);
               await user.reload();

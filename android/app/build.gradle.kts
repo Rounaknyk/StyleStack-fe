@@ -29,6 +29,7 @@ android {
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -80,4 +81,5 @@ dependencies {
     // modern minified Play build. Pin the current AndroidX implementation so
     // Gradle replaces the obsolete transitive dependency.
     implementation("androidx.work:work-runtime:2.11.2")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }

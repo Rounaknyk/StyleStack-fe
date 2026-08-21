@@ -9,16 +9,19 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../config/design_system.dart';
 import '../models/wardrobe_item.dart';
 import '../models/canvas_style.dart';
+import '../models/calendar_models.dart';
 import '../providers/wardrobe_provider.dart';
 import '../services/api_service.dart';
 import '../services/image_cache_service.dart';
+import '../services/notification_service.dart';
 import '../widgets/schedule_canvas_dialog.dart';
 import 'saved_styles_screen.dart';
 import 'style_story_share_screen.dart';
 
 class CanvasStyleBuilderScreen extends StatefulWidget {
-  const CanvasStyleBuilderScreen({super.key, this.initialStyle});
+  const CanvasStyleBuilderScreen({super.key, this.initialStyle, this.calendarEvent});
   final CanvasStyle? initialStyle;
+  final StyleCalendarEvent? calendarEvent;
 
   @override
   State<CanvasStyleBuilderScreen> createState() =>
@@ -256,12 +259,14 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
     try {
       final bytes = await _captureCleanCanvas();
       final styleId = widget.initialStyle?.id;
+      var savedStyleId = styleId;
       if (styleId == null) {
-        await _api.createCanvasStyle(
+        final created = await _api.createCanvasStyle(
           name: name.trim(),
           items: _placed.map((item) => item.toJson()).toList(),
           previewBytes: bytes,
         );
+        savedStyleId = created.id;
       } else {
         await _api.updateCanvasStyle(
           styleId: styleId,
@@ -270,6 +275,28 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
           previewBytes: bytes,
         );
       }
+      
+      if (widget.calendarEvent != null && savedStyleId != null) {
+        final event = widget.calendarEvent!;
+        final createdEvent = await _api.scheduleCanvasStyle(
+          styleId: savedStyleId,
+          title: event.title,
+          startAt: event.startAt,
+          eventId: event.id == 'new' ? null : event.id,
+        );
+        if (createdEvent.outfitId != null) {
+          await NotificationService.scheduleOutfitReminder(
+            outfitId: createdEvent.outfitId!,
+            eventName: event.title,
+            eventDate: event.startAt,
+          );
+        }
+        if (!mounted) return;
+        _message('Outfit planned!');
+        Navigator.pop(context); // Go back to calendar
+        return;
+      }
+
       if (!mounted) return;
       _message(
         styleId == null ? 'Style saved to My Styles.' : 'Style updated.',
@@ -402,37 +429,9 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
         ),
         actions: [
           IconButton(
-            onPressed: _scheduleCanvas,
-            icon: const Icon(Icons.edit_calendar_outlined),
-            tooltip: 'Schedule to Calendar',
-          ),
-          IconButton(
-            onPressed: _shareCanvas,
-            icon: const Icon(Icons.ios_share_outlined),
-            tooltip: 'Share style',
-          ),
-          IconButton(
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const SavedStylesScreen()),
-            ),
-            icon: const Icon(Icons.collections_bookmark_outlined),
-            tooltip: 'My Styles',
-          ),
-          IconButton(
             onPressed: _placed.isEmpty ? null : () => setState(_placed.clear),
             icon: const Icon(Icons.delete_sweep_outlined),
             tooltip: 'Clear canvas',
-          ),
-          IconButton(
-            onPressed: _saving ? null : _save,
-            icon: _saving
-                ? const SizedBox.square(
-                    dimension: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.save_outlined),
-            tooltip: 'Save style',
           ),
         ],
       ),
@@ -505,6 +504,22 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
               onCategoryChanged: (category) =>
                   setState(() => _activeCategory = category),
               onAdd: _add,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: _saving ? null : _save,
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                ),
+                child: _saving 
+                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Text('Save Outfit', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              ),
             ),
           ),
         ],

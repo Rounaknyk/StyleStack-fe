@@ -11,12 +11,16 @@ class OnboardingScreen extends StatefulWidget {
     required this.updateDisplayName,
     this.onCompleted,
     this.editMode = false,
+    this.skipNameStep = false,
+    this.initialDisplayName,
     super.key,
   });
 
   final Future<void> Function(String name) updateDisplayName;
   final VoidCallback? onCompleted;
   final bool editMode;
+  final bool skipNameStep;
+  final String? initialDisplayName;
 
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
@@ -24,9 +28,9 @@ class OnboardingScreen extends StatefulWidget {
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
   static const _questionCount = 8;
-  final _pages = PageController();
+  late final PageController _pages;
   final _name = TextEditingController();
-  int _step = 0;
+  late int _step;
   bool _seeded = false;
   String? _gender;
   DateTime? _dateOfBirth;
@@ -37,13 +41,24 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   String? _shoppingFrequency;
   final Set<String> _goals = {};
 
+  int get _firstStep => widget.skipNameStep && !widget.editMode ? 1 : 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _step = _firstStep;
+    _pages = PageController(initialPage: _firstStep);
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (_seeded) return;
     final profile = context.read<OnboardingProvider>().profile;
     if (profile != null) {
-      _name.text = profile.displayName ?? '';
+      _name.text = profile.displayName?.trim().isNotEmpty == true
+          ? profile.displayName!.trim()
+          : widget.initialDisplayName?.trim() ?? '';
       _gender = profile.gender;
       _dateOfBirth = profile.dateOfBirth;
       _bodyType = profile.bodyType;
@@ -52,6 +67,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       _styles.addAll(profile.stylePreferences);
       _shoppingFrequency = profile.shoppingFrequency;
       _goals.addAll(profile.styleGoals);
+    }
+    if (_name.text.trim().isEmpty && widget.skipNameStep) {
+      _name.text = widget.initialDisplayName?.trim().isNotEmpty == true
+          ? widget.initialDisplayName!.trim()
+          : 'StyleStack member';
     }
     _name.addListener(_refresh);
     _seeded = true;
@@ -86,7 +106,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   Future<void> _back() async {
-    if (_step == 0) {
+    if (_step <= _firstStep) {
       if (widget.editMode && mounted) Navigator.pop(context);
       return;
     }
@@ -169,6 +189,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget build(BuildContext context) {
     final provider = context.watch<OnboardingProvider>();
     final onSummary = _step == _questionCount;
+    final visibleQuestionCount = _questionCount - _firstStep;
+    final visibleStep = _step - _firstStep + 1;
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -177,13 +199,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
               child: Row(
                 children: [
-                  if (_step > 0 || widget.editMode)
+                  if (_step > _firstStep || widget.editMode)
                     IconButton(
                       key: const Key('onboarding_back'),
-                      tooltip: _step == 0 ? 'Close' : 'Previous question',
+                      tooltip: _step == _firstStep
+                          ? 'Close'
+                          : 'Previous question',
                       onPressed: provider.saving ? null : _back,
                       icon: Icon(
-                        _step == 0
+                        _step == _firstStep
                             ? Icons.close_rounded
                             : Icons.arrow_back_rounded,
                       ),
@@ -198,7 +222,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               ? widget.editMode
                                     ? 'Review changes'
                                     : 'Ready to style'
-                              : 'Step ${_step + 1} of 8',
+                              : 'Step $visibleStep of $visibleQuestionCount',
                           style: Theme.of(context).textTheme.labelLarge
                               ?.copyWith(
                                 color: DesignSystem.textSecondary,
@@ -210,7 +234,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           borderRadius: BorderRadius.circular(99),
                           child: LinearProgressIndicator(
                             minHeight: 4,
-                            value: onSummary ? 1 : (_step + 1) / _questionCount,
+                            value: onSummary
+                                ? 1
+                                : visibleStep / visibleQuestionCount,
                             backgroundColor: DesignSystem.surfaceAlt,
                             color: DesignSystem.primary,
                           ),
