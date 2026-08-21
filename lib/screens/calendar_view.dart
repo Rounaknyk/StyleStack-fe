@@ -13,6 +13,9 @@ import '../services/rewarded_ad_service.dart';
 import 'reminder_outfit_screen.dart';
 import 'canvas_style_builder_screen.dart';
 
+import '../widgets/custom_outfit_calendar.dart';
+import '../widgets/calendar_summary_cards.dart';
+
 class StyleCalendarView extends StatefulWidget {
   const StyleCalendarView({super.key});
 
@@ -442,12 +445,13 @@ class _StyleCalendarViewState extends State<StyleCalendarView> {
             onDisconnect: _disconnectGoogle,
           ),
           const SizedBox(height: 12),
-          CalendarDatePicker(
-            initialDate: _selected,
-            firstDate: DateTime(DateTime.now().year - 1),
-            lastDate: DateTime(DateTime.now().year + 3),
-            onDateChanged: (value) => setState(() => _selected = value),
+          CustomOutfitCalendar(
+            selectedDate: _selected,
+            events: _events,
+            api: _api,
+            onDateSelected: (value) => setState(() => _selected = value),
           ),
+          const CalendarSummaryCards(),
           if (_upcomingEventDays.isNotEmpty) ...[
             SizedBox(
               height: 44,
