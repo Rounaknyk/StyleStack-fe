@@ -14,7 +14,12 @@ class OutfitHistoryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Outfit history')),
+    backgroundColor: DesignSystem.background,
+    appBar: AppBar(
+      title: const Text('Outfit history'),
+      backgroundColor: DesignSystem.background,
+      elevation: 0,
+    ),
     body: const OutfitHistoryView(showHeading: false),
   );
 }
