@@ -507,19 +507,38 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: _saving ? null : _save,
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+            child: Column(
+              children: [
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: _saving ? null : _save,
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+                    child: _saving 
+                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                        : const Text('Save Outfit', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  ),
                 ),
-                child: _saving 
-                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : const Text('Save Outfit', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: _shareCanvas,
+                    icon: const Icon(Icons.ios_share_rounded, size: 20),
+                    label: const Text('Post to socials', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      side: const BorderSide(color: DesignSystem.primary, width: 2),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      foregroundColor: DesignSystem.primary,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],

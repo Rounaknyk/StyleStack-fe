@@ -1,8 +1,10 @@
+import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../config/brand_logo.dart';
@@ -132,37 +134,53 @@ class StyleStoryCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 14),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 13,
-                    ),
-                    decoration: BoxDecoration(
-                      color: DesignSystem.cta,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'CREATE YOUR LOOK',
-                          style: TextStyle(
-                            fontFamily: 'Manrope',
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 1.4,
-                          ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'GET THE APP',
+                              style: TextStyle(
+                                fontFamily: 'Manrope',
+                                color: DesignSystem.secondaryLight,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 1.5,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Scan to download\nStyleStack free',
+                              style: TextStyle(
+                                fontFamily: 'Manrope',
+                                color: Colors.white.withValues(alpha: .9),
+                                fontSize: 12,
+                                height: 1.3,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
                         ),
-                        SizedBox(width: 8),
-                        Icon(
-                          Icons.arrow_outward_rounded,
+                      ),
+                      Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
                           color: Colors.white,
-                          size: 15,
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                      ],
-                    ),
+                        child: QrImageView(
+                          data: Platform.isIOS
+                              ? 'https://apps.apple.com/in/app/stylestack-your-fashion-ai/id6796359015'
+                              : 'https://play.google.com/store/apps/details?id=com.stylestack.stylestack',
+                          version: QrVersions.auto,
+                          size: 48.0,
+                          backgroundColor: Colors.white,
+                          padding: EdgeInsets.zero,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

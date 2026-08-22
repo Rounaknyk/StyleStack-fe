@@ -206,7 +206,7 @@ class _SavedStylesScreenState extends State<SavedStylesScreen> {
                     crossAxisCount: 2,
                     crossAxisSpacing: 14,
                     mainAxisSpacing: 18,
-                    childAspectRatio: .71,
+                    childAspectRatio: .63,
                   ),
                   itemBuilder: (context, index) {
                     final style = styles[index];
@@ -467,6 +467,24 @@ class _StylePortfolioCard extends StatelessWidget {
                         ),
                       ],
                     ),
+                    if (onShare != null) ...[
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        width: double.infinity,
+                        height: 32,
+                        child: OutlinedButton.icon(
+                          onPressed: onShare,
+                          icon: const Icon(Icons.ios_share_rounded, size: 14),
+                          label: const Text('Post to socials', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: -0.2)),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            side: const BorderSide(color: DesignSystem.primary),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            foregroundColor: DesignSystem.primary,
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
