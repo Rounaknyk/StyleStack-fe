@@ -9,7 +9,7 @@ class StyleStackLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Image.asset(
-    'assets/images/stylestack_s_mark.png',
+    'assets/images/stylestack_s_logo.png',
     width: size,
     height: size,
     fit: BoxFit.contain,
