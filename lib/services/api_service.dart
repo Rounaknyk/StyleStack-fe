@@ -56,6 +56,20 @@ class ApiService {
     }
   }
 
+  Future<Map<String, dynamic>> getAppFeatures() async {
+    try {
+      final response = await _client
+          .get(Uri.parse('${RuntimeConfig.apiBaseUrl}/config/features'))
+          .timeout(const Duration(seconds: 5));
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      }
+    } catch (_) {
+      // Ignore errors and return default empty features on network failure
+    }
+    return {};
+  }
+
   Future<void> deleteAccount() async {
     final response = await _client.delete(
       Uri.parse('${RuntimeConfig.apiBaseUrl}/users/me'),

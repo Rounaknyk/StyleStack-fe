@@ -337,12 +337,14 @@ class AuthProvider extends ChangeNotifier {
   }
 
   String _messageForException(FirebaseAuthException error) {
+    print('RAW FIREBASE AUTH ERROR: ${error.code} | ${error.message}');
     final providerMessage = (error.message ?? '').toLowerCase();
-    if (providerMessage.contains('billing_not_enabled') ||
-        providerMessage.contains('billing not enabled')) {
-      return 'Phone sign-in is unavailable because Firebase SMS billing is not enabled. Please upgrade to the Blaze plan.';
-    }
-    return _messageFor(error.code);
+    
+    // Fallback to standard error messages, or return the raw message if unknown
+    final defaultMsg = _messageFor(error.code);
+    return defaultMsg == 'An unknown error occurred.' && error.message != null 
+        ? error.message! 
+        : defaultMsg;
   }
 
   String _messageFor(String code) => switch (code) {

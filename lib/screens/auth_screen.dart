@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../config/design_system.dart';
 import '../config/brand_logo.dart';
 import '../providers/auth_provider.dart';
+import '../services/api_service.dart';
 import 'privacy_policy_screen.dart';
 
 enum _AuthPanel { chooser, phone, email }
@@ -29,6 +30,25 @@ class _AuthScreenState extends State<AuthScreen> {
   _AuthPanel _panel = _AuthPanel.chooser;
   bool _signUp = false;
   bool _obscure = true;
+
+  bool _isConfigLoading = true;
+  bool _phoneAuthEnabled = true; // Default fallback
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchAppFeatures();
+  }
+
+  Future<void> _fetchAppFeatures() async {
+    final features = await ApiService().getAppFeatures();
+    if (mounted) {
+      setState(() {
+        _phoneAuthEnabled = features['phone_auth_enabled'] ?? true;
+        _isConfigLoading = false;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -218,14 +238,24 @@ class _AuthScreenState extends State<AuthScreen> {
                   ),
           ),
         ),
-        const SizedBox(height: DesignSystem.spacingMd),
-        _AuthOptionButton(
-          icon: Icons.phone_iphone_rounded,
-          title: 'Continue with Phone',
-          subtitle: 'Quick OTP verification for India',
-          enabled: !auth.loading,
-          onPressed: () => _showPanel(_AuthPanel.phone),
-        ),
+        if (_isConfigLoading)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: DesignSystem.spacingMd),
+            child: SizedBox(
+              height: 56,
+              child: Center(child: CircularProgressIndicator()),
+            ),
+          )
+        else if (_phoneAuthEnabled) ...[
+          const SizedBox(height: DesignSystem.spacingMd),
+          _AuthOptionButton(
+            icon: Icons.phone_iphone_rounded,
+            title: 'Continue with Phone',
+            subtitle: 'Quick OTP verification for India',
+            enabled: !auth.loading,
+            onPressed: () => _showPanel(_AuthPanel.phone),
+          ),
+        ],
         // const SizedBox(height: DesignSystem.spacingMd),
         // _AuthOptionButton(
         //   icon: Icons.mail_outline_rounded,
