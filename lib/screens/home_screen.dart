@@ -460,7 +460,7 @@ class _HomeScreenState extends State<HomeScreen> {
               onOpenHistory: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const OutfitHistoryView()),
+                  MaterialPageRoute(builder: (_) => const OutfitHistoryScreen()),
                 );
               },
               onOpenProfile: () => _selectTab(2),
