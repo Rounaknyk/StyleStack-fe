@@ -226,14 +226,14 @@ class _AuthScreenState extends State<AuthScreen> {
           enabled: !auth.loading,
           onPressed: () => _showPanel(_AuthPanel.phone),
         ),
-        const SizedBox(height: DesignSystem.spacingMd),
-        _AuthOptionButton(
-          icon: Icons.mail_outline_rounded,
-          title: 'Continue with Email',
-          subtitle: 'Use your email and password',
-          enabled: !auth.loading,
-          onPressed: () => _showPanel(_AuthPanel.email),
-        ),
+        // const SizedBox(height: DesignSystem.spacingMd),
+        // _AuthOptionButton(
+        //   icon: Icons.mail_outline_rounded,
+        //   title: 'Continue with Email',
+        //   subtitle: 'Use your email and password',
+        //   enabled: !auth.loading,
+        //   onPressed: () => _showPanel(_AuthPanel.email),
+        // ),
         if (auth.error != null) ...[
           const SizedBox(height: DesignSystem.spacingLg),
           _AuthError(message: auth.error!),

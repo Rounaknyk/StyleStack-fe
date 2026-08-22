@@ -14,22 +14,22 @@ class AdMobConfig {
   static String rewardedDailyOutfitId() => _forPlatform(
     android: const String.fromEnvironment(
       'ADMOB_REWARDED_DAILY_ANDROID',
-      defaultValue: _androidTestRewarded,
+      defaultValue: kDebugMode ? _androidTestRewarded : 'ca-app-pub-1786816052212177/8552169163',
     ),
     ios: const String.fromEnvironment(
       'ADMOB_REWARDED_DAILY_IOS',
-      defaultValue: _iosTestRewarded,
+      defaultValue: _iosTestRewarded, // TODO: Replace with iOS Prod ID
     ),
   );
 
   static String rewardedCalendarId() => _forPlatform(
     android: const String.fromEnvironment(
       'ADMOB_REWARDED_CALENDAR_ANDROID',
-      defaultValue: _androidTestRewarded,
+      defaultValue: kDebugMode ? _androidTestRewarded : 'ca-app-pub-1786816052212177/8552169163',
     ),
     ios: const String.fromEnvironment(
       'ADMOB_REWARDED_CALENDAR_IOS',
-      defaultValue: _iosTestRewarded,
+      defaultValue: _iosTestRewarded, // TODO: Replace with iOS Prod ID
     ),
   );
 

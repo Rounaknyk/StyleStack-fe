@@ -340,7 +340,7 @@ class AuthProvider extends ChangeNotifier {
     final providerMessage = (error.message ?? '').toLowerCase();
     if (providerMessage.contains('billing_not_enabled') ||
         providerMessage.contains('billing not enabled')) {
-      return 'Phone sign-in is temporarily unavailable. Please use Google or email while SMS verification is being enabled.';
+      return 'Phone sign-in is unavailable because Firebase SMS billing is not enabled. Please upgrade to the Blaze plan.';
     }
     return _messageFor(error.code);
   }

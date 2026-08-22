@@ -64,6 +64,31 @@ class NotificationService {
       sound: true,
     );
 
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      final notification = message.notification;
+      final android = message.notification?.android;
+      if (notification != null && android != null) {
+        _localNotifications.show(
+          notification.hashCode,
+          notification.title,
+          notification.body,
+          const NotificationDetails(
+            android: AndroidNotificationDetails(
+              'high_importance_channel',
+              'High Importance Notifications',
+              channelDescription: 'This channel is used for important notifications.',
+              importance: Importance.max,
+              priority: Priority.high,
+              icon: '@mipmap/ic_launcher',
+            ),
+          ),
+          payload: message.data['outfit_id'] != null
+              ? 'outfit_${message.data['outfit_id']}'
+              : null,
+        );
+      }
+    });
+
     FirebaseMessaging.onMessageOpenedApp.listen(_handleInteraction);
     final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
     if (initialMessage != null) _handleInteraction(initialMessage);

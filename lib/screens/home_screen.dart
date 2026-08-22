@@ -20,6 +20,7 @@ import '../services/analytics_service.dart';
 import '../services/notification_service.dart';
 import '../services/image_cache_service.dart';
 import 'camera_preview_screen.dart';
+import 'outfit_history_screen.dart';
 import 'batch_add_screen.dart';
 import 'canvas_style_builder_screen.dart';
 import 'item_detail_screen.dart';
@@ -456,7 +457,12 @@ class _HomeScreenState extends State<HomeScreen> {
           index: _tab,
           children: [
             DailyOutfitView(
-              onOpenHistory: () {}, // Handled internally now or via new navigation
+              onOpenHistory: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const OutfitHistoryView()),
+                );
+              },
               onOpenProfile: () => _selectTab(2),
               onCreateStyle: _openCreateStyle,
               onAddItem: _chooseImageSource,

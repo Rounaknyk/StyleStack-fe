@@ -52,7 +52,7 @@
              before publishing a monetized build. -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713" />
+            android:value="ca-app-pub-1786816052212177~8067440668" />
     </application>
     <queries>
         <intent>

@@ -125,24 +125,12 @@ class _OutfitHistoryViewState extends State<OutfitHistoryView> {
           if (widget.showHeading) ...[
             const StyleStackPageIntro(
               eyebrow: 'Your style diary',
-              title: 'Plan & remember',
-              subtitle:
-                  'Prepare for upcoming events, then revisit what you actually wore.',
+              title: 'Outfit history',
+              subtitle: 'Revisit what you wore in the past.',
               padding: EdgeInsets.zero,
             ),
             const SizedBox(height: 20),
           ],
-          _CalendarCard(
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => Scaffold(
-                  appBar: AppBar(title: const Text('Style calendar')),
-                  body: const StyleCalendarView(),
-                ),
-              ),
-            ),
-          ),
           if (tomorrow != null) ...[
             const SizedBox(height: 14),
             _TomorrowCard(outfit: tomorrow),
@@ -187,46 +175,6 @@ class _OutfitHistoryViewState extends State<OutfitHistoryView> {
   }
 }
 
-class _CalendarCard extends StatelessWidget {
-  const _CalendarCard({required this.onTap});
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => StyleStackFeaturePanel(
-    color: DesignSystem.primary,
-    onTap: onTap,
-    child: const Row(
-      children: [
-        StyleStackIconBadge(
-          icon: Icons.calendar_month_outlined,
-          backgroundColor: DesignSystem.primaryDark,
-        ),
-        SizedBox(width: 14),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Plan for what is next',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 16,
-                ),
-              ),
-              SizedBox(height: 3),
-              Text(
-                'See events and outfit reminders',
-                style: TextStyle(color: Colors.white70, height: 1.35),
-              ),
-            ],
-          ),
-        ),
-        Icon(Icons.arrow_forward_rounded, color: Colors.white),
-      ],
-    ),
-  );
-}
 
 class _TomorrowCard extends StatelessWidget {
   const _TomorrowCard({required this.outfit});
