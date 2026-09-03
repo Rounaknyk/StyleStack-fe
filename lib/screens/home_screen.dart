@@ -14,6 +14,7 @@ import '../config/custom_widgets.dart';
 import '../models/wardrobe_item.dart';
 import '../providers/auth_provider.dart';
 import '../providers/gmail_sync_provider.dart';
+import '../services/api_service.dart';
 import '../providers/wardrobe_provider.dart';
 import '../services/permission_prompt_service.dart';
 import '../services/analytics_service.dart';
