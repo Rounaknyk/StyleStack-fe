@@ -136,6 +136,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _chooseImageSource() async {
     final gmailSync = context.read<GmailSyncProvider>();
+    final features = await ApiService().getAppFeatures();
+    final gmailEnabled = features['gmail_sync_enabled'] == true;
+    if (!mounted) return;
+
     final source = await showModalBottomSheet<_AddItemSource>(
       context: context,
       showDragHandle: true,
@@ -185,33 +189,34 @@ class _HomeScreenState extends State<HomeScreen> {
                   Navigator.pop(context, _AddItemSource.gallery);
                 },
               ),
-              ListTile(
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 8,
-                ),
-                enabled: !gmailSync.isRunning,
-                leading: const Icon(Icons.mark_email_read_outlined),
-                title: Text(
-                  gmailSync.isRunning
-                      ? 'Closet Sync is running'
-                      : 'Fetch purchases from Gmail',
-                ),
-                subtitle: Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: Text(
-                    gmailSync.isRunning
-                        ? 'All eligible deliveries are being checked in the background. You can keep using StyleStack.'
-                        : gmailSync.result == null
-                        ? 'Connect the Gmail used for Amazon purchases. All eligible delivered items are checked in one sync.'
-                        : '${gmailSync.result?['imported_items'] ?? 0} items added or refreshed in the last sync',
-                    style: const TextStyle(height: 1.35),
+              if (gmailEnabled)
+                ListTile(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 8,
                   ),
+                  enabled: !gmailSync.isRunning,
+                  leading: const Icon(Icons.mark_email_read_outlined),
+                  title: Text(
+                    gmailSync.isRunning
+                        ? 'Closet Sync is running'
+                        : 'Fetch purchases from Gmail',
+                  ),
+                  subtitle: Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Text(
+                      gmailSync.isRunning
+                          ? 'All eligible deliveries are being checked in the background. You can keep using StyleStack.'
+                          : gmailSync.result == null
+                          ? 'Connect the Gmail used for Amazon purchases. All eligible delivered items are checked in one sync.'
+                          : '${gmailSync.result?['imported_items'] ?? 0} items added or refreshed in the last sync',
+                      style: const TextStyle(height: 1.35),
+                    ),
+                  ),
+                  onTap: gmailSync.isRunning
+                      ? null
+                      : () => Navigator.pop(context, _AddItemSource.gmail),
                 ),
-                onTap: gmailSync.isRunning
-                    ? null
-                    : () => Navigator.pop(context, _AddItemSource.gmail),
-              ),
             ],
           ),
         ),

@@ -1,3 +1,4 @@
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'dart:convert';
 import 'dart:io';
 
@@ -43,6 +44,21 @@ class ApiService {
     return token;
   }
 
+  Future<Map<String, String>> _defaultHeaders() async {
+    final token = await _token();
+    final headers = {'Authorization': 'Bearer $token'};
+    try {
+      final appCheckToken = await FirebaseAppCheck.instance.getToken();
+      if (appCheckToken != null) {
+        headers['X-Firebase-AppCheck'] = appCheckToken;
+      }
+    } catch (e) {
+      // Ignore if AppCheck is not initialized or fails
+    }
+    return headers;
+  }
+
+
   Future<void> checkBackendHealth() async {
     final apiUri = Uri.parse(RuntimeConfig.apiBaseUrl);
     final healthUri = apiUri.replace(path: '/health', query: null);
@@ -56,13 +72,17 @@ class ApiService {
     }
   }
 
+  Map<String, dynamic>? _cachedFeatures;
+
   Future<Map<String, dynamic>> getAppFeatures() async {
+    if (_cachedFeatures != null) return _cachedFeatures!;
     try {
       final response = await _client
           .get(Uri.parse('${RuntimeConfig.apiBaseUrl}/config/features'))
           .timeout(const Duration(seconds: 5));
       if (response.statusCode == 200) {
-        return jsonDecode(response.body) as Map<String, dynamic>;
+        _cachedFeatures = jsonDecode(response.body) as Map<String, dynamic>;
+        return _cachedFeatures!;
       }
     } catch (_) {
       // Ignore errors and return default empty features on network failure
@@ -70,10 +90,28 @@ class ApiService {
     return {};
   }
 
+  Future<void> updateAppFeatures({bool? googleCalendarEnabled, bool? gmailSyncEnabled}) async {
+    final body = <String, dynamic>{};
+    if (googleCalendarEnabled != null) {
+      body['google_calendar_enabled'] = googleCalendarEnabled;
+    }
+    if (gmailSyncEnabled != null) {
+      body['gmail_sync_enabled'] = gmailSyncEnabled;
+    }
+    if (body.isEmpty) return;
+
+    final response = await _client.post(
+      Uri.parse('${RuntimeConfig.apiBaseUrl}/config/owner/features'),
+      headers: await _defaultHeaders(),
+      body: jsonEncode(body),
+    );
+    _cachedFeatures = _decode(response) as Map<String, dynamic>;
+  }
+
   Future<void> deleteAccount() async {
     final response = await _client.delete(
       Uri.parse('${RuntimeConfig.apiBaseUrl}/users/me'),
-      headers: {'Authorization': 'Bearer ${await _token()}'},
+      headers: await _defaultHeaders(),
     );
     _decode(response);
   }
@@ -81,7 +119,7 @@ class ApiService {
   Future<Map<String, dynamic>> fetchUserAccess() async {
     final response = await _client.get(
       Uri.parse('${RuntimeConfig.apiBaseUrl}/users/me/access'),
-      headers: {'Authorization': 'Bearer ${await _token()}'},
+      headers: await _defaultHeaders(),
     );
     return _decode(response) as Map<String, dynamic>;
   }
@@ -89,7 +127,7 @@ class ApiService {
   Future<List<WardrobeItem>> fetchItems() async {
     final response = await _client.get(
       Uri.parse('${RuntimeConfig.apiBaseUrl}/wardrobe/items'),
-      headers: {'Authorization': 'Bearer ${await _token()}'},
+      headers: await _defaultHeaders(),
     );
     final body = _decode(response);
     return (body as List<dynamic>)
@@ -100,7 +138,7 @@ class ApiService {
   Future<Map<String, dynamic>> fetchWardrobeUploadQuota() async {
     final response = await _client.get(
       Uri.parse('${RuntimeConfig.apiBaseUrl}/wardrobe/upload-quota'),
-      headers: {'Authorization': 'Bearer ${await _token()}'},
+      headers: await _defaultHeaders(),
     );
     return _decode(response) as Map<String, dynamic>;
   }
@@ -122,7 +160,7 @@ class ApiService {
             'POST',
             Uri.parse('${RuntimeConfig.apiBaseUrl}/wardrobe/items'),
           )
-          ..headers['Authorization'] = 'Bearer ${await _token()}'
+          ..headers.addAll(await _defaultHeaders())
           ..fields['name'] = name.trim()
           ..fields['category'] = category.trim();
     if (brand?.trim().isNotEmpty == true) {
@@ -175,7 +213,7 @@ class ApiService {
     final request = http.MultipartRequest(
       'POST',
       Uri.parse('${RuntimeConfig.apiBaseUrl}/wardrobe/analyze-image'),
-    )..headers['Authorization'] = 'Bearer ${await _token()}';
+    )..headers.addAll(await _defaultHeaders());
     final extension = image.path.split('.').last.toLowerCase();
     final subtype = extension == 'png'
         ? 'png'
@@ -201,7 +239,7 @@ class ApiService {
     final request = http.MultipartRequest(
       'POST',
       Uri.parse('${RuntimeConfig.apiBaseUrl}/wardrobe/analysis-jobs'),
-    )..headers['Authorization'] = 'Bearer ${await _token()}';
+    )..headers.addAll(await _defaultHeaders());
     request.fields['kind'] = multiple ? 'multiple' : 'single';
     final extension = image.path.split('.').last.toLowerCase();
     final subtype = extension == 'png'
@@ -223,7 +261,7 @@ class ApiService {
   Future<AiAnalysisJob> fetchImageAnalysisJob(String jobId) async {
     final response = await http.get(
       Uri.parse('${RuntimeConfig.apiBaseUrl}/wardrobe/analysis-jobs/$jobId'),
-      headers: {'Authorization': 'Bearer ${await _token()}'},
+      headers: await _defaultHeaders(),
     );
     return AiAnalysisJob.fromJson(_decode(response) as Map<String, dynamic>);
   }
@@ -231,7 +269,7 @@ class ApiService {
   Future<AiAnalysisJob> cancelImageAnalysisJob(String jobId) async {
     final response = await http.delete(
       Uri.parse('${RuntimeConfig.apiBaseUrl}/wardrobe/analysis-jobs/$jobId'),
-      headers: {'Authorization': 'Bearer ${await _token()}'},
+      headers: await _defaultHeaders(),
     );
     return AiAnalysisJob.fromJson(_decode(response) as Map<String, dynamic>);
   }
@@ -241,7 +279,7 @@ class ApiService {
       Uri.parse(
         '${RuntimeConfig.apiBaseUrl}/wardrobe/analysis-jobs/$jobId/retry',
       ),
-      headers: {'Authorization': 'Bearer ${await _token()}'},
+      headers: await _defaultHeaders(),
     );
     return AiAnalysisJob.fromJson(_decode(response) as Map<String, dynamic>);
   }
@@ -250,7 +288,7 @@ class ApiService {
     final request = http.MultipartRequest(
       'POST',
       Uri.parse('${RuntimeConfig.apiBaseUrl}/wardrobe/detect-items'),
-    )..headers['Authorization'] = 'Bearer ${await _token()}';
+    )..headers.addAll(await _defaultHeaders());
     final extension = image.path.split('.').last.toLowerCase();
     final subtype = extension == 'png'
         ? 'png'
@@ -274,7 +312,7 @@ class ApiService {
     final request = http.MultipartRequest(
       'POST',
       Uri.parse('${RuntimeConfig.apiBaseUrl}/wardrobe/outfit-selfies/analyze'),
-    )..headers['Authorization'] = 'Bearer ${await _token()}';
+    )..headers.addAll(await _defaultHeaders());
     final extension = image.path.split('.').last.toLowerCase();
     final subtype = extension == 'png'
         ? 'png'
@@ -303,7 +341,7 @@ class ApiService {
         '${RuntimeConfig.apiBaseUrl}/wardrobe/outfit-selfies/$selfieId/confirm',
       ),
       headers: {
-        'Authorization': 'Bearer ${await _token()}',
+        ...await _defaultHeaders(),
         'Content-Type': 'application/json',
       },
       body: jsonEncode({
@@ -328,7 +366,7 @@ class ApiService {
       Uri.parse(
         '${RuntimeConfig.apiBaseUrl}/wardrobe/outfit-selfies/$selfieId',
       ),
-      headers: {'Authorization': 'Bearer ${await _token()}'},
+      headers: await _defaultHeaders(),
     );
     _decode(response);
   }
@@ -336,7 +374,7 @@ class ApiService {
   Future<List<OutfitSelfieHistoryEntry>> fetchOutfitSelfieHistory() async {
     final response = await _client.get(
       Uri.parse('${RuntimeConfig.apiBaseUrl}/wardrobe/outfit-selfies/history'),
-      headers: {'Authorization': 'Bearer ${await _token()}'},
+      headers: await _defaultHeaders(),
     );
     return (_decode(response) as List<dynamic>)
         .map(
@@ -351,7 +389,7 @@ class ApiService {
       Uri.parse(
         '${RuntimeConfig.apiBaseUrl}/wardrobe/wear-history?limit=$limit',
       ),
-      headers: {'Authorization': 'Bearer ${await _token()}'},
+      headers: await _defaultHeaders(),
     );
     return (_decode(response) as List<dynamic>)
         .map((item) => WearHistoryEntry.fromJson(item as Map<String, dynamic>))
@@ -361,7 +399,7 @@ class ApiService {
   Future<void> deleteItem(String itemId) async {
     final response = await _client.delete(
       Uri.parse('${RuntimeConfig.apiBaseUrl}/wardrobe/items/$itemId'),
-      headers: {'Authorization': 'Bearer ${await _token()}'},
+      headers: await _defaultHeaders(),
     );
     _decode(response);
   }
@@ -376,7 +414,7 @@ class ApiService {
             'POST',
             Uri.parse('${RuntimeConfig.apiBaseUrl}/canvas/styles'),
           )
-          ..headers['Authorization'] = 'Bearer ${await _token()}'
+          ..headers.addAll(await _defaultHeaders())
           ..fields['name'] = name.trim()
           ..fields['items'] = jsonEncode(items);
     request.files.add(
@@ -402,7 +440,7 @@ class ApiService {
             'PUT',
             Uri.parse('${RuntimeConfig.apiBaseUrl}/canvas/styles/$styleId'),
           )
-          ..headers['Authorization'] = 'Bearer ${await _token()}'
+          ..headers.addAll(await _defaultHeaders())
           ..fields['name'] = name.trim()
           ..fields['items'] = jsonEncode(items);
     request.files.add(
@@ -420,7 +458,7 @@ class ApiService {
   Future<List<CanvasStyle>> fetchCanvasStyles() async {
     final response = await _client.get(
       Uri.parse('${RuntimeConfig.apiBaseUrl}/canvas/styles'),
-      headers: {'Authorization': 'Bearer ${await _token()}'},
+      headers: await _defaultHeaders(),
     );
     return (_decode(response) as List<dynamic>)
         .map((item) => CanvasStyle.fromJson(item as Map<String, dynamic>))
@@ -430,7 +468,7 @@ class ApiService {
   Future<void> deleteCanvasStyle(String styleId) async {
     final response = await _client.delete(
       Uri.parse('${RuntimeConfig.apiBaseUrl}/canvas/styles/$styleId'),
-      headers: {'Authorization': 'Bearer ${await _token()}'},
+      headers: await _defaultHeaders(),
     );
     _decode(response);
   }
@@ -438,7 +476,7 @@ class ApiService {
   Future<WardrobeItem> fetchItem(String itemId) async {
     final response = await _client.get(
       Uri.parse('${RuntimeConfig.apiBaseUrl}/wardrobe/items/$itemId'),
-      headers: {'Authorization': 'Bearer ${await _token()}'},
+      headers: await _defaultHeaders(),
     );
     return WardrobeItem.fromJson(_decode(response) as Map<String, dynamic>);
   }
@@ -448,7 +486,7 @@ class ApiService {
       Uri.parse(
         '${RuntimeConfig.apiBaseUrl}/wardrobe/items/$itemId/retry-processing',
       ),
-      headers: {'Authorization': 'Bearer ${await _token()}'},
+      headers: await _defaultHeaders(),
     );
     return WardrobeItem.fromJson(_decode(response) as Map<String, dynamic>);
   }
@@ -460,7 +498,7 @@ class ApiService {
     final response = await _client.put(
       Uri.parse('${RuntimeConfig.apiBaseUrl}/wardrobe/items/$itemId'),
       headers: {
-        'Authorization': 'Bearer ${await _token()}',
+        ...await _defaultHeaders(),
         'Content-Type': 'application/json',
       },
       body: jsonEncode(fields),
@@ -491,7 +529,7 @@ class ApiService {
         try {
           final getResponse = await _client.get(
             Uri.parse('${RuntimeConfig.apiBaseUrl}/outfits/$cachedOutfitId'),
-            headers: {'Authorization': 'Bearer ${await _token()}'},
+            headers: await _defaultHeaders(),
           );
           if (getResponse.statusCode >= 200 && getResponse.statusCode < 300) {
             return Outfit.fromJson(_decode(getResponse) as Map<String, dynamic>);
@@ -515,7 +553,7 @@ class ApiService {
     final response = await _client.post(
       Uri.parse('${RuntimeConfig.apiBaseUrl}/outfits/suggest'),
       headers: {
-        'Authorization': 'Bearer ${await _token()}',
+        ...await _defaultHeaders(),
         'Content-Type': 'application/json',
       },
       body: jsonEncode(payload),
@@ -536,7 +574,7 @@ class ApiService {
     final response = await _client.post(
       Uri.parse('${RuntimeConfig.apiBaseUrl}/outfits/chat'),
       headers: {
-        'Authorization': 'Bearer ${await _token()}',
+        ...await _defaultHeaders(),
         'Content-Type': 'application/json',
       },
       body: jsonEncode({'message': message, 'city': city}),
@@ -547,7 +585,7 @@ class ApiService {
   Future<int> wearOutfit(String outfitId) async {
     final response = await _client.post(
       Uri.parse('${RuntimeConfig.apiBaseUrl}/outfits/$outfitId/wear'),
-      headers: {'Authorization': 'Bearer ${await _token()}'},
+      headers: await _defaultHeaders(),
     );
     return (_decode(response) as Map<String, dynamic>)['logged_items'] as int;
   }
@@ -564,7 +602,7 @@ class ApiService {
     final response = await _client.post(
       Uri.parse('${RuntimeConfig.apiBaseUrl}/outfits/$outfitId/feedback'),
       headers: {
-        'Authorization': 'Bearer ${await _token()}',
+        ...await _defaultHeaders(),
         'Content-Type': 'application/json',
       },
       body: jsonEncode(payload),
@@ -584,7 +622,7 @@ class ApiService {
     final response = await _client.post(
       Uri.parse('${RuntimeConfig.apiBaseUrl}/wardrobe/items/$itemId/wear'),
       headers: {
-        'Authorization': 'Bearer ${await _token()}',
+        ...await _defaultHeaders(),
         'Content-Type': 'application/json',
       },
       body: jsonEncode(payload),
@@ -595,7 +633,7 @@ class ApiService {
   Future<Outfit> fetchOutfit(String outfitId) async {
     final response = await _client.get(
       Uri.parse('${RuntimeConfig.apiBaseUrl}/outfits/$outfitId'),
-      headers: {'Authorization': 'Bearer ${await _token()}'},
+      headers: await _defaultHeaders(),
     );
     return Outfit.fromJson(_decode(response) as Map<String, dynamic>);
   }
@@ -603,7 +641,7 @@ class ApiService {
   Future<UserPreferences> fetchPreferences() async {
     final response = await _client.get(
       Uri.parse('${RuntimeConfig.apiBaseUrl}/users/me/preferences'),
-      headers: {'Authorization': 'Bearer ${await _token()}'},
+      headers: await _defaultHeaders(),
     );
     return UserPreferences.fromJson(_decode(response) as Map<String, dynamic>);
   }
@@ -612,7 +650,7 @@ class ApiService {
     final response = await _client.put(
       Uri.parse('${RuntimeConfig.apiBaseUrl}/users/me/preferences'),
       headers: {
-        'Authorization': 'Bearer ${await _token()}',
+        ...await _defaultHeaders(),
         'Content-Type': 'application/json',
       },
       body: jsonEncode(fields),
@@ -624,7 +662,7 @@ class ApiService {
     final response = await _client.post(
       Uri.parse('${RuntimeConfig.apiBaseUrl}/users/me/devices'),
       headers: {
-        'Authorization': 'Bearer ${await _token()}',
+        ...await _defaultHeaders(),
         'Content-Type': 'application/json',
       },
       body: jsonEncode({'token': token, 'platform': platform}),
@@ -638,7 +676,7 @@ class ApiService {
             "POST",
             Uri.parse("${RuntimeConfig.apiBaseUrl}/admin/notifications/media"),
           )
-          ..headers["Authorization"] = "Bearer ${await _token()}"
+          ..headers.addAll(await _defaultHeaders())
           ..files.add(await http.MultipartFile.fromPath("image", image.path));
     final streamed = await request.send();
     final response = await http.Response.fromStream(streamed);
@@ -655,7 +693,7 @@ class ApiService {
     final response = await _client.post(
       Uri.parse("${RuntimeConfig.apiBaseUrl}/admin/notifications/broadcast"),
       headers: {
-        "Authorization": "Bearer ${await _token()}",
+        ...await _defaultHeaders(),
         "Content-Type": "application/json",
       },
       body: jsonEncode({
@@ -671,7 +709,7 @@ class ApiService {
   Future<Map<String, int>> sendTestNotification() async {
     final response = await _client.post(
       Uri.parse('${RuntimeConfig.apiBaseUrl}/users/me/test-notification'),
-      headers: {'Authorization': 'Bearer ${await _token()}'},
+      headers: await _defaultHeaders(),
     );
     final result = _decode(response) as Map<String, dynamic>;
     return {
@@ -685,7 +723,7 @@ class ApiService {
   ) async {
     final response = await _client.post(
       Uri.parse('${RuntimeConfig.apiBaseUrl}/users/me/simulations/$simulation'),
-      headers: {'Authorization': 'Bearer ${await _token()}'},
+      headers: await _defaultHeaders(),
     );
     return _decode(response) as Map<String, dynamic>;
   }
@@ -695,7 +733,7 @@ class ApiService {
     final response = await _client.post(
       Uri.parse('${RuntimeConfig.apiBaseUrl}/imports/gmail/jobs'),
       headers: {
-        'Authorization': 'Bearer ${await _token()}',
+        ...await _defaultHeaders(),
         'Content-Type': 'application/json',
       },
       body: jsonEncode(payload),
@@ -706,7 +744,7 @@ class ApiService {
   Future<Map<String, dynamic>> fetchGmailImportJob(String jobId) async {
     final response = await _client.get(
       Uri.parse('${RuntimeConfig.apiBaseUrl}/imports/gmail/jobs/$jobId'),
-      headers: {'Authorization': 'Bearer ${await _token()}'},
+      headers: await _defaultHeaders(),
     );
     return _decode(response) as Map<String, dynamic>;
   }
@@ -723,7 +761,7 @@ class ApiService {
     ).replace(queryParameters: query.isEmpty ? null : query);
     final response = await _client.get(
       uri,
-      headers: {'Authorization': 'Bearer ${await _token()}'},
+      headers: await _defaultHeaders(),
     );
     return (_decode(response) as List<dynamic>)
         .map(
@@ -738,7 +776,7 @@ class ApiService {
     final response = await _client.post(
       Uri.parse('${RuntimeConfig.apiBaseUrl}/calendar/events'),
       headers: {
-        'Authorization': 'Bearer ${await _token()}',
+        ...await _defaultHeaders(),
         'Content-Type': 'application/json',
       },
       body: jsonEncode(fields),
@@ -751,7 +789,7 @@ class ApiService {
   Future<void> deleteCalendarEvent(String eventId) async {
     final response = await _client.delete(
       Uri.parse('${RuntimeConfig.apiBaseUrl}/calendar/events/$eventId'),
-      headers: {'Authorization': 'Bearer ${await _token()}'},
+      headers: await _defaultHeaders(),
     );
     _decode(response);
   }
@@ -759,7 +797,7 @@ class ApiService {
   Future<Map<String, dynamic>> fetchGoogleCalendarStatus() async {
     final response = await _client.get(
       Uri.parse('${RuntimeConfig.apiBaseUrl}/calendar/google/status'),
-      headers: {'Authorization': 'Bearer ${await _token()}'},
+      headers: await _defaultHeaders(),
     );
     return _decode(response) as Map<String, dynamic>;
   }
@@ -771,7 +809,7 @@ class ApiService {
     final response = await _client.post(
       Uri.parse('${RuntimeConfig.apiBaseUrl}/calendar/google/connect'),
       headers: {
-        'Authorization': 'Bearer ${await _token()}',
+        ...await _defaultHeaders(),
         'Content-Type': 'application/json',
       },
       body: jsonEncode({'server_auth_code': serverAuthCode, 'email': email}),
@@ -782,7 +820,7 @@ class ApiService {
   Future<Map<String, dynamic>> syncGoogleCalendar() async {
     final response = await _client.post(
       Uri.parse('${RuntimeConfig.apiBaseUrl}/calendar/google/sync'),
-      headers: {'Authorization': 'Bearer ${await _token()}'},
+      headers: await _defaultHeaders(),
     );
     return _decode(response) as Map<String, dynamic>;
   }
@@ -790,7 +828,7 @@ class ApiService {
   Future<void> disconnectGoogleCalendar() async {
     final response = await _client.delete(
       Uri.parse('${RuntimeConfig.apiBaseUrl}/calendar/google/connection'),
-      headers: {'Authorization': 'Bearer ${await _token()}'},
+      headers: await _defaultHeaders(),
     );
     _decode(response);
   }
@@ -798,7 +836,7 @@ class ApiService {
   Future<List<StyleNotification>> fetchNotifications() async {
     final response = await _client.get(
       Uri.parse('${RuntimeConfig.apiBaseUrl}/calendar/notifications'),
-      headers: {'Authorization': 'Bearer ${await _token()}'},
+      headers: await _defaultHeaders(),
     );
     return (_decode(response) as List<dynamic>)
         .map((item) => StyleNotification.fromJson(item as Map<String, dynamic>))
@@ -810,7 +848,7 @@ class ApiService {
       Uri.parse(
         '${RuntimeConfig.apiBaseUrl}/calendar/notifications/$notificationId/read',
       ),
-      headers: {'Authorization': 'Bearer ${await _token()}'},
+      headers: await _defaultHeaders(),
     );
     _decode(response);
   }
@@ -845,7 +883,7 @@ class ApiService {
     final response = await _client.post(
       Uri.parse('${RuntimeConfig.apiBaseUrl}/canvas/styles/$styleId/schedule'),
       headers: {
-        'Authorization': 'Bearer ${await _token()}',
+        ...await _defaultHeaders(),
         'Content-Type': 'application/json',
       },
       body: jsonEncode(payload),

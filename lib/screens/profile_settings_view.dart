@@ -94,6 +94,8 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
   bool _schedulingNotificationSimulation = false;
   bool _deletingAccount = false;
   bool _adminMode = false;
+  bool _calendarFeatureEnabled = false;
+  bool _gmailFeatureEnabled = false;
 
   @override
   void initState() {
@@ -105,11 +107,13 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
         await context.read<AccessProvider>().syncUser(user, force: true);
       }
       final preferences = await SharedPreferences.getInstance();
+      final features = await ApiService().getAppFeatures();
       if (mounted) {
-        setState(
-          () => _adminMode =
-              preferences.getBool("stylestack_admin_mode") ?? false,
-        );
+        setState(() {
+          _adminMode = preferences.getBool("stylestack_admin_mode") ?? false;
+          _calendarFeatureEnabled = features['google_calendar_enabled'] == true;
+          _gmailFeatureEnabled = features['gmail_sync_enabled'] == true;
+        });
       }
     });
   }
@@ -420,6 +424,32 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
     if (mounted) setState(() => _adminMode = enabled);
   }
 
+  Future<void> _setCalendarFeature(bool enabled) async {
+    try {
+      setState(() => _calendarFeatureEnabled = enabled);
+      await ApiService().updateAppFeatures(googleCalendarEnabled: enabled);
+      if (mounted) _message('Calendar sync feature ${enabled ? 'enabled' : 'disabled'}');
+    } catch (e) {
+      if (mounted) {
+        setState(() => _calendarFeatureEnabled = !enabled);
+        _message('Failed to update feature flag');
+      }
+    }
+  }
+
+  Future<void> _setGmailFeature(bool enabled) async {
+    try {
+      setState(() => _gmailFeatureEnabled = enabled);
+      await ApiService().updateAppFeatures(gmailSyncEnabled: enabled);
+      if (mounted) _message('Gmail sync feature ${enabled ? 'enabled' : 'disabled'}');
+    } catch (e) {
+      if (mounted) {
+        setState(() => _gmailFeatureEnabled = !enabled);
+        _message('Failed to update feature flag');
+      }
+    }
+  }
+
   void _message(String text) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
@@ -608,7 +638,8 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
             ],
           ),
           const SizedBox(height: 18),
-          _SettingsSection(
+          if (_gmailFeatureEnabled)
+            _SettingsSection(
             title: 'Closet Sync',
             subtitle: gmailSync.isRunning
                 ? 'Sync continues while you use the rest of StyleStack.'
@@ -699,6 +730,24 @@ class _ProfileSettingsViewState extends State<ProfileSettingsView> {
                         builder: (_) => const _BroadcastNotificationComposer(),
                       ),
                     ),
+                  ),
+                  const Divider(height: 1),
+                  SwitchListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                    secondary: const Icon(Icons.calendar_month_outlined),
+                    value: _calendarFeatureEnabled,
+                    title: const Text('Google Calendar Sync'),
+                    subtitle: const Text('Toggle the calendar connection card visibility'),
+                    onChanged: _setCalendarFeature,
+                  ),
+                  const Divider(height: 1),
+                  SwitchListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                    secondary: const Icon(Icons.mail_outline),
+                    value: _gmailFeatureEnabled,
+                    title: const Text('Gmail Closet Sync'),
+                    subtitle: const Text('Toggle the Gmail connection card visibility'),
+                    onChanged: _setGmailFeature,
                   ),
                   const Divider(height: 1),
                   _SettingsTile(
