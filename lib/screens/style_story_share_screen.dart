@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:gal/gal.dart';
 
 import '../config/brand_logo.dart';
 import '../config/design_system.dart';
@@ -467,6 +468,48 @@ class _StyleStoryShareScreenState extends State<StyleStoryShareScreen> {
     return bytes.buffer.asUint8List();
   }
 
+
+  Future<void> _downloadStory() async {
+    if (!_imageReady || _sharing) return;
+    setState(() => _sharing = true);
+    try {
+      final bytes = await _renderStory();
+      if (!mounted) return;
+      
+      final hasAccess = await Gal.hasAccess();
+      if (!hasAccess) {
+        final request = await Gal.requestAccess();
+        if (!request) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Photo library access is required to save images.')),
+            );
+          }
+          return;
+        }
+      }
+      
+      await Gal.putImageBytes(bytes, name: 'stylestack-outfit-${DateTime.now().millisecondsSinceEpoch}');
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Saved to your camera roll!'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not save the image.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _sharing = false);
+    }
+  }
+
   Future<void> _shareStory() async {
     if (!_imageReady || _sharing) return;
     setState(() => _sharing = true);
@@ -503,87 +546,89 @@ class _StyleStoryShareScreenState extends State<StyleStoryShareScreen> {
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(title: const Text('Share your style')),
     body: SafeArea(
-      child: LayoutBuilder(
-        builder: (context, constraints) => SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 4, 20, 28),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 430),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Story-ready',
-                    style: Theme.of(context).textTheme.headlineMedium,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 430),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Story-ready',
+                  style: Theme.of(context).textTheme.headlineMedium,
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'Your canvas is framed in a 9:16 StyleStack edit, ready to post.',
+                  style: TextStyle(
+                    color: DesignSystem.textSecondary,
+                    height: 1.45,
                   ),
-                  const SizedBox(height: 6),
+                ),
+                const SizedBox(height: 20),
+                Expanded(
+                  child: Center(
+                    child: FittedBox(
+                      fit: BoxFit.contain,
+                      child: RepaintBoundary(
+                        key: _storyKey,
+                        child: widget.outfit != null 
+                            ? OutfitStoryCard(outfit: widget.outfit!) 
+                            : StyleStoryCard(
+                                canvasImage: widget.canvasImage!,
+                                styleName: widget.styleName,
+                              ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                if (_precacheError != null)
                   const Text(
-                    'Your canvas is framed in a 9:16 StyleStack edit, ready to post.',
-                    style: TextStyle(
-                      color: DesignSystem.textSecondary,
-                      height: 1.45,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Center(
-                    child: SizedBox(
-                      height: constraints.maxHeight.clamp(450, 610).toDouble(),
-                      child: FittedBox(
-                        fit: BoxFit.contain,
-                        child: RepaintBoundary(
-                          key: _storyKey,
-                          child: widget.outfit != null 
-                              ? OutfitStoryCard(outfit: widget.outfit!) 
-                              : StyleStoryCard(
-                                  canvasImage: widget.canvasImage!,
-                                  styleName: widget.styleName,
-                                ),
+                    'The saved canvas could not be loaded. Open the style and try again.',
+                    style: TextStyle(color: DesignSystem.error),
+                  )
+                else
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _imageReady && !_sharing
+                              ? _downloadStory
+                              : null,
+                          icon: _sharing
+                              ? const SizedBox.square(
+                                  dimension: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.download_rounded),
+                          label: const Text('Download'),
                         ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  if (_precacheError != null)
-                    const Text(
-                      'The saved canvas could not be loaded. Open the style and try again.',
-                      style: TextStyle(color: DesignSystem.error),
-                    )
-                  else
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton.icon(
-                        onPressed: _imageReady && !_sharing
-                            ? _shareStory
-                            : null,
-                        icon: _sharing
-                            ? const SizedBox.square(
-                                dimension: 18,
-                                child: CircularProgressIndicator(
-                                  color: Colors.white,
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Icon(Icons.ios_share_rounded),
-                        label: Text(
-                          _sharing
-                              ? 'Preparing 1080 × 1920…'
-                              : 'Share to Instagram Story',
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: FilledButton.icon(
+                          onPressed: _imageReady && !_sharing
+                              ? _shareStory
+                              : null,
+                          icon: _sharing
+                              ? const SizedBox.square(
+                                  dimension: 18,
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.ios_share_rounded),
+                          label: const Text('Post to IG'),
                         ),
                       ),
-                    ),
-                  const SizedBox(height: 10),
-                  const Center(
-                    child: Text(
-                      'Choose Instagram from the share sheet, then select Story.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: DesignSystem.textTertiary,
-                        fontSize: 12,
-                      ),
-                    ),
+                    ],
                   ),
-                ],
-              ),
+              ],
             ),
           ),
         ),
