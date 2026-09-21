@@ -529,7 +529,7 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
                   child: OutlinedButton.icon(
                     onPressed: _shareCanvas,
                     icon: const Icon(Icons.ios_share_rounded, size: 20),
-                    label: const Text('Post to socials', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    label: const Text('Export Style', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                     style: OutlinedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       side: const BorderSide(color: DesignSystem.primary, width: 2),

@@ -475,7 +475,7 @@ class _StylePortfolioCard extends StatelessWidget {
                         child: OutlinedButton.icon(
                           onPressed: onShare,
                           icon: const Icon(Icons.ios_share_rounded, size: 14),
-                          label: const Text('Post to socials', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: -0.2)),
+                          label: const Text('Export Style', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: -0.2)),
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(horizontal: 4),
                             side: const BorderSide(color: DesignSystem.primary),
