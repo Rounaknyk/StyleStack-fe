@@ -175,7 +175,7 @@ class StyleStoryCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: QrImageView(
-                          data: 'https://stylestack.ai/download',
+                          data: 'https://stylestackai.in/download',
                           version: QrVersions.auto,
                           size: 48.0,
                           backgroundColor: Colors.white,
@@ -377,7 +377,7 @@ class OutfitStoryCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: QrImageView(
-                          data: 'https://stylestack.ai/download',
+                          data: 'https://stylestackai.in/download',
                           version: QrVersions.auto,
                           size: 48.0,
                           backgroundColor: Colors.white,
