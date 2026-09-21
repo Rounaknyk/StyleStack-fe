@@ -544,7 +544,7 @@ class _StyleStoryShareScreenState extends State<StyleStoryShareScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Share your style')),
+    appBar: AppBar(title: const Text('Export your style')),
     body: SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
