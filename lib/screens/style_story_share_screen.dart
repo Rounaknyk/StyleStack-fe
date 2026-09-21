@@ -619,7 +619,7 @@ class _StyleStoryShareScreenState extends State<StyleStoryShareScreen> {
                                   ),
                                 )
                               : const Icon(Icons.ios_share_rounded),
-                          label: const Text('Post to IG'),
+                          label: const Text('Post to socials'),
                         ),
                       ),
                     ],
