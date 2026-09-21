@@ -39,6 +39,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  bool _isOpeningCanvas = false;
+
   final _picker = ImagePicker();
   int _tab = 0;
 
@@ -126,13 +128,19 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _openCreateStyle() async {
-    unawaited(AnalyticsService.instance.event('canvas_style_started'));
-    await context.read<WardrobeProvider>().loadItems();
-    if (!mounted) return;
-    await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const CanvasStyleBuilderScreen()),
-    );
+    if (_isOpeningCanvas) return;
+    _isOpeningCanvas = true;
+    try {
+      unawaited(AnalyticsService.instance.event('canvas_style_started'));
+      await context.read<WardrobeProvider>().loadItems();
+      if (!mounted) return;
+      await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const CanvasStyleBuilderScreen()),
+      );
+    } finally {
+      _isOpeningCanvas = false;
+    }
   }
 
   Future<void> _chooseImageSource() async {

@@ -175,9 +175,7 @@ class StyleStoryCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: QrImageView(
-                          data: Platform.isIOS
-                              ? 'https://apps.apple.com/in/app/stylestack-your-fashion-ai/id6796359015'
-                              : 'https://play.google.com/store/apps/details?id=com.stylestack.stylestack',
+                          data: 'https://stylestack.ai/download',
                           version: QrVersions.auto,
                           size: 48.0,
                           backgroundColor: Colors.white,
@@ -379,9 +377,7 @@ class OutfitStoryCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: QrImageView(
-                          data: Platform.isIOS
-                              ? 'https://apps.apple.com/in/app/stylestack-your-fashion-ai/id6796359015'
-                              : 'https://play.google.com/store/apps/details?id=com.stylestack.stylestack',
+                          data: 'https://stylestack.ai/download',
                           version: QrVersions.auto,
                           size: 48.0,
                           backgroundColor: Colors.white,

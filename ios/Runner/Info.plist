@@ -60,6 +60,9 @@
 		<string>StyleStack: Your Style AI connects to a developer-hosted service on your local network only when using a development build.</string>
 		<key>NSCameraUsageDescription</key>
 		<string>StyleStack: Your Style AI uses the camera only when you choose to photograph an item for your digital wardrobe.</string>
+		<key>NSPhotoLibraryAddUsageDescription</key>
+		<string>StyleStack requires access to save outfit styles and images to your camera roll.</string>
+
 		<key>NSPhotoLibraryUsageDescription</key>
 		<string>StyleStack: Your Style AI accesses only the photos you select to add items to your digital wardrobe.</string>
 		<key>UIApplicationSceneManifest</key>
