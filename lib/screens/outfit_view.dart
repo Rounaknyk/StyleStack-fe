@@ -20,8 +20,9 @@ import 'saved_styles_screen.dart';
 import 'stylist_chat_screen.dart';
 import 'app_help_screen.dart';
 import 'calendar_view.dart';
-import 'outfit_history_screen.dart';
+import '../services/api_service.dart';
 import '../services/notification_service.dart';
+import 'style_story_share_screen.dart';
 
 class DailyOutfitView extends StatefulWidget {
   const DailyOutfitView({
@@ -501,7 +502,7 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
                 const SizedBox(height: 12),
               ],
               _OutfitBoard(
-                items: mvp.eventOutfit!.items,
+                outfit: mvp.eventOutfit!,
                 title: 'For ${priorityEvent.title}',
               ),
               const SizedBox(height: 14),
@@ -615,7 +616,7 @@ class _DailyOutfitViewState extends State<DailyOutfitView> {
               ),
               const SizedBox(height: 12),
             ],
-            _OutfitBoard(items: mvp.outfit!.items),
+            _OutfitBoard(outfit: mvp.outfit!),
             const SizedBox(height: 14),
             _WhyItWorks(reasoning: mvp.outfit!.reasoning),
             const SizedBox(height: 10),
@@ -1609,12 +1610,13 @@ class _WeatherStrip extends StatelessWidget {
 }
 
 class _OutfitBoard extends StatelessWidget {
-  const _OutfitBoard({required this.items, this.title = 'Today’s outfit'});
-  final List<WardrobeItem> items;
+  const _OutfitBoard({required this.outfit, this.title = 'Today’s outfit'});
+  final Outfit outfit;
   final String title;
 
   @override
   Widget build(BuildContext context) {
+    final items = outfit.items;
     final visibleItems = items.take(6).toList();
     final columns = visibleItems.length <= 4 ? 2 : 3;
     final rows = (visibleItems.length / (columns == 0 ? 1 : columns)).ceil();
@@ -1641,6 +1643,28 @@ class _OutfitBoard extends StatelessWidget {
                     color: DesignSystem.primaryDark,
                     fontWeight: FontWeight.w800,
                   ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                decoration: BoxDecoration(
+                  color: DesignSystem.surfaceAlt,
+                  borderRadius: BorderRadius.circular(99),
+                ),
+                child: IconButton(
+                  visualDensity: VisualDensity.compact,
+                  padding: const EdgeInsets.all(8),
+                  constraints: const BoxConstraints(),
+                  iconSize: 18,
+                  icon: const Icon(Icons.ios_share_rounded, color: DesignSystem.textSecondary),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => StyleStoryShareScreen.fromOutfit(outfit: outfit),
+                      ),
+                    );
+                  },
                 ),
               ),
               const SizedBox(width: 8),

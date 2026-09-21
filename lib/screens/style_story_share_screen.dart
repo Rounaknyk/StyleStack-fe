@@ -9,6 +9,9 @@ import 'package:share_plus/share_plus.dart';
 
 import '../config/brand_logo.dart';
 import '../config/design_system.dart';
+import '../models/outfit.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import '../services/image_cache_service.dart';
 
 /// A fixed 9:16 branded card used for Instagram Story exports.
 ///
@@ -192,15 +195,221 @@ class StyleStoryCard extends StatelessWidget {
   }
 }
 
+
+class OutfitStoryCard extends StatelessWidget {
+  const OutfitStoryCard({
+    super.key,
+    required this.outfit,
+  });
+
+  final Outfit outfit;
+
+  @override
+  Widget build(BuildContext context) {
+    final items = outfit.items.take(6).toList();
+    final columns = items.length <= 4 ? 2 : 3;
+    final rows = (items.length / (columns == 0 ? 1 : columns)).ceil();
+    
+    return SizedBox(
+      width: 360,
+      height: 640,
+      child: DecoratedBox(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFF0D2C28), Color(0xFF174E47)],
+          ),
+        ),
+        child: Stack(
+          children: [
+            const Positioned(
+              right: -46,
+              top: 54,
+              child: _StoryOrb(size: 150, color: Color(0x22EBD3BA)),
+            ),
+            const Positioned(
+              left: -56,
+              bottom: 80,
+              child: _StoryOrb(size: 132, color: Color(0x18FFFFFF)),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 22, 24, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const _StoryBrand(),
+                  const Spacer(),
+                  const Text(
+                    'DAILY LOOK / OUTFIT',
+                    style: TextStyle(
+                      fontFamily: 'Manrope',
+                      color: DesignSystem.secondaryLight,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 2.1,
+                    ),
+                  ),
+                  const SizedBox(height: 7),
+                  const Text(
+                    "My StyleStack Outfit",
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: 'Manrope',
+                      color: Colors.white,
+                      fontSize: 28,
+                      height: 1.02,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -1,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    flex: 8,
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: .72),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          const spacing = 9.0;
+                          const aspectRatio = .74;
+                          return GridView.builder(
+                            padding: EdgeInsets.zero,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: items.length,
+                            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: columns,
+                              crossAxisSpacing: spacing,
+                              mainAxisSpacing: spacing,
+                              childAspectRatio: aspectRatio,
+                            ),
+                            itemBuilder: (context, index) {
+                              final imageUrl = items[index].canvasImageUrl;
+                              return Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: const Color(0xFFF0F0F0)),
+                                ),
+                                child: imageUrl == null
+                                    ? const Icon(Icons.checkroom_outlined, size: 34, color: DesignSystem.primaryDark)
+                                    : CachedNetworkImage(
+                                        imageUrl: imageUrl,
+                                        cacheKey: 'canvas-${items[index].id}-${items[index].aiTagStatus}',
+                                        cacheManager: StyleStackImageCache.instance,
+                                        fadeInDuration: Duration.zero,
+                                        filterQuality: FilterQuality.high,
+                                        fit: BoxFit.contain,
+                                      ),
+                              );
+                            },
+                          );
+                        }
+                      )
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  const Text(
+                    'Your wardrobe. Your point of view.',
+                    style: TextStyle(
+                      fontFamily: 'Manrope',
+                      color: Colors.white,
+                      fontSize: 17,
+                      height: 1.2,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: -.35,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Create, remix and wear what already feels like you.',
+                    style: TextStyle(
+                      fontFamily: 'Manrope',
+                      color: Colors.white.withValues(alpha: .72),
+                      fontSize: 11,
+                      height: 1.35,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'GET THE APP',
+                              style: TextStyle(
+                                fontFamily: 'Manrope',
+                                color: DesignSystem.secondaryLight,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 1.5,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Scan to download\nStyleStack free',
+                              style: TextStyle(
+                                fontFamily: 'Manrope',
+                                color: Colors.white.withValues(alpha: .9),
+                                fontSize: 12,
+                                height: 1.3,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: QrImageView(
+                          data: Platform.isIOS
+                              ? 'https://apps.apple.com/in/app/stylestack-your-fashion-ai/id6796359015'
+                              : 'https://play.google.com/store/apps/details?id=com.stylestack.stylestack',
+                          version: QrVersions.auto,
+                          size: 48.0,
+                          backgroundColor: Colors.white,
+                          padding: EdgeInsets.zero,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class StyleStoryShareScreen extends StatefulWidget {
   const StyleStoryShareScreen({
     super.key,
-    required this.canvasImage,
-    required this.styleName,
+    this.canvasImage,
+    this.styleName = '',
+    this.outfit,
   });
 
-  final ImageProvider canvasImage;
+  final ImageProvider? canvasImage;
   final String styleName;
+  final Outfit? outfit;
 
   factory StyleStoryShareScreen.fromBytes({
     required Uint8List canvasBytes,
@@ -208,6 +417,12 @@ class StyleStoryShareScreen extends StatefulWidget {
   }) => StyleStoryShareScreen(
     canvasImage: MemoryImage(canvasBytes),
     styleName: styleName,
+  );
+
+  factory StyleStoryShareScreen.fromOutfit({
+    required Outfit outfit,
+  }) => StyleStoryShareScreen(
+    outfit: outfit,
   );
 
   @override
@@ -226,13 +441,17 @@ class _StyleStoryShareScreenState extends State<StyleStoryShareScreen> {
     super.didChangeDependencies();
     if (_precacheStarted || _imageReady || _precacheError != null) return;
     _precacheStarted = true;
-    precacheImage(widget.canvasImage, context)
-        .then((_) {
-          if (mounted) setState(() => _imageReady = true);
-        })
-        .catchError((Object error) {
-          if (mounted) setState(() => _precacheError = error);
-        });
+    if (widget.canvasImage != null) {
+      precacheImage(widget.canvasImage!, context)
+          .then((_) {
+            if (mounted) setState(() => _imageReady = true);
+          })
+          .catchError((Object error) {
+            if (mounted) setState(() => _precacheError = error);
+          });
+    } else {
+      _imageReady = true;
+    }
   }
 
   Future<Uint8List> _renderStory() async {
@@ -313,10 +532,12 @@ class _StyleStoryShareScreenState extends State<StyleStoryShareScreen> {
                         fit: BoxFit.contain,
                         child: RepaintBoundary(
                           key: _storyKey,
-                          child: StyleStoryCard(
-                            canvasImage: widget.canvasImage,
-                            styleName: widget.styleName,
-                          ),
+                          child: widget.outfit != null 
+                              ? OutfitStoryCard(outfit: widget.outfit!) 
+                              : StyleStoryCard(
+                                  canvasImage: widget.canvasImage!,
+                                  styleName: widget.styleName,
+                                ),
                         ),
                       ),
                     ),
