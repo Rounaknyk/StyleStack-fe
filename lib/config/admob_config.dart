@@ -18,7 +18,7 @@ class AdMobConfig {
     ),
     ios: const String.fromEnvironment(
       'ADMOB_REWARDED_DAILY_IOS',
-      defaultValue: _iosTestRewarded, // TODO: Replace with iOS Prod ID
+      defaultValue: kDebugMode ? _iosTestRewarded : 'ca-app-pub-1786816052212177/7355044082',
     ),
   );
 
@@ -29,7 +29,32 @@ class AdMobConfig {
     ),
     ios: const String.fromEnvironment(
       'ADMOB_REWARDED_CALENDAR_IOS',
-      defaultValue: _iosTestRewarded, // TODO: Replace with iOS Prod ID
+      defaultValue: kDebugMode ? _iosTestRewarded : 'ca-app-pub-1786816052212177/7355044082',
+    ),
+  );
+
+  static const _androidTestInterstitial = 'ca-app-pub-3940256099942544/1033173712';
+  static const _iosTestInterstitial = 'ca-app-pub-3940256099942544/4411468910';
+
+  static String interstitialId() => _forPlatform(
+    android: const String.fromEnvironment(
+      'ADMOB_INTERSTITIAL_ANDROID',
+      defaultValue: kDebugMode ? _androidTestInterstitial : 'ca-app-pub-1786816052212177/1412626302',
+    ),
+    ios: const String.fromEnvironment(
+      'ADMOB_INTERSTITIAL_IOS',
+      defaultValue: kDebugMode ? _iosTestInterstitial : 'ca-app-pub-1786816052212177/7978139855',
+    ),
+  );
+
+  static String interstitialExportStyleId() => _forPlatform(
+    android: const String.fromEnvironment(
+      'ADMOB_INTERSTITIAL_EXPORT_ANDROID',
+      defaultValue: kDebugMode ? _androidTestInterstitial : 'ca-app-pub-1786816052212177/3038827883',
+    ),
+    ios: const String.fromEnvironment(
+      'ADMOB_INTERSTITIAL_EXPORT_IOS',
+      defaultValue: kDebugMode ? _iosTestInterstitial : 'ca-app-pub-1786816052212177/5210619090',
     ),
   );
 

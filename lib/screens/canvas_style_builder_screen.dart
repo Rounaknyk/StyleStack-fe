@@ -202,6 +202,7 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
   @override
   void initState() {
     super.initState();
+    InterstitialAdService.instance.loadExportAd();
   }
 
   void _restoreInitialStyle(List<WardrobeItem> items) {
@@ -352,15 +353,19 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
     try {
       final bytes = await _captureCleanCanvas();
       if (!mounted) return;
-      await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => StyleStoryShareScreen.fromBytes(
-            canvasBytes: bytes,
-            styleName: widget.initialStyle?.name ?? 'Styled by me',
+      
+      InterstitialAdService.instance.showExportAd(onComplete: () {
+        if (!mounted) return;
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => StyleStoryShareScreen.fromBytes(
+              canvasBytes: bytes,
+              styleName: widget.initialStyle?.name ?? 'Styled by me',
+            ),
           ),
-        ),
-      );
+        );
+      });
     } catch (_) {
       _message('Could not share this style.');
     }
