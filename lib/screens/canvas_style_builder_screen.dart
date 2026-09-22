@@ -14,6 +14,7 @@ import '../providers/wardrobe_provider.dart';
 import '../services/api_service.dart';
 import '../services/image_cache_service.dart';
 import '../services/notification_service.dart';
+import '../services/interstitial_ad_service.dart';
 import '../widgets/schedule_canvas_dialog.dart';
 import 'saved_styles_screen.dart';
 import 'style_story_share_screen.dart';
