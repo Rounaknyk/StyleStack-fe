@@ -483,6 +483,24 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
                           GestureDetector(
                             behavior: HitTestBehavior.opaque,
                             onTap: _clearCanvasSelection,
+                            onScaleStart: (details) {
+                              if (_selectedId != null) {
+                                final target = _placed.firstWhere(
+                                  (p) => p.item.id == _selectedId,
+                                  orElse: () => _placed.first,
+                                );
+                                target.beginGesture();
+                              }
+                            },
+                            onScaleUpdate: (details) {
+                              if (_selectedId != null) {
+                                final target = _placed.firstWhere(
+                                  (p) => p.item.id == _selectedId,
+                                  orElse: () => _placed.first,
+                                );
+                                setState(() => target.updateGesture(details));
+                              }
+                            },
                             child: Transform.translate(
                               offset: _canvasPan,
                               child: Transform.scale(
@@ -644,36 +662,6 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
                             padding: EdgeInsets.all(8),
                             child: Icon(
                               Icons.close_rounded,
-                              size: 16,
-                              color: DesignSystem.textPrimary,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  if (selected)
-                    Positioned(
-                      right: 0,
-                      bottom: 0,
-                      child: GestureDetector(
-                        onPanUpdate: (details) =>
-                            setState(() => placed.resizeFromHandle(details)),
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black26,
-                                blurRadius: 4,
-                                offset: Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: const Padding(
-                            padding: EdgeInsets.all(8),
-                            child: Icon(
-                              Icons.open_in_full_rounded,
                               size: 16,
                               color: DesignSystem.textPrimary,
                             ),
