@@ -421,7 +421,7 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
     final wardrobe = context.watch<WardrobeProvider>();
     final items = wardrobe.items;
 
-    if (wardrobe.loading && items.isEmpty) {
+    if (wardrobe.loading) {
       return const Scaffold(
         backgroundColor: DesignSystem.background,
         body: Center(
