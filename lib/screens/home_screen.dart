@@ -132,7 +132,8 @@ class _HomeScreenState extends State<HomeScreen> {
     _isOpeningCanvas = true;
     try {
       unawaited(AnalyticsService.instance.event('canvas_style_started'));
-      await context.read<WardrobeProvider>().loadItems();
+      // Trigger load in background but do not await, so navigation is instant
+      unawaited(context.read<WardrobeProvider>().loadItems());
       if (!mounted) return;
       await Navigator.push(
         context,

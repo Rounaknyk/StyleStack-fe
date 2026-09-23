@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
 import '../config/design_system.dart';
+import '../config/custom_widgets.dart';
 import '../models/wardrobe_item.dart';
 import '../models/canvas_style.dart';
 import '../models/calendar_models.dart';
@@ -419,6 +420,18 @@ class _CanvasStyleBuilderScreenState extends State<CanvasStyleBuilderScreen> {
   Widget build(BuildContext context) {
     final wardrobe = context.watch<WardrobeProvider>();
     final items = wardrobe.items;
+
+    if (wardrobe.loading && items.isEmpty) {
+      return const Scaffold(
+        backgroundColor: DesignSystem.background,
+        body: Center(
+          child: StyleStackLoadingIndicator(
+            message: 'Preparing your wardrobe...',
+            animationSize: 150,
+          ),
+        ),
+      );
+    }
 
     if (!_initialStyleRestored &&
         widget.initialStyle != null &&
